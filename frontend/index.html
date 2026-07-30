@@ -11,8 +11,11 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      body.is-loading main { visibility: hidden; }
+    </style>
   </head>
-  <body>
+  <body class="is-loading">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="Caledor DMC home">
         <span class="brand-mark" aria-hidden="true">C</span>
@@ -44,10 +47,9 @@
         <div class="hero-overlay"></div>
         <div class="hero-content">
           <p class="eyebrow">Destination Management Company</p>
-          <h1>Curated Excellence,<br />Every Detail.</h1>
+          <h1>Discover Your Next<br />Adventure</h1>
           <p>
-            From exclusive private villas to private chauffeurs—we curate the most
-            elite world-class experiences across the UK and Europe.
+            Explore breathtaking destinations worldwide with Caledor DMC — bespoke hotel bookings, transfers, and curated holiday packages across the UK &amp; Europe.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#contact">Become a Partner</a>
@@ -559,7 +561,17 @@
           <h2 id="galleryTitle">Photo Gallery</h2>
           <span class="gallery-rule" aria-hidden="true"></span>
         </div>
-        <div class="gallery-grid" id="galleryGrid"></div>
+        <div class="gallery-grid" id="galleryGrid">
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-01-winner-certificate.png" alt="British Curry Championship Winner" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-02-team-vehicle.png" alt="On the Road" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-03-scotland-event.png" alt="Scotland Community Event" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-04-award-presentation.png" alt="Award Presentation" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-05-team-portrait.png" alt="Team Portrait" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-06-partners.png" alt="Partners and Team" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-07-certificates.png" alt="Certifications" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-08-group-walk.png" alt="Group Experience" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-09-outdoor-guest.png" alt="Celebrity Guest Experience" loading="lazy" /></figure>
+        </div>
       </section>
 
       <section class="blog section-light" id="blogSection">

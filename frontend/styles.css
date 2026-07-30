@@ -388,7 +388,7 @@ p {
 
 .about-split {
   display: grid;
-  grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.12fr);
+  grid-template-columns: minmax(300px, 1.08fr) minmax(0, 0.92fr);
   gap: clamp(28px, 4vw, 56px);
   align-items: start;
 }
@@ -396,6 +396,7 @@ p {
 .about-media {
   min-width: 0;
   align-self: start;
+  width: 100%;
 }
 
 .about-image-frame,
@@ -417,9 +418,10 @@ p {
   display: block;
   width: 100%;
   height: auto;
+  max-width: 100%;
   max-height: none;
-  object-fit: unset;
-  object-position: center center;
+  object-fit: contain;
+  object-position: center top;
   border-radius: 30px;
 }
 

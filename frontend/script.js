@@ -890,13 +890,13 @@ async function loadGallery() {
     const data = await fetchJson("/gallery");
     const items = data.items || [];
     if (!items.length) return;
-    grid.innerHTML = items.map((item) => `
-      <figure class="gallery-cell">
+    grid.innerHTML = items.map((item, index) => `
+      <figure class="gallery-cell${index === 0 ? " gallery-cell-hero" : ""}">
         <img src="${escapeHtml(mediaUrl(item.image_url))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
       </figure>
     `).join("");
   } catch {
-    // keep fallback content
+    // keep static fallback images in HTML
   }
 }
 
@@ -1407,29 +1407,34 @@ function wireMobileNav() {
 }
 
 async function init() {
-  bindAccordion();
-  bindChatBubble();
-  bindPackageSearch();
-  bindBlogSearch();
-  bindNewsletterForm();
-  observeSections();
-  connectLiveUpdates();
-  wireMobileNav();
+  try {
+    bindAccordion();
+    bindChatBubble();
+    bindPackageSearch();
+    bindBlogSearch();
+    bindNewsletterForm();
+    observeSections();
+    connectLiveUpdates();
+    wireMobileNav();
 
-  await loadSettings();
-  await loadPackages();
-  await Promise.all([
-    loadCmsHome(),
-    loadCmsAbout(),
-    loadCmsContact(),
-    loadCmsBlog(),
-    loadCmsPackagesPage(),
-    loadCmsFooter(),
-    loadCmsFaq(),
-    loadBlogPosts(),
-    loadFaqs(),
-    loadGallery(),
-  ]);
+    await loadSettings();
+    await loadPackages();
+    await Promise.all([
+      loadCmsHome(),
+      loadCmsAbout(),
+      loadCmsContact(),
+      loadCmsBlog(),
+      loadCmsPackagesPage(),
+      loadCmsFooter(),
+      loadCmsFaq(),
+      loadBlogPosts(),
+      loadFaqs(),
+      loadGallery(),
+    ]);
+  } finally {
+    document.body.classList.remove("is-loading");
+    document.body.classList.add("cms-ready");
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
