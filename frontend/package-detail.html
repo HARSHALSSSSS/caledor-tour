@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Package Details | Caledor DMC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="package-detail.css" />
+  </head>
+  <body>
+    <header class="pkg-header">
+      <a class="brand" href="/">
+        <span class="brand-mark">C</span>
+        <span class="brand-word">Caledor <small>| DMC</small></span>
+      </a>
+      <a class="button primary sm" href="/#contact" id="pkgHeaderCta">Enquire Now</a>
+    </header>
+
+    <main id="packageDetailRoot">
+      <section class="pkg-hero" id="pkgHero">
+        <div class="pkg-hero-bg" id="pkgHeroBg"></div>
+        <div class="pkg-hero-overlay"></div>
+        <div class="pkg-hero-content">
+          <span class="pkg-badge" id="pkgBadge">MULTI-DAY</span>
+          <h1 id="pkgTitle">Scottish Highlands Journey</h1>
+          <p id="pkgTagline">A curated path through misty lochs and ancient castles.</p>
+          <div class="pkg-quick-info" id="pkgQuickInfo">
+            <article><span>Duration</span><strong id="pkgDuration">7 Days</strong></article>
+            <article><span>Group Size</span><strong id="pkgGroupSize">2–8 Guests</strong></article>
+            <article><span>Difficulty</span><strong id="pkgDifficulty">Moderate</strong></article>
+            <article><span>Season</span><strong id="pkgSeason">Year-Round</strong></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="pkg-about section-block">
+        <div class="container split-about">
+          <div>
+            <p class="section-label" id="pkgAboutLabel">The Expedition</p>
+            <h2>About This Experience</h2>
+            <div id="pkgDescription"></div>
+          </div>
+          <aside class="highlights-card">
+            <h3>Experience Highlights</h3>
+            <ul id="pkgHighlights"></ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="pkg-itinerary section-block dark">
+        <div class="container">
+          <p class="section-label gold">The Journey</p>
+          <h2 id="pkgItineraryHeading">A Curated Day-by-Day Path</h2>
+          <div class="itinerary-list" id="pkgItinerary"></div>
+        </div>
+      </section>
+
+      <section class="pkg-gallery section-block">
+        <div class="container">
+          <p class="section-label gold">Atmosphere</p>
+          <h2 id="pkgGalleryHeading">Capturing the Highland Soul</h2>
+          <div class="gallery-row" id="pkgGallery"></div>
+        </div>
+      </section>
+
+      <section class="pkg-inclusions section-block dark">
+        <div class="container split-inclusions">
+          <div>
+            <h2>What's Included</h2>
+            <ul class="included-list" id="pkgInclusions"></ul>
+          </div>
+          <div>
+            <h2>Not Included</h2>
+            <ul class="excluded-list" id="pkgExclusions"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="pkg-related section-block">
+        <div class="container">
+          <h2>Similar Featured Experiences</h2>
+          <div class="related-grid" id="pkgRelated"></div>
+        </div>
+      </section>
+
+      <section class="pkg-cta section-block dark">
+        <div class="container centered">
+          <h2>Ready to Begin Your Journey?</h2>
+          <p id="pkgCtaCopy">Speak with our travel specialists to tailor this experience.</p>
+          <div class="cta-actions">
+            <a class="button primary" href="/#contact" id="pkgCtaPrimary">Enquire Now</a>
+            <a class="button ghost" href="/#packages" id="pkgCtaSecondary">View All Packages</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pkg-footer">
+      <p class="copyright" id="pkgCopyright">&copy; 2026 Caledor DMC. All rights reserved.</p>
+      <a href="/">Back to Home</a>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="package-detail.js"></script>
+  </body>
+</html>

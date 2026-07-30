@@ -2,10 +2,18 @@
   "name": "caledor-tour",
   "private": true,
   "scripts": {
-    "start": "node server/server.js",
-    "stop": "powershell -Command \"$p = (Get-NetTCPConnection -LocalPort 3456 -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess; if ($p) { Stop-Process -Id $p -Force; Write-Host 'Stopped server on port 3456' } else { Write-Host 'No server running on port 3456' }\"",
-    "restart": "npm run stop && npm start",
-    "seed": "node server/seed.js",
-    "import-media": "node server/scripts/import-media.js"
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "node dev-server.cjs",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "node dev-server.cjs",
+    "install:all": "npm install && cd backend && npm install",
+    "seed": "cd backend && npm run seed",
+    "import-media": "cd backend && npm run import-media"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "express": "^4.21.1",
+    "http-proxy-middleware": "^3.0.3"
   }
 }

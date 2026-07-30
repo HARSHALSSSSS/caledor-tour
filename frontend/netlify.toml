@@ -1,0 +1,22 @@
+[[redirects]]
+  from = "/api/*"
+  to = "https://YOUR-RENDER-APP.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://YOUR-RENDER-APP.onrender.com/uploads/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/socket.io/*"
+  to = "https://YOUR-RENDER-APP.onrender.com/socket.io/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/package/:slug"
+  to = "/package-detail.html?slug=:slug"
+  status = 200

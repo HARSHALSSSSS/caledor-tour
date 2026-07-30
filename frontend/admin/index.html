@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caledor Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="login-mode">
+    <div class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <div class="login-brand">
+          <span class="brand-mark">C</span>
+          <span class="brand-name">CALEDOR <small>ADMIN</small></span>
+        </div>
+        <h2>Welcome back</h2>
+        <p class="login-subtitle">Sign in to the Caledor admin panel</p>
+        <div class="login-field">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" placeholder="admin@caledor.com" autocomplete="email" />
+        </div>
+        <div class="login-field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <p class="login-error" id="loginError" aria-live="polite"></p>
+        <button class="btn login-btn" id="loginBtn" type="button">Sign In</button>
+        <p class="login-hint">Default: admin@caledor.com / admin123</p>
+      </div>
+    </div>
+
+    <div class="app-shell" id="appShell" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="#overview" aria-label="Caledor admin home">
+          <span class="brand-mark">C</span>
+          <span class="brand-name">CALEDOR <small>DMC</small></span>
+        </a>
+        <nav class="sidebar-nav" id="sidebarNav" aria-label="Admin sections"></nav>
+        <div class="sidebar-profile">
+          <div class="avatar" id="avatarInitials">AG</div>
+          <div class="profile-copy">
+            <strong id="profileName">Alex Graham</strong>
+            <span id="profileRole">Super Admin</span>
+          </div>
+          <button class="logout-btn" id="logoutBtn" type="button" title="Sign Out" aria-label="Sign Out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 17l5-5-5-5"></path>
+              <path d="M15 12H5"></path>
+              <path d="M19 4v16"></path>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <div class="main-shell">
+        <div class="main-body">
+          <header class="topbar">
+            <div>
+              <p class="crumbs" id="crumbs">Admin > Overview</p>
+              <h1 id="pageTitle">Dashboard Overview</h1>
+            </div>
+            <div class="topbar-actions" id="topbarActions"></div>
+          </header>
+          <main id="view"></main>
+        </div>
+        <footer class="sticky-footer" id="stickyFooter" hidden>
+          <span class="saved-text" id="savedText">Last saved: Connected to live server</span>
+          <div class="footer-actions">
+            <button class="btn secondary" type="button" data-action="discard-changes">Discard Changes</button>
+            <button class="btn success" type="button" data-action="publish">Publish</button>
+            <button class="btn primary" type="button" data-action="save-changes">Save Changes</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" aria-live="polite"></div>
+    <script src="../js/config.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./cms-schema.js"></script>
+    <script src="./cms-ui.js"></script>
+    <script src="./package-editor.js"></script>
+    <script src="./entities.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

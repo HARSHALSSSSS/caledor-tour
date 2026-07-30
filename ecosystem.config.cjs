@@ -2,15 +2,15 @@
 module.exports = {
   apps: [
     {
-      name: "caledor",
-      script: "server/server.js",
+      name: "caledor-api",
+      script: "backend/index.js",
       cwd: __dirname,
       instances: 1,
       autorestart: true,
       max_memory_restart: "400M",
       env: {
         NODE_ENV: "production",
-        PORT: 3456,
+        PORT: 4000,
       },
     },
   ],
