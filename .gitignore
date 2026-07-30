@@ -17,13 +17,15 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Local database (backend creates fresh DB on first run)
-backend/data/*.db
+# Legacy root database folder
+/data/
+
+# SQLite WAL sidecars only — keep backend/data/caledor.db in git
 backend/data/*.db-shm
 backend/data/*.db-wal
 
+# Legacy monolith (removed)
+server/
+
 # Cursor / tooling
 .freebuff/
-
-# Legacy monolith folder (removed — use backend/ + frontend/)
-server/

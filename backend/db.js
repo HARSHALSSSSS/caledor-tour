@@ -302,11 +302,9 @@ function seedDefaults() {
 }
 
 function seedDefaultCms() {
-  const count = db.prepare('SELECT COUNT(*) as count FROM cms_content').get();
-  if (count.count > 0) return;
-
   const insert = db.prepare(
-    'INSERT INTO cms_content (tab, section, key, value) VALUES (?, ?, ?, ?)'
+    `INSERT INTO cms_content (tab, section, key, value) VALUES (?, ?, ?, ?)
+     ON CONFLICT(tab, section, key) DO NOTHING`
   );
 
   const rows = flattenCmsDefaults();

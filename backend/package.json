@@ -7,7 +7,9 @@
     "start": "node index.js",
     "dev": "node index.js",
     "seed": "node seed.js",
-    "import-media": "node scripts/import-media.js"
+    "bootstrap": "node scripts/bootstrap-data.js",
+    "import-media": "node scripts/import-media.js",
+    "postinstall": "node scripts/bootstrap-data.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

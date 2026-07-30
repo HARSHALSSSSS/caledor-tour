@@ -9,6 +9,7 @@
     "start:frontend": "node dev-server.cjs",
     "install:all": "npm install && cd backend && npm install",
     "seed": "cd backend && npm run seed",
+    "bootstrap": "cd backend && npm run bootstrap",
     "import-media": "cd backend && npm run import-media"
   },
   "devDependencies": {
