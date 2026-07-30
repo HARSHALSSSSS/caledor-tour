@@ -57,7 +57,11 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'caledor-api' });
 });
 
-app.use('/uploads', express.static(join(__dirname, 'uploads')));
+app.use('/uploads', express.static(join(__dirname, 'uploads'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  },
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/cms', cmsRoutes);

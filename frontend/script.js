@@ -1,7 +1,13 @@
 const API = window.CALEDOR_CONFIG?.apiBase ?? "/api";
 
+let cmsRevision = String(Date.now());
+
 async function fetchJson(path) {
-  const res = await fetch(`${API}${path}`, { cache: "no-store" });
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache" },
+  });
   if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json();
 }
@@ -50,6 +56,28 @@ function mediaUrl(url) {
   return `/${value.replace(/^\/+/, "")}`;
 }
 
+/** Resolved upload/API image URL with optional cache-bust (CMS save time or item updated_at). */
+function assetUrl(url, version) {
+  const resolved = mediaUrl(url);
+  if (!resolved) return "";
+  const v = version || cmsRevision;
+  if (!v) return resolved;
+  const join = resolved.includes("?") ? "&" : "?";
+  return `${resolved}${join}v=${encodeURIComponent(String(v).replace(/\s/g, ""))}`;
+}
+
+function setImgSrc(el, url, version) {
+  if (!el || !url) return;
+  const next = assetUrl(url, version);
+  if (!next) return;
+  el.src = next;
+}
+
+function bgUrl(url, version) {
+  const resolved = assetUrl(url, version);
+  return resolved ? `url("${resolved.replace(/"/g, '\\"')}")` : "";
+}
+
 function setSectionVisible(el, enabled) {
   if (!el) return;
   if (enabled === "0" || enabled === false) el.setAttribute("hidden", "");
@@ -69,7 +97,7 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   if (heroSection && hero.background_image) {
     heroSection.style.backgroundImage = [
       "linear-gradient(180deg, rgba(8, 15, 33, 0.28), rgba(8, 15, 33, 0.62) 44%, rgba(8, 15, 33, 0.94) 100%)",
-      `url("${mediaUrl(hero.background_image)}")`,
+      bgUrl(hero.background_image, cmsState.homeUpdatedAt),
     ].join(",");
     heroSection.style.backgroundSize = "cover";
     heroSection.style.backgroundPosition = "center";
@@ -284,9 +312,11 @@ function applyAboutContent(sections = {}) {
     aboutTitle.hidden = !subtitle;
   }
   if (aboutStory && story.description) aboutStory.textContent = story.description;
-  if (aboutImage && story.image_url) {
-    aboutImage.src = mediaUrl(story.image_url);
-    aboutImage.alt = story.heading || pageHero.title || "About Caledor DMC";
+  if (aboutImage) {
+    if (story.image_url) {
+      setImgSrc(aboutImage, story.image_url, cmsState.aboutUpdatedAt);
+      aboutImage.alt = story.heading || pageHero.title || "About Caledor DMC";
+    }
   }
 
   const mvSection = document.getElementById("missionVisionSection");
@@ -323,7 +353,7 @@ function applyAboutContent(sections = {}) {
     const members = parseJson(team.members_json);
     teamGrid.innerHTML = members.map((member, index) => `
       <div class="leader-row${index % 2 ? " reverse" : ""}">
-        <img src="${escapeHtml(mediaUrl(member.photo))}" alt="${escapeHtml(member.name || "Team member")}" />
+        <img src="${escapeHtml(assetUrl(member.photo, cmsState.aboutUpdatedAt))}" alt="${escapeHtml(member.name || "Team member")}" />
         <div>
           <p class="mini-label">${escapeHtml(member.role || "")}</p>
           <h3>${escapeHtml(member.name || "")}</h3>
@@ -439,7 +469,7 @@ function applyContactContent(sections = {}, settings = {}) {
     button.href = `mailto:${email}?subject=Request%20Proposal`;
   }
   if (heroBg && hero.background_image) {
-    heroBg.style.backgroundImage = `url("${mediaUrl(hero.background_image)}")`;
+    heroBg.style.backgroundImage = bgUrl(hero.background_image, cmsState.contactUpdatedAt);
     heroBg.style.backgroundSize = "cover";
     heroBg.style.backgroundPosition = "center";
   }
@@ -583,7 +613,7 @@ function applyBlogCms(sections = {}) {
 
   const blogSection = document.getElementById("blogSection");
   if (blogSection && page.background_image) {
-    blogSection.style.backgroundImage = `linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.98)), url("${mediaUrl(page.background_image)}")`;
+    blogSection.style.backgroundImage = `linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.98)), ${bgUrl(page.background_image, cmsState.blogUpdatedAt)}`;
     blogSection.style.backgroundSize = "cover";
     blogSection.style.backgroundPosition = "center top";
   }
@@ -619,7 +649,7 @@ function applyPackagesPageCms(sections = {}) {
     const subtitle = document.getElementById("packagesHeroSubtitle");
     const searchWrap = document.getElementById("packagesSearchWrap");
     const search = document.getElementById("packagesSearch");
-    if (bg && hero.background_image) bg.style.backgroundImage = `url("${mediaUrl(hero.background_image)}")`;
+    if (bg && hero.background_image) bg.style.backgroundImage = bgUrl(hero.background_image, cmsState.packagesPageUpdatedAt);
     if (title && hero.title) title.textContent = hero.title;
     if (subtitle && hero.subtitle) subtitle.textContent = hero.subtitle;
     setSectionVisible(searchWrap, hero.show_search !== "0");
@@ -674,7 +704,7 @@ function applyPackagesPageCms(sections = {}) {
 }
 
 function packageCard(pkg, listing = {}) {
-  const image = mediaUrl(pkg.image_url) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
+  const image = assetUrl(pkg.image_url, pkg.updated_at) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
   const price = pkg.price_from != null ? `${pkg.currency || "$"}${Number(pkg.price_from).toLocaleString()}` : "On request";
   const duration = pkg.duration || "Custom itinerary";
   const showPrice = listing.show_price !== "0";
@@ -725,7 +755,7 @@ function renderPackageGrid() {
 }
 
 function blogCard(post, listing = {}) {
-  const image = mediaUrl(post.image_url) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=700&q=85";
+  const image = assetUrl(post.image_url, post.updated_at) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=700&q=85";
   const excerptLen = parseInt(listing.excerpt_length || "150", 10);
   let excerpt = post.excerpt || "";
   if (excerpt.length > excerptLen) excerpt = `${excerpt.slice(0, excerptLen).trim()}…`;
@@ -866,7 +896,7 @@ function applyDestinationsSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article>
-      <img src="${escapeHtml(mediaUrl(item.image))}" alt="${escapeHtml(item.name)}" loading="lazy" />
+      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.name)}" loading="lazy" />
       <h3>${escapeHtml(item.name)}</h3>
       <p>${escapeHtml(item.places || "")}</p>
     </article>
@@ -892,7 +922,7 @@ async function loadGallery() {
     if (!items.length) return;
     grid.innerHTML = items.map((item, index) => `
       <figure class="gallery-cell${index === 0 ? " gallery-cell-hero" : ""}">
-        <img src="${escapeHtml(mediaUrl(item.image_url))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
+        <img src="${escapeHtml(assetUrl(item.image_url, item.updated_at || cmsRevision))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
       </figure>
     `).join("");
   } catch {
@@ -917,7 +947,7 @@ function applyScotlandAttractionsSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article class="scotland-tile${item.hero ? " scotland-tile-hero" : ""}">
-      <img src="${escapeHtml(mediaUrl(item.image))}" alt="${escapeHtml(item.alt || item.label || "Scotland attraction")}" loading="lazy" />
+      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.label || "Scotland attraction")}" loading="lazy" />
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
     </article>`).join("");
 }
@@ -941,7 +971,7 @@ function applyPremiumServicesSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article>
-      <img src="${escapeHtml(mediaUrl(item.image))}" alt="${escapeHtml(item.alt || item.title || "Premium service")}" loading="lazy" />
+      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.title || "Premium service")}" loading="lazy" />
       <div>
         <h3>${escapeHtml(item.title || "")}</h3>
         <p>${escapeHtml(item.description || "")}</p>
@@ -977,7 +1007,7 @@ function applyMiceSection(section = {}) {
 
   const image = document.getElementById("miceImage");
   if (image && section.image_url) {
-    image.src = mediaUrl(section.image_url);
+    setImgSrc(image, section.image_url, cmsState.homeUpdatedAt);
     image.alt = section.kicker || "Corporate event venue";
   }
 
@@ -1033,7 +1063,7 @@ function applySuccessStoriesSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article>
-      <img src="${escapeHtml(mediaUrl(item.image))}" alt="${escapeHtml(item.alt || item.title || "Success story")}" loading="lazy" />
+      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.title || "Success story")}" loading="lazy" />
       <div class="success-body">
         <h3>${escapeHtml(item.title || "")}</h3>
         <p class="success-label">Challenge</p>
@@ -1079,6 +1109,8 @@ async function loadCmsHome() {
     const data = await fetchJson("/cms/home");
     const sections = data.sections || {};
     cmsState.home = sections;
+    cmsState.homeUpdatedAt = data.updated_at || Date.now();
+    if (data.updated_at) cmsRevision = String(data.updated_at);
     applyHeroContent(sections.hero || {}, sections.trust || {}, sections.stats || {});
     applyWhyChooseSection(sections.why_choose || {});
     applyFeaturedToursSection(sections.featured_tours || {});
@@ -1107,6 +1139,8 @@ async function loadCmsAbout() {
   try {
     const data = await fetchJson("/cms/about-us");
     cmsState.about = data.sections || {};
+    cmsState.aboutUpdatedAt = data.updated_at || Date.now();
+    if (data.updated_at) cmsRevision = String(data.updated_at);
     applyAboutContent(data.sections || {});
   } catch {
     // keep static
@@ -1121,6 +1155,8 @@ async function loadCmsContact() {
     ]);
     const sections = cmsData.sections || {};
     cmsState.contact = sections;
+    cmsState.contactUpdatedAt = cmsData.updated_at || Date.now();
+    if (cmsData.updated_at) cmsRevision = String(cmsData.updated_at);
     applyContactContent(sections, settingsData.settings || {});
     applyBrandSettings(settingsData.settings || {});
   } catch {
@@ -1131,6 +1167,8 @@ async function loadCmsContact() {
 async function loadCmsBlog() {
   try {
     const data = await fetchJson("/cms/blog");
+    cmsState.blogUpdatedAt = data.updated_at || Date.now();
+    if (data.updated_at) cmsRevision = String(data.updated_at);
     applyBlogCms(data.sections || {});
   } catch {
     // keep static
@@ -1140,6 +1178,8 @@ async function loadCmsBlog() {
 async function loadCmsPackagesPage() {
   try {
     const data = await fetchJson("/cms/packages-page");
+    cmsState.packagesPageUpdatedAt = data.updated_at || Date.now();
+    if (data.updated_at) cmsRevision = String(data.updated_at);
     applyPackagesPageCms(data.sections || {});
   } catch {
     // keep static
@@ -1350,6 +1390,7 @@ function connectLiveUpdates() {
 
   const reloaders = {
     "cms:updated": (payload) => {
+      if (payload?.timestamp) cmsRevision = String(payload.timestamp);
       const tab = payload?.tab;
       if (tab === "home") return Promise.all([loadCmsHome(), loadPackages()]);
       if (tab === "about-us") return loadCmsAbout();

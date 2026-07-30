@@ -18,6 +18,21 @@ function mediaUrl(url) {
   return `/${value.replace(/^\/+/, "")}`;
 }
 
+function assetUrl(url, version) {
+  const resolved = mediaUrl(url);
+  if (!resolved) return "";
+  if (!version) return resolved;
+  const join = resolved.includes("?") ? "&" : "?";
+  return `${resolved}${join}v=${encodeURIComponent(String(version).replace(/\s/g, ""))}`;
+}
+
+async function fetchJson(path) {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
+  return res.json();
+}
+
 function getSlug() {
   const params = new URLSearchParams(window.location.search);
   return params.get("slug") || params.get("id") || "scottish-highlands-journey";
@@ -33,7 +48,7 @@ function renderPackage(pkg, related = []) {
   document.title = `${pkg.name} | Caledor DMC`;
 
   const heroBg = document.getElementById("pkgHeroBg");
-  if (heroBg) heroBg.style.backgroundImage = `url("${mediaUrl(pkg.image_url || "")}")`;
+  if (heroBg && pkg.image_url) heroBg.style.backgroundImage = `url("${assetUrl(pkg.image_url, pkg.updated_at)}")`;
 
   const setText = (id, val) => {
     const el = document.getElementById(id);
@@ -80,14 +95,14 @@ function renderPackage(pkg, related = []) {
   const gallery = parseJson(pkg.gallery_json);
   if (galleryEl) {
     galleryEl.innerHTML = gallery.map((item) =>
-      `<img src="${escapeHtml(mediaUrl(item.url))}" alt="${escapeHtml(item.alt || pkg.name)}" />`).join("");
+      `<img src="${escapeHtml(assetUrl(item.url, pkg.updated_at))}" alt="${escapeHtml(item.alt || pkg.name)}" />`).join("");
   }
 
   const relatedEl = document.getElementById("pkgRelated");
   if (relatedEl) {
     relatedEl.innerHTML = related.map((item) => `
       <article class="related-card">
-        <img src="${escapeHtml(mediaUrl(item.image_url) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85")}" alt="${escapeHtml(item.name)}" />
+        <img src="${escapeHtml(assetUrl(item.image_url, item.updated_at) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85")}" alt="${escapeHtml(item.name)}" />
         <div class="related-card-body">
           <span class="badge">${escapeHtml(item.badge || item.category || "TOUR")}</span>
           <h3>${escapeHtml(item.name)}</h3>
@@ -100,9 +115,7 @@ function renderPackage(pkg, related = []) {
 async function loadPackage() {
   const slug = getSlug();
   try {
-    const res = await fetch(`${API}/packages/${encodeURIComponent(slug)}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("Package not found");
-    const data = await res.json();
+    const data = await fetchJson(`/packages/${encodeURIComponent(slug)}`);
     renderPackage(data.package, data.related || []);
   } catch {
     document.getElementById("packageDetailRoot").innerHTML = `

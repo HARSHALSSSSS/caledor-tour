@@ -17,7 +17,14 @@ router.get('/:tab', (req, res) => {
     grouped[row.section][row.key] = row.value;
   }
 
-  res.json({ tab, sections: mergeCmsSections(tab, grouped), raw: rows });
+  const updated = db.prepare('SELECT MAX(updated_at) AS updated_at FROM cms_content WHERE tab = ?').get(tab);
+
+  res.json({
+    tab,
+    sections: mergeCmsSections(tab, grouped),
+    raw: rows,
+    updated_at: updated?.updated_at || null,
+  });
 });
 
 // Get all tabs (list)

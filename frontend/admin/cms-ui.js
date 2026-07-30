@@ -24,7 +24,8 @@ window.CmsUI = (() => {
     const targets = thumbs.length ? thumbs : (fallback ? [fallback] : []);
     targets.forEach((thumb) => {
       if (input.value) {
-        thumb.style.backgroundImage = `url('${input.value.replace(/'/g, "%27")}')`;
+        const preview = window.CALEDOR_CONFIG?.mediaUrl?.(input.value) || input.value;
+        thumb.style.backgroundImage = `url('${preview.replace(/'/g, "%27")}')`;
         thumb.style.backgroundSize = "cover";
         thumb.style.backgroundPosition = "center";
       } else {
