@@ -1,0 +1,24 @@
+# Dependencies
+server/node_modules/
+
+# Local env / secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local database (server creates fresh DB on first run)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Cursor / tooling
+.freebuff/
