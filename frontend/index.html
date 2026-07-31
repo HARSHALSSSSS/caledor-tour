@@ -23,11 +23,11 @@
       </a>
       <nav class="desktop-nav" aria-label="Primary navigation">
         <a href="#services">Experiences</a>
-        <a href="#mice">MICE & Corporate</a>
+        <a href="#mice" class="nav-accent">MICE & Corporate</a>
         <a href="#packages">Packages</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <a class="header-cta" href="#contact">Become a partner</a>
+      <a class="header-cta" href="#contact">Enquire Now</a>
       <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -38,35 +38,37 @@
         <a href="#mice">MICE & Corporate</a>
         <a href="#packages">Packages</a>
         <a href="#faq">FAQ</a>
-        <a class="button primary" href="#contact">Become a partner</a>
+        <a class="button primary" href="#contact">Enquire Now</a>
       </nav>
     </div>
 
     <main id="top">
       <section class="hero section-dark" id="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <p class="eyebrow">Destination Management Company</p>
-          <h1>Discover Your Next<br />Adventure</h1>
-          <p>
-            Explore breathtaking destinations worldwide with Caledor DMC — bespoke hotel bookings, transfers, and curated holiday packages across the UK &amp; Europe.
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="#contact">Become a Partner</a>
-            <a class="button ghost" href="#packages">View Experiences</a>
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <div class="hero-content">
+            <p class="eyebrow" id="heroEyebrow">Destination Management Company</p>
+            <h1 id="heroTitle">Your Trusted DMC Partner for UK &amp; Europe</h1>
+            <p id="heroSubtitle">
+              Delivering exceptional travel experiences through bespoke hotel bookings, transfers, sightseeing, luxury transport, and curated holiday packages.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" id="heroPrimaryCta" href="#contact">Become a Partner</a>
+              <a class="button ghost hero-ghost-cta" id="heroSecondaryCta" href="#destinations">Explore Destinations</a>
+            </div>
           </div>
-        </div>
-        <div class="hero-trust" aria-label="Caledor service benefits">
-          <span>20+ European Countries</span>
-          <span>Dedicated DMC Support</span>
-          <span>Tailor-Made Itineraries</span>
-          <span>Competitive Contracted Rates</span>
-        </div>
-        <div class="hero-stats" aria-label="Company highlights">
-          <article><strong>500+</strong><span>Hotels Network</span></article>
-          <article><strong>50+</strong><span>Cities Covered</span></article>
-          <article><strong>200+</strong><span>Transfer Partners</span></article>
-          <article><strong>15+</strong><span>Years of Experience</span></article>
+          <div class="hero-trust" id="heroTrust" aria-label="Caledor service benefits">
+            <span>20+ European Countries</span>
+            <span>Dedicated DMC Support</span>
+            <span>Tailor-Made Itineraries</span>
+            <span>Competitive Contracted Rates</span>
+          </div>
+          <div class="hero-stats" id="heroStats" aria-label="Company highlights">
+            <article><strong>500+</strong><span>Hotels Network</span></article>
+            <article><strong>50+</strong><span>Cities Covered</span></article>
+            <article><strong>200+</strong><span>Transfer Partners</span></article>
+            <article><strong>15+</strong><span>Years of Experience</span></article>
+          </div>
         </div>
       </section>
 
@@ -77,7 +79,8 @@
               <div class="image-frame about-image-frame">
                 <img
                   id="aboutImage"
-                  alt="About Caledor DMC"
+                  src="assets/about-castle.png"
+                  alt="Eilean Donan Castle, Scotland"
                   decoding="async"
                 />
               </div>
@@ -134,49 +137,69 @@
       </section>
 
       <section class="attractions section-dark" id="services">
-        <div class="section-heading centered">
-          <p class="section-kicker" id="scotlandAttractionsKicker">Top Scotland Attractions</p>
-          <h2 id="scotlandAttractionsTitle">Iconic landscapes, wildlife, and experiences across Scotland.</h2>
-        </div>
-        <div class="scotland-attractions-grid" id="scotlandAttractionsGrid">
-          <article class="scotland-tile scotland-tile-hero">
-            <img src="/uploads/scotland-attractions/isle-of-skye.png" alt="Isle of Skye dramatic coastline" loading="lazy" />
-            <span class="scotland-label">Isle of Skye</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/loch-lomond-cruise.png" alt="Loch Lomond cruise at sunrise" loading="lazy" />
-            <span class="scotland-label">Loch Lomond Cruise</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/the-kelpies.png" alt="The Kelpies sculptures at sunset" loading="lazy" />
-            <span class="scotland-label">The Kelpies</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/whisky-distillery.png" alt="Scottish whisky distillery with copper stills" loading="lazy" />
-            <span class="scotland-label">Whisky Distillery</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/puffin-highlands.png" alt="Atlantic puffin with wings spread" loading="lazy" />
-            <span class="scotland-label">Highland Wildlife</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/puffin-fishing.png" alt="Puffin carrying fish" loading="lazy" />
-            <span class="scotland-label">Coastal Wildlife</span>
-          </article>
-          <article class="scotland-tile">
-            <img src="/uploads/scotland-attractions/puffins-sea.png" alt="Puffins floating on Scottish waters" loading="lazy" />
-            <span class="scotland-label">Scottish Seabirds</span>
-          </article>
+        <div class="container scotland-wrap">
+          <div class="section-heading centered scotland-heading">
+            <p class="section-kicker" id="scotlandAttractionsKicker">Top Scotland Attractions</p>
+            <h2 id="scotlandAttractionsTitle">Discover the most iconic experiences Scotland has to offer.</h2>
+          </div>
+          <div class="scotland-attractions-grid" id="scotlandAttractionsGrid">
+            <article class="scotland-tile scotland-tile-loch">
+              <img src="assets/scotland/loch-lomond.png" alt="Loch Lomond Cruise" loading="lazy" />
+              <span class="scotland-label">Loch Lomond Cruise</span>
+            </article>
+            <article class="scotland-tile scotland-tile-kelpies">
+              <img src="assets/scotland/the-kelpies.png" alt="The Kelpies" loading="lazy" />
+              <span class="scotland-label">The Kelpies</span>
+            </article>
+            <article class="scotland-tile scotland-tile-tall">
+              <img src="assets/scotland/puffin-highlands.png" alt="Atlantic puffin with wings spread" loading="lazy" />
+              <span class="scotland-label">Highland Wildlife</span>
+            </article>
+            <article class="scotland-tile scotland-tile-wide">
+              <img src="assets/scotland/puffins-sea.png" alt="Puffins on Scottish waters" loading="lazy" />
+              <span class="scotland-label">Coastal Wildlife</span>
+            </article>
+            <article class="scotland-tile scotland-tile-skye">
+              <img src="assets/scotland/isle-of-skye.png" alt="Isle of Skye" loading="lazy" />
+              <span class="scotland-label">Isle of Skye</span>
+            </article>
+            <article class="scotland-tile scotland-tile-whisky">
+              <img src="assets/scotland/whisky-distillery.png" alt="Scottish Whisky Distillery" loading="lazy" />
+              <span class="scotland-label">Whisky Distillery</span>
+            </article>
+          </div>
         </div>
       </section>
 
       <section class="leaders section-light" id="teamSection">
-        <div class="section-heading centered">
-          <p class="section-kicker" id="teamKicker">Our Leadership Team</p>
-          <h2 id="teamTitle">Led by passionate travel specialists.</h2>
-          <p id="teamSubtitle"></p>
+        <div class="section-heading centered leaders-heading">
+          <p class="leaders-eyebrow" id="teamEyebrow">THE TEAM BEHIND YOUR JOURNEY</p>
+          <p class="section-kicker leaders-kicker" id="teamKicker">Our Leadership Team</p>
+          <span class="leaders-rule" aria-hidden="true"></span>
+          <p class="leaders-subtitle" id="teamSubtitle">Meet the people who make exceptional travel possible.</p>
         </div>
-        <div id="teamGrid"></div>
+        <div id="teamGrid">
+          <div class="leader-row">
+            <div class="leader-photo">
+              <img src="assets/team-alok-singh-portrait.jpg" alt="Mr. Alok Singh" loading="lazy" />
+            </div>
+            <div class="leader-copy">
+              <h3>Mr. Alok Singh</h3>
+              <p class="leader-role"><span aria-hidden="true">|</span> MANAGING DIRECTOR</p>
+              <p class="leader-bio">Mr. Alok Singh comes from a strong hospitality background. His deep understanding of Indian travellers — their tastes, cultural preferences, and expectations — forms the backbone of our guest experience approach.</p>
+            </div>
+          </div>
+          <div class="leader-row">
+            <div class="leader-photo">
+              <img src="assets/team-neha-sawant-portrait.jpg" alt="Ms. Neha Sawant" loading="lazy" />
+            </div>
+            <div class="leader-copy">
+              <h3>Ms. Neha Sawant</h3>
+              <p class="leader-role"><span aria-hidden="true">|</span> HEAD ASIA PACIFIC</p>
+              <p class="leader-bio">Ms. Neha Sawant brings over a decade of expertise in luxury and experiential travel across the Asia Pacific region. Her nuanced knowledge of regional markets — from Southeast Asia to East Asia — enables her to craft journeys that are both culturally immersive and seamlessly executed for today's discerning traveller.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="owned-assets section-light" id="awardsSection">
@@ -227,7 +250,7 @@
                 Exclusive access to prestigious properties and boutique hotels
                 with preferred partner benefits.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#hotel-bookings">Learn more</a>
             </div>
           </article>
           <article>
@@ -241,7 +264,7 @@
                 Carefully curated itineraries that blend iconic landmarks with
                 hidden gems for a smoother journey.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#holiday-packages">Learn more</a>
             </div>
           </article>
           <article>
@@ -255,7 +278,7 @@
                 Private, expert-led excursions with deep local context and
                 access to cultural heritage sites.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#sightseeing-tours">Learn more</a>
             </div>
           </article>
           <article>
@@ -269,7 +292,7 @@
                 A fleet of premium vehicles with professional chauffeurs for
                 flexible, private travel.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#vehicle-at-disposal">Learn more</a>
             </div>
           </article>
           <article>
@@ -283,7 +306,7 @@
                 Seamless, punctual, and comfortable transfers for a stress-free
                 arrival and departure experience.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#airport-transfers">Learn more</a>
             </div>
           </article>
           <article>
@@ -297,7 +320,7 @@
                 Priority booking at Michelin-starred establishments and sought-
                 after dining destinations.
               </p>
-              <a href="#contact">Learn more</a>
+              <a href="/premium-services#restaurant-reservations">Learn more</a>
             </div>
           </article>
         </div>
@@ -344,27 +367,63 @@
       <section class="fit section-light" id="whyChooseSection">
         <div class="fit-intro centered">
           <p class="section-kicker fit-intro-kicker" id="whyChooseKicker">Why Choose Caledor</p>
-          <h2>
+          <p class="fit-intro-lead">
             Partner with a DMC that delivers reliability, expertise, and
             bespoke luxury operations across the UK and Europe.
-          </h2>
-          <p>
-            Partner with a DMC that combines premium service standards,
-            practical destination knowledge, and consistent delivery for every
-            program.
           </p>
           <span class="fit-rule" aria-hidden="true"></span>
         </div>
         <div class="fit-panel">
           <div class="fit-lead">
-            <p class="section-kicker">Premium Services</p>
+            <p class="section-kicker fit-lead-kicker">Premium Services</p>
             <h3>Built for modern travel teams</h3>
             <p>
               A curated set of capabilities that elevate planning, execution,
-              and traveler experience with clear ownership and fast turnaround.
+              and traveler experience — with clear ownership and fast turnaround.
             </p>
           </div>
-          <div class="fit-grid" id="whyChooseGrid"></div>
+          <div class="fit-grid" id="whyChooseGrid">
+            <article>
+              <span class="fit-icon" aria-hidden="true">👤</span>
+              <h3>Dedicated Account Managers</h3>
+              <p>Personalized support and a single point of contact for every request and itinerary.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">⚡</span>
+              <h3>Fast Quotations</h3>
+              <p>Quick turnaround on quotes and availability checks to keep your planning moving.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">🏨</span>
+              <h3>Contracted Hotel Rates</h3>
+              <p>Preferred partner rates and direct access to exclusive inventory across Europe.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">★</span>
+              <h3>Luxury Experiences</h3>
+              <p>Curated itineraries, private tours, and exclusive access to hidden gems.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">📍</span>
+              <h3>Ground Operations Support</h3>
+              <p>Transfers, logistics, and on-the-ground coordination for seamless execution.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">💼</span>
+              <h3>Corporate Travel Expertise</h3>
+              <p>Tailored solutions for corporate groups, meetings, and executive travel.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">🖥</span>
+              <h3>MICE Solutions</h3>
+              <p>End-to-end management for incentives, meetings, and events.</p>
+            </article>
+            <article>
+              <span class="fit-icon" aria-hidden="true">🌐</span>
+              <h3>Multilingual Assistance</h3>
+              <p>Professional support in multiple languages for travelers and partners alike.</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -557,20 +616,22 @@
 
       <section class="gallery gallery-dark section-dark" id="gallery">
         <div class="gallery-head">
-          <p class="section-kicker gallery-kicker">Our Gallery</p>
+          <div class="gallery-head-label">
+            <span class="gallery-head-line" aria-hidden="true"></span>
+            <p class="section-kicker gallery-kicker">Our Gallery</p>
+          </div>
           <h2 id="galleryTitle">Photo Gallery</h2>
-          <span class="gallery-rule" aria-hidden="true"></span>
         </div>
         <div class="gallery-grid" id="galleryGrid">
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-01-winner-certificate.png" alt="British Curry Championship Winner" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-02-team-vehicle.png" alt="On the Road" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-03-scotland-event.png" alt="Scotland Community Event" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-04-award-presentation.png" alt="Award Presentation" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-05-team-portrait.png" alt="Team Portrait" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-06-partners.png" alt="Partners and Team" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-07-certificates.png" alt="Certifications" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-08-group-walk.png" alt="Group Experience" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img src="/uploads/gallery/gallery-09-outdoor-guest.png" alt="Celebrity Guest Experience" loading="lazy" /></figure>
+          <figure class="gallery-cell gallery-cell-hero"><img class="media-cover" src="/uploads/gallery/gallery-01-winner-certificate.png" alt="British Curry Championship Winner" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-02-team-vehicle.png" alt="On the Road" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-03-scotland-event.png" alt="Scotland Community Event" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-04-award-presentation.png" alt="Award Presentation" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-05-team-portrait.png" alt="Team Portrait" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-06-partners.png" alt="Partners and Team" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-07-certificates.png" alt="Certifications" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-08-group-walk.png" alt="Group Experience" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-09-outdoor-guest.png" alt="Celebrity Guest Experience" loading="lazy" /></figure>
         </div>
       </section>
 
@@ -619,12 +680,12 @@
         </div>
       </section>
 
-      <section class="contact contact-cta section-dark" id="contact">
-        <div class="contact-bg" id="contactHeroBg"></div>
+      <section class="contact contact-cta contact-cta--art section-dark" id="contact">
+        <div class="contact-bg" id="contactHeroBg" aria-hidden="true"></div>
         <div class="contact-cta-content">
-          <h2 id="contactHeroTitle">Let’s Create Exceptional UK & Europe Experiences Together</h2>
+          <h2 id="contactHeroTitle">Let&rsquo;s Create Exceptional UK &amp; Europe<br />Experiences Together</h2>
           <p id="contactHeroSubtitle">Partner with a DMC that understands luxury, reliability, and bespoke operations.</p>
-          <a class="button ghost contact-button" href="mailto:info@caledor.com?subject=Request%20Proposal">Request Proposal</a>
+          <a class="button ghost contact-button" id="contactHeroButton" href="mailto:info@caledor.com?subject=Request%20Proposal">Request Proposal</a>
         </div>
       </section>
 

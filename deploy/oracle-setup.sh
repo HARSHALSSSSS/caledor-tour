@@ -84,6 +84,10 @@ server {
         rewrite ^/package/(.*)$ /package-detail.html?slug=\$1 last;
     }
 
+    location = /premium-services {
+        try_files /premium-services.html =404;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
     }

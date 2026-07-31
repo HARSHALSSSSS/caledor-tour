@@ -27,6 +27,10 @@ app.get("/package/:slug", (req, res) => {
   res.redirect(`/package-detail.html?slug=${encodeURIComponent(req.params.slug)}`);
 });
 
+app.get("/premium-services", (_req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, "premium-services.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`Caledor frontend dev server: http://localhost:${PORT}`);
   console.log(`Proxying API/uploads/socket.io -> ${BACKEND_URL}`);

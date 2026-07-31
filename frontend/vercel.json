@@ -15,6 +15,10 @@
     {
       "source": "/package/:slug",
       "destination": "/package-detail.html?slug=:slug"
+    },
+    {
+      "source": "/premium-services",
+      "destination": "/premium-services.html"
     }
   ]
 }

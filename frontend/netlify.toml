@@ -20,3 +20,8 @@
   from = "/package/:slug"
   to = "/package-detail.html?slug=:slug"
   status = 200
+
+[[redirects]]
+  from = "/premium-services"
+  to = "/premium-services.html"
+  status = 200

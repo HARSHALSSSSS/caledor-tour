@@ -30,6 +30,92 @@ let blogSearchQuery = "";
 
 let testimonialTimer = null;
 
+const WHY_CHOOSE_DEFAULTS = [
+  { icon: "👤", title: "Dedicated Account Managers", description: "Personalized support and a single point of contact for every request and itinerary." },
+  { icon: "⚡", title: "Fast Quotations", description: "Quick turnaround on quotes and availability checks to keep your planning moving." },
+  { icon: "🏨", title: "Contracted Hotel Rates", description: "Preferred partner rates and direct access to exclusive inventory across Europe." },
+  { icon: "★", title: "Luxury Experiences", description: "Curated itineraries, private tours, and exclusive access to hidden gems." },
+  { icon: "📍", title: "Ground Operations Support", description: "Transfers, logistics, and on-the-ground coordination for seamless execution." },
+  { icon: "💼", title: "Corporate Travel Expertise", description: "Tailored solutions for corporate groups, meetings, and executive travel." },
+  { icon: "🖥", title: "MICE Solutions", description: "End-to-end management for incentives, meetings, and events." },
+  { icon: "🌐", title: "Multilingual Assistance", description: "Professional support in multiple languages for travelers and partners alike." },
+];
+
+const SCOTLAND_ATTRACTIONS_DEFAULTS = [
+  { label: "Loch Lomond Cruise", layout: "loch", image: "assets/scotland/loch-lomond.png", alt: "Loch Lomond Cruise", hero: false },
+  { label: "The Kelpies", layout: "kelpies", image: "assets/scotland/the-kelpies.png", alt: "The Kelpies", hero: false },
+  { label: "Highland Wildlife", layout: "tall", image: "assets/scotland/puffin-highlands.png", alt: "Atlantic puffin with wings spread", hero: false },
+  { label: "Coastal Wildlife", layout: "wide", image: "assets/scotland/puffins-sea.png", alt: "Puffins on Scottish waters", hero: false },
+  { label: "Isle of Skye", layout: "skye", image: "assets/scotland/isle-of-skye.png", alt: "Isle of Skye", hero: false },
+  { label: "Whisky Distillery", layout: "whisky", image: "assets/scotland/whisky-distillery.png", alt: "Scottish Whisky Distillery", hero: false },
+];
+
+const SCOTLAND_LAYOUT_CLASSES = {
+  loch: " scotland-tile-loch",
+  kelpies: " scotland-tile-kelpies",
+  tall: " scotland-tile-tall",
+  wide: " scotland-tile-wide",
+  skye: " scotland-tile-skye",
+  whisky: " scotland-tile-whisky",
+};
+
+const TEAM_DEFAULTS = [
+  {
+    name: "Mr. Alok Singh",
+    role: "Managing Director",
+    bio: "Mr. Alok Singh comes from a strong hospitality background. His deep understanding of Indian travellers — their tastes, cultural preferences, and expectations — forms the backbone of our guest experience approach.",
+    photo: "assets/team-alok-singh-portrait.jpg",
+  },
+  {
+    name: "Ms. Neha Sawant",
+    role: "Head Asia Pacific",
+    bio: "Ms. Neha Sawant brings over a decade of expertise in luxury and experiential travel across the Asia Pacific region. Her nuanced knowledge of regional markets — from Southeast Asia to East Asia — enables her to craft journeys that are both culturally immersive and seamlessly executed for today's discerning traveller.",
+    photo: "assets/team-neha-sawant-portrait.jpg",
+  },
+];
+
+const CONTACT_CTA_DEFAULTS = {
+  title: "Let's Create Exceptional UK & Europe Experiences Together",
+  subtitle: "Partner with a DMC that understands luxury, reliability, and bespoke operations.",
+  background_image: "assets/final-cta-hero.png",
+  button_label: "Request Proposal",
+};
+
+const HERO_DEFAULTS = {
+  eyebrow: "Destination Management Company",
+  title: "Your Trusted DMC Partner for UK & Europe",
+  subtitle: "Delivering exceptional travel experiences through bespoke hotel bookings, transfers, sightseeing, luxury transport, and curated holiday packages.",
+  primary_cta_label: "Become a Partner",
+  primary_cta_url: "#contact",
+  secondary_cta_label: "Explore Destinations",
+  secondary_cta_url: "#destinations",
+  background_image: "assets/hero-background.png",
+};
+
+const PREMIUM_SERVICE_SLUGS = {
+  "Hotel Bookings": "hotel-bookings",
+  "Holiday Packages": "holiday-packages",
+  "Sightseeing Tours": "sightseeing-tours",
+  "Vehicle At Disposal": "vehicle-at-disposal",
+  "Airport Transfers": "airport-transfers",
+  "Restaurant Reservations": "restaurant-reservations",
+};
+
+function premiumServiceLink(item = {}) {
+  const link = String(item.link || "").trim();
+  if (link && link !== "#contact") return link;
+  const slug = PREMIUM_SERVICE_SLUGS[item.title || ""];
+  return slug ? `/premium-services#${slug}` : "/premium-services";
+}
+
+function formatContactCtaTitle(title) {
+  const safe = escapeHtml(title || "");
+  if (safe.includes("Experiences Together")) {
+    return safe.replace(" Experiences Together", "<br />Experiences Together");
+  }
+  return safe;
+}
+
 function truncateText(text, max = 120) {
   const value = String(text ?? "").trim();
   if (value.length <= max) return value;
@@ -94,45 +180,57 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   const heroSection = document.getElementById("hero") || document.querySelector(".hero");
   setSectionVisible(heroSection, hero.enabled !== "0");
 
-  const eyebrow = document.querySelector(".hero .eyebrow");
-  const heading = document.querySelector(".hero h1");
-  const copy = document.querySelector(".hero-content p:not(.eyebrow)");
-  const primary = document.querySelector(".hero-actions .primary");
-  const secondary = document.querySelector(".hero-actions .ghost");
+  const useHeroDefaults = !hero.title || String(hero.title).includes("Discover Your Next");
+  const h = useHeroDefaults ? { ...HERO_DEFAULTS, enabled: hero.enabled } : { ...HERO_DEFAULTS, ...hero };
 
-  if (heroSection && hero.background_image) {
+  const eyebrow = document.getElementById("heroEyebrow") || document.querySelector(".hero .eyebrow");
+  const heading = document.getElementById("heroTitle") || document.querySelector(".hero h1");
+  const copy = document.getElementById("heroSubtitle") || document.querySelector(".hero-content p:not(.eyebrow)");
+  const primary = document.getElementById("heroPrimaryCta") || document.querySelector(".hero-actions .primary");
+  const secondary = document.getElementById("heroSecondaryCta") || document.querySelector(".hero-actions .ghost");
+
+  const bgImage = h.background_image && !String(h.background_image).includes("unsplash.com")
+    ? h.background_image
+    : HERO_DEFAULTS.background_image;
+
+  if (heroSection) {
     heroSection.style.backgroundImage = [
-      "linear-gradient(180deg, rgba(8, 15, 33, 0.28), rgba(8, 15, 33, 0.62) 44%, rgba(8, 15, 33, 0.94) 100%)",
-      bgUrl(hero.background_image, cmsState.homeUpdatedAt),
+      "linear-gradient(180deg, rgba(8, 12, 22, 0.35) 0%, rgba(8, 12, 22, 0.25) 35%, rgba(8, 12, 22, 0.72) 78%, rgba(8, 12, 22, 0.88) 100%)",
+      bgUrl(bgImage, cmsState.homeUpdatedAt),
     ].join(",");
     heroSection.style.backgroundSize = "cover";
-    heroSection.style.backgroundPosition = "center";
+    heroSection.style.backgroundPosition = "center center";
   }
 
-  if (eyebrow && hero.eyebrow) eyebrow.textContent = hero.eyebrow;
-  if (heading && hero.title) heading.innerHTML = escapeHtml(hero.title).replace(/\n/g, "<br />");
-  if (copy && hero.subtitle) copy.textContent = hero.subtitle;
+  if (eyebrow) eyebrow.textContent = h.eyebrow || HERO_DEFAULTS.eyebrow;
+  if (heading) heading.textContent = h.title || HERO_DEFAULTS.title;
+  if (copy) copy.textContent = h.subtitle || HERO_DEFAULTS.subtitle;
 
   if (primary) {
-    primary.textContent = hero.primary_cta_label || "Become a Partner";
-    primary.href = hero.primary_cta_url || "#contact";
+    primary.textContent = h.primary_cta_label || HERO_DEFAULTS.primary_cta_label;
+    primary.href = h.primary_cta_url || HERO_DEFAULTS.primary_cta_url;
   }
 
   if (secondary) {
-    secondary.textContent = hero.secondary_cta_label || "Explore Destinations";
-    secondary.href = hero.secondary_cta_url || "#destinations";
+    secondary.textContent = h.secondary_cta_label || HERO_DEFAULTS.secondary_cta_label;
+    secondary.href = h.secondary_cta_url || HERO_DEFAULTS.secondary_cta_url;
   }
 
-  const trustValues = [trust.point_1, trust.point_2, trust.point_3, trust.point_4].filter(Boolean);
+  const trustValues = [
+    trust.point_1 || "20+ European Countries",
+    trust.point_2 || "Dedicated DMC Support",
+    trust.point_3 || "Tailor-Made Itineraries",
+    trust.point_4 || "Competitive Contracted Rates",
+  ].filter(Boolean);
   document.querySelectorAll(".hero-trust span").forEach((item, index) => {
     if (trustValues[index]) item.textContent = trustValues[index];
   });
 
   const statValues = [
-    [stats.stat_1_value, stats.stat_1_label],
-    [stats.stat_2_value, stats.stat_2_label],
-    [stats.stat_3_value, stats.stat_3_label],
-    [stats.stat_4_value, stats.stat_4_label],
+    [stats.stat_1_value || "500+", stats.stat_1_label || "Hotels Network"],
+    [stats.stat_2_value || "50+", stats.stat_2_label || "Cities Covered"],
+    [stats.stat_3_value || "200+", stats.stat_3_label || "Transfer Partners"],
+    [stats.stat_4_value || "15+", stats.stat_4_label || "Years of Experience"],
   ];
   document.querySelectorAll(".hero-stats article").forEach((card, index) => {
     const [value, label] = statValues[index] || [];
@@ -219,9 +317,8 @@ function applyWhyChooseSection(section = {}) {
   const grid = document.getElementById("whyChooseGrid");
   if (!grid) return;
   const features = parseJson(section.features_json);
-  if (!features.length) return;
-
-  grid.innerHTML = features.map((item) => `
+  const items = features.length >= 8 ? features : WHY_CHOOSE_DEFAULTS;
+  grid.innerHTML = items.map((item) => `
     <article>
       <span class="fit-icon" aria-hidden="true">${escapeHtml(item.icon || "★")}</span>
       <h3>${escapeHtml(item.title || "")}</h3>
@@ -320,8 +417,10 @@ function applyAboutContent(sections = {}) {
   if (aboutImage) {
     if (story.image_url) {
       setImgSrc(aboutImage, story.image_url, cmsState.aboutUpdatedAt);
-      aboutImage.alt = story.heading || pageHero.title || "About Caledor DMC";
+    } else {
+      aboutImage.src = "assets/about-castle.png";
     }
+    aboutImage.alt = story.heading || pageHero.title || "About Caledor DMC";
   }
 
   const mvSection = document.getElementById("missionVisionSection");
@@ -343,32 +442,38 @@ function applyAboutContent(sections = {}) {
 
   const teamSection = document.getElementById("teamSection");
   setSectionVisible(teamSection, team.enabled !== "0");
+  const teamEyebrow = document.getElementById("teamEyebrow");
   const teamKicker = document.getElementById("teamKicker");
-  const teamTitle = document.getElementById("teamTitle");
   const teamSubtitle = document.getElementById("teamSubtitle");
-  if (teamKicker) teamKicker.textContent = "Our Leadership Team";
-  if (teamTitle && team.heading) teamTitle.textContent = team.heading;
+  if (teamEyebrow) teamEyebrow.textContent = team.eyebrow || "THE TEAM BEHIND YOUR JOURNEY";
+  if (teamKicker) teamKicker.textContent = team.heading || "Our Leadership Team";
   if (teamSubtitle) {
-    teamSubtitle.textContent = team.description || "";
-    teamSubtitle.hidden = !team.description;
+    teamSubtitle.textContent = team.description || "Meet the people who make exceptional travel possible.";
   }
 
   const teamGrid = document.getElementById("teamGrid");
   if (teamGrid) {
-    const members = parseJson(team.members_json);
-    teamGrid.innerHTML = members.map((member, index) => `
-      <div class="leader-row${index % 2 ? " reverse" : ""}">
-        <img src="${escapeHtml(assetUrl(member.photo, cmsState.aboutUpdatedAt))}" alt="${escapeHtml(member.name || "Team member")}" />
-        <div>
-          <p class="mini-label">${escapeHtml(member.role || "")}</p>
+    const useMembers = TEAM_DEFAULTS;
+    if (!useMembers.length) return;
+    teamGrid.innerHTML = useMembers.map((member) => {
+      const photo = assetUrl(member.photo, cmsState.aboutUpdatedAt) || "assets/team-alok-singh-portrait.jpg";
+      const role = (member.role || "").toUpperCase();
+      return `
+      <div class="leader-row">
+        <div class="leader-photo">
+          <img src="${escapeHtml(photo)}" alt="${escapeHtml(member.name || "Team member")}" loading="lazy" />
+        </div>
+        <div class="leader-copy">
           <h3>${escapeHtml(member.name || "")}</h3>
-          <p>${escapeHtml(member.bio || "")}</p>
+          <p class="leader-role"><span aria-hidden="true">|</span> ${escapeHtml(role)}</p>
+          <p class="leader-bio">${escapeHtml(member.bio || "")}</p>
           ${member.linkedin || member.twitter ? `<div class="team-socials">
             ${member.linkedin ? `<a href="${escapeHtml(member.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>` : ""}
             ${member.twitter ? `<a href="${escapeHtml(member.twitter)}" target="_blank" rel="noopener">Twitter</a>` : ""}
           </div>` : ""}
         </div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
   }
 
   const awardsSection = document.getElementById("awardsSection");
@@ -463,20 +568,44 @@ function applyContactContent(sections = {}, settings = {}) {
 
   const title = document.getElementById("contactHeroTitle");
   const subtitle = document.getElementById("contactHeroSubtitle");
-  const button = document.querySelector("#contact .contact-button");
+  const button = document.getElementById("contactHeroButton") || document.querySelector("#contact .contact-button");
   const heroBg = document.getElementById("contactHeroBg");
 
-  if (title && hero.title) title.textContent = hero.title;
-  if (subtitle && hero.subtitle) subtitle.textContent = hero.subtitle;
+  const useCtaDefaults = !hero.title || hero.title === "Get In Touch";
+  const ctaTitle = useCtaDefaults ? CONTACT_CTA_DEFAULTS.title : hero.title;
+  const ctaSubtitle = useCtaDefaults ? CONTACT_CTA_DEFAULTS.subtitle : (hero.subtitle || CONTACT_CTA_DEFAULTS.subtitle);
+  const ctaButton = hero.button_label || CONTACT_CTA_DEFAULTS.button_label;
+  const ctaBg = hero.background_image
+    && !String(hero.background_image).includes("unsplash.com")
+    && !String(hero.background_image).endsWith("final-cta-bg.png")
+    && !String(hero.background_image).endsWith("final-cta-bg.jpg")
+    ? hero.background_image
+    : CONTACT_CTA_DEFAULTS.background_image;
+
+  const contactSection = document.getElementById("contact");
+  const useArtBanner = String(ctaBg).includes("final-cta-hero");
+  contactSection?.classList.toggle("contact-cta--art", useArtBanner);
+
+  if (title) title.innerHTML = formatContactCtaTitle(ctaTitle);
+  if (subtitle) subtitle.textContent = ctaSubtitle;
   if (button) {
-    if (hero.button_label) button.textContent = hero.button_label;
+    button.textContent = ctaButton;
     const email = info.email_1 || settings.contact?.contact_email || "info@caledor.com";
     button.href = `mailto:${email}?subject=Request%20Proposal`;
   }
-  if (heroBg && hero.background_image) {
-    heroBg.style.backgroundImage = bgUrl(hero.background_image, cmsState.contactUpdatedAt);
-    heroBg.style.backgroundSize = "cover";
-    heroBg.style.backgroundPosition = "center";
+  if (heroBg) {
+    if (useArtBanner) {
+      heroBg.style.backgroundImage = bgUrl(ctaBg, cmsState.contactUpdatedAt);
+      heroBg.style.backgroundSize = "cover";
+      heroBg.style.backgroundPosition = "center center";
+      heroBg.style.opacity = "1";
+    } else {
+      const overlay = "linear-gradient(180deg, rgba(5, 10, 20, 0.28) 0%, rgba(5, 10, 20, 0.48) 100%)";
+      heroBg.style.backgroundImage = `${overlay}, ${bgUrl(ctaBg, cmsState.contactUpdatedAt)}`;
+      heroBg.style.backgroundSize = "cover";
+      heroBg.style.backgroundPosition = "center center";
+      heroBg.style.opacity = "1";
+    }
   }
 
   const formTitle = document.querySelector(".request-proposal-title");
@@ -931,7 +1060,7 @@ async function loadGallery() {
     if (!items.length) return;
     grid.innerHTML = items.map((item, index) => `
       <figure class="gallery-cell${index === 0 ? " gallery-cell-hero" : ""}">
-        <img src="${escapeHtml(assetUrl(item.image_url, item.updated_at || cmsRevision))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
+        <img class="media-cover" src="${escapeHtml(assetUrl(item.image_url, item.updated_at || cmsRevision))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
       </figure>
     `).join("");
   } catch {
@@ -952,13 +1081,17 @@ function applyScotlandAttractionsSection(section = {}) {
   const grid = document.getElementById("scotlandAttractionsGrid");
   if (!grid) return;
   const items = parseJson(section.items_json);
-  if (!items.length) return;
+  const useItems = SCOTLAND_ATTRACTIONS_DEFAULTS;
+  if (!useItems.length) return;
 
-  grid.innerHTML = items.map((item) => `
-    <article class="scotland-tile${item.hero ? " scotland-tile-hero" : ""}">
+  grid.innerHTML = useItems.map((item) => {
+    const layoutClass = SCOTLAND_LAYOUT_CLASSES[item.layout] || "";
+    return `
+    <article class="scotland-tile${layoutClass}">
       <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.label || "Scotland attraction")}" loading="lazy" />
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
-    </article>`).join("");
+    </article>`;
+  }).join("");
 }
 
 function applyPremiumServicesSection(section = {}) {
@@ -984,7 +1117,7 @@ function applyPremiumServicesSection(section = {}) {
       <div>
         <h3>${escapeHtml(item.title || "")}</h3>
         <p>${escapeHtml(item.description || "")}</p>
-        <a href="${escapeHtml(item.link || "#contact")}">Learn more</a>
+        <a href="${escapeHtml(premiumServiceLink(item))}">Learn more</a>
       </div>
     </article>`).join("");
 }

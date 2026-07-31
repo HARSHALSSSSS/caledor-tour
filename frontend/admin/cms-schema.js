@@ -234,7 +234,7 @@ window.CmsSchema = (() => {
         <div class="field"><label>Title</label><input name="title" value="${esc(item.title || "")}" /></div>
         <div class="field"><label>Alt Text</label><input name="alt" value="${esc(item.alt || "")}" /></div>
         <div class="field-full"><label>Description</label><textarea name="description">${esc(item.description || "")}</textarea></div>
-        <div class="field"><label>Link URL</label><input name="link" value="${esc(item.link || "#contact")}" /></div>
+        <div class="field"><label>Link URL</label><input name="link" value="${esc(item.link || "/premium-services")}" /></div>
       </div>
       <button class="action-icon danger cms-remove-row" type="button">✕</button>
     </div>`;
