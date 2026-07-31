@@ -680,15 +680,6 @@ window.CmsSchema = (() => {
     ].join("");
   }
 
-  function renderSeo(settings) {
-    const seo = settings.seo || {};
-    return section("SEO Controls", `<div class="form-grid">
-      ${settingInput("seo", "meta_title", "Meta Title", seo.meta_title || "")}
-      ${settingTextarea("seo", "meta_description", "Meta Description", seo.meta_description || "")}
-      ${settingInput("seo", "focus_keywords", "Focus Keywords", seo.focus_keywords || "", true)}
-    </div>`, "seo", true);
-  }
-
   function collectCms(container) {
     const sections = {};
     container.querySelectorAll("[data-cms-section][data-cms-key]").forEach((el) => {
@@ -993,7 +984,7 @@ window.CmsSchema = (() => {
   const TAB_USES_SETTINGS = new Set(["contact", "footer"]);
 
   return {
-    esc, val, section, collectCms, collectSettings, TAB_RENDERERS, TAB_USES_SETTINGS, renderSeo,
+    esc, val, section, collectCms, collectSettings, TAB_RENDERERS, TAB_USES_SETTINGS,
     featureRow, teamRow, destinationRow, formFieldRow, parseJson,
     footerColumnRow, postTagRow, cmsImage, imageField,
     aboutFeatureRow, scotlandTileRow, premiumServiceRow, miceItemRow, statRow,

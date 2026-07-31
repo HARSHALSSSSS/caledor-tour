@@ -22,7 +22,6 @@ const routes = [
   { id: "booking-management", label: "Booking Management", icon: "booking", title: "Booking Management", crumbs: ["Admin", "Booking Management"] },
   { id: "gallery", label: "Gallery", icon: "gallery", title: "Gallery", crumbs: ["Admin", "Gallery"] },
   { id: "faq-management", label: "FAQ Management", icon: "faq", title: "FAQ Management", crumbs: ["Admin", "FAQ Management"] },
-  { id: "seo-settings", label: "SEO Settings", icon: "seo", title: "SEO Settings", crumbs: ["Admin", "SEO Settings"] },
   { id: "notifications", label: "Notifications", icon: "bell", title: "Notifications", crumbs: ["Admin", "Notifications"] },
 ];
 
@@ -44,7 +43,6 @@ const icons = {
   booking: "M7 3v4M17 3v4M4 8h16M6 12h4m-4 4h4m6-4h4m-4 4h4M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
   gallery: "M4 5h16v14H4zM8 9h.01M4 15l4-4 4 4 3-3 5 5",
   faq: "M8 9h8M8 13h6M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
-  seo: "M4 12a8 8 0 1 0 16 0 8 8 0 0 0-16 0zm8-4v8m-4-4h8",
   bell: "M6 17h12l-1.5-2.5V11a4.5 4.5 0 0 0-9 0v3.5zM10.5 19a1.5 1.5 0 0 0 3 0",
   analytics: "M5 19V9M12 19V5M19 19v-7",
 };
@@ -341,7 +339,7 @@ async function overviewView() {
 }
 
 async function cmsView(tab) {
-  const { TAB_RENDERERS, TAB_USES_SETTINGS, collectCms, collectSettings, renderSeo } = window.CmsSchema;
+  const { TAB_RENDERERS, TAB_USES_SETTINGS, collectCms, collectSettings } = window.CmsSchema;
   const tabs = cmsTabs
     .map((item) => `<button class="tab ${item.id === tab ? "active" : ""}" data-tab="${item.id}" type="button">${item.label}</button>`)
     .join("");
@@ -408,12 +406,6 @@ async function saveCmsTab(tab) {
   }
 }
 
-async function saveSeoSettings() {
-  const viewEl = document.getElementById("view");
-  const settings = window.CmsSchema.collectSettings(viewEl);
-  await api("/settings", { method: "PUT", body: JSON.stringify({ settings }) });
-}
-
 async function saveFaqSection() {
   const viewEl = document.getElementById("view");
   const sections = window.CmsSchema.collectCms(viewEl);
@@ -446,17 +438,6 @@ function galleryView() {
   return window.AdminEntities.galleryView(api);
 }
 
-async function seoView() {
-  let settings = {};
-  try {
-    const s = await api("/settings");
-    settings = s.settings || {};
-  } catch {
-    settings = {};
-  }
-  return `<section class="content-grid">${window.CmsSchema.renderSeo(settings)}</section>`;
-}
-
 function faqManagementView() {
   return window.AdminEntities.faqView(api);
 }
@@ -477,7 +458,7 @@ function renderSidebar(active) {
 
 function getRoute() {
   const raw = window.location.hash.replace(/^#/, "") || "overview";
-  if (raw === "banner-settings") {
+  if (raw === "banner-settings" || raw === "seo-settings") {
     window.location.replace("#cms-settings/home");
     return { section: "cms-settings", tab: "home", raw: "cms-settings/home" };
   }
@@ -565,7 +546,6 @@ function setTopbar(route) {
     "booking-management": `${actionButton("Filter", "secondary", "filter")}${actionButton("Export", "primary", "export")}`,
     gallery: `${actionButton("Upload", "secondary", "upload")}${actionButton("Save Changes", "primary", "save-changes")}`,
     "faq-management": `${actionButton("Preview FAQ", "secondary", "preview-faq")}${actionButton("Save Section Settings", "primary", "save-faq-section")}`,
-    "seo-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
     notifications: "",
   };
 
@@ -590,11 +570,6 @@ async function handleSaveAction() {
       await savePackageForm();
       showToast("Package saved — live on the website");
       markSaved();
-      return;
-    }
-    if (routeInfo.section === "seo-settings") {
-      await saveSeoSettings();
-      showToast("SEO settings saved");
       return;
     }
     if (routeInfo.section === "faq-management") {
@@ -961,7 +936,6 @@ async function render() {
     "booking-management": bookingsView,
     gallery: galleryView,
     "faq-management": faqManagementView,
-    "seo-settings": seoView,
     notifications: notificationsView,
   };
 
