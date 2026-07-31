@@ -148,9 +148,6 @@ window.CmsUI = (() => {
     wireAddButton(container, ".cms-add-feature", '[data-json-section="why_choose"]', window.CmsSchema.featureRow);
     wireAddButton(container, ".cms-add-destination", '[data-json-section="destinations"]', window.CmsSchema.destinationRow);
     wireAddButton(container, ".cms-add-team", '[data-json-section="team"]', window.CmsSchema.teamRow);
-    wireAddButton(container, ".cms-add-award", '[data-json-section="awards"]', window.CmsSchema.awardRow);
-    wireAddButton(container, ".cms-add-category", '[data-json-section="blog_categories"]', window.CmsSchema.categoryRow);
-    wireAddButton(container, ".cms-add-pkg-category", '[data-json-section="pkg_categories"]', window.CmsSchema.pkgCategoryRow);
     wireAddButton(container, ".cms-add-footer-column", '[data-json-section="navigation"]', window.CmsSchema.footerColumnRow);
     wireAddButton(container, ".cms-add-about-feature", '[data-json-section="about_features"]', window.CmsSchema.aboutFeatureRow);
     wireAddButton(container, ".cms-add-scotland", '[data-json-section="scotland_attractions"]', window.CmsSchema.scotlandTileRow);
@@ -162,21 +159,6 @@ window.CmsUI = (() => {
     wireAddButton(container, ".cms-add-success", '[data-json-section="success_stories"]', window.CmsSchema.successStoryRow);
     wireAddButton(container, ".cms-add-number", '[data-json-section="numbers"]', () => window.CmsSchema.statRow({}, "numbers-stats"));
     wireAddButton(container, ".cms-add-badge", '[data-json-section="owned_assets"]', window.CmsSchema.badgeRow);
-
-    const addTag = container.querySelector(".cms-add-tag");
-    if (addTag && !addTag._wired) {
-      addTag._wired = true;
-      addTag.addEventListener("click", () => {
-        const name = prompt("Tour name:");
-        if (!name) return;
-        const area = container.querySelector('[data-list="tags"]');
-        const btn = area?.querySelector(".cms-add-tag");
-        if (btn) {
-          btn.insertAdjacentHTML("beforebegin", `<span class="tag-pill">${name} <button class="remove cms-remove-tag" type="button">×</button></span>`);
-          wire(area);
-        }
-      });
-    }
 
     const addPostTag = container.querySelector(".cms-add-post-tag");
     if (addPostTag && !addPostTag._wired) {

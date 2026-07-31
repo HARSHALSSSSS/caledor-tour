@@ -213,14 +213,15 @@ window.CmsSchema = (() => {
 
   function scotlandTileRow(item = {}) {
     const target = `scotland-img-${Math.random().toString(36).slice(2, 9)}`;
+    const layouts = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
+    const layoutOptions = layouts.map((layout) =>
+      `<option value="${layout}"${item.layout === layout ? " selected" : ""}>${layout}</option>`).join("");
     return `<div class="destination-row" data-list="scotland-tiles">
       <div class="form-grid">
         ${imageField(target, "Image", item.image || "", { name: "image", compact: true })}
         <div class="field"><label>Label</label><input name="label" value="${esc(item.label || "")}" /></div>
         <div class="field"><label>Alt Text</label><input name="alt" value="${esc(item.alt || "")}" /></div>
-        <div class="field"><label>Hero Tile</label>
-          <span class="switch sm ${item.hero ? "on" : ""}" data-field-hero data-switch-value="${item.hero ? "1" : "0"}"></span>
-        </div>
+        <div class="field"><label>Grid Layout</label><select name="layout">${layoutOptions}</select></div>
       </div>
       <button class="action-icon danger cms-remove-row" type="button">✕</button>
     </div>`;
@@ -339,7 +340,6 @@ window.CmsSchema = (() => {
   /* ── HOME PAGE (Figma) ── */
   function renderHome(s) {
     const features = parseJson(val(s, "why_choose", "features_json"));
-    const tags = parseJson(val(s, "featured_tours", "tour_tags_json"));
     const destinations = parseJson(val(s, "destinations", "items_json"));
     const scotlandTiles = parseJson(val(s, "scotland_attractions", "items_json"));
     const premiumServices = parseJson(val(s, "premium_services", "items_json"));
@@ -353,35 +353,29 @@ window.CmsSchema = (() => {
     return [
       section("Hero Section", `<div class="form-grid">
         ${cmsInput("hero", "eyebrow", "Eyebrow Label", val(s, "hero", "eyebrow", "Destination Management Company"))}
-        ${cmsInput("hero", "title", "Hero Title", val(s, "hero", "title", "Discover Your Next Adventure"))}
-        ${cmsTextarea("hero", "subtitle", "Hero Subtitle", val(s, "hero", "subtitle"))}
-        ${cmsInput("hero", "primary_cta_label", "CTA Button Text", val(s, "hero", "primary_cta_label", "Explore Packages"))}
-        ${cmsInput("hero", "primary_cta_url", "CTA Button URL", val(s, "hero", "primary_cta_url", "/packages"))}
+        ${cmsInput("hero", "title", "Hero Title", val(s, "hero", "title", "Your Trusted DMC Partner for UK & Europe"))}
+        ${cmsTextarea("hero", "subtitle", "Hero Subtitle", val(s, "hero", "subtitle", "Delivering exceptional travel experiences through bespoke hotel bookings, transfers, sightseeing, luxury transport, and curated holiday packages."))}
+        ${cmsInput("hero", "primary_cta_label", "Primary CTA Text", val(s, "hero", "primary_cta_label", "Become a Partner"))}
+        ${cmsInput("hero", "primary_cta_url", "Primary CTA URL", val(s, "hero", "primary_cta_url", "#contact"))}
         ${cmsInput("hero", "secondary_cta_label", "Secondary CTA Text", val(s, "hero", "secondary_cta_label", "Explore Destinations"))}
         ${cmsInput("hero", "secondary_cta_url", "Secondary CTA URL", val(s, "hero", "secondary_cta_url", "#destinations"))}
-        ${cmsImage("hero", "background_image", "Hero Background Image", val(s, "hero", "background_image"))}
+        ${cmsImage("hero", "background_image", "Hero Background Image", val(s, "hero", "background_image", "assets/hero-background.png"))}
+        <div class="field-full"><span class="settings-copy">Hero background, title, CTAs, trust points, and stats all live here. Changes appear on the homepage hero immediately after save.</span></div>
       </div>
       <div class="form-grid" style="margin-top:14px">
-        ${cmsInput("trust", "point_1", "Trust Point 1", val(s, "trust", "point_1"))}
-        ${cmsInput("trust", "point_2", "Trust Point 2", val(s, "trust", "point_2"))}
-        ${cmsInput("trust", "point_3", "Trust Point 3", val(s, "trust", "point_3"))}
-        ${cmsInput("trust", "point_4", "Trust Point 4", val(s, "trust", "point_4"))}
-        ${cmsInput("stats", "stat_1_value", "Stat 1 Value", val(s, "stats", "stat_1_value"))}
-        ${cmsInput("stats", "stat_1_label", "Stat 1 Label", val(s, "stats", "stat_1_label"))}
-        ${cmsInput("stats", "stat_2_value", "Stat 2 Value", val(s, "stats", "stat_2_value"))}
-        ${cmsInput("stats", "stat_2_label", "Stat 2 Label", val(s, "stats", "stat_2_label"))}
-        ${cmsInput("stats", "stat_3_value", "Stat 3 Value", val(s, "stats", "stat_3_value"))}
-        ${cmsInput("stats", "stat_3_label", "Stat 3 Label", val(s, "stats", "stat_3_label"))}
-        ${cmsInput("stats", "stat_4_value", "Stat 4 Value", val(s, "stats", "stat_4_value"))}
-        ${cmsInput("stats", "stat_4_label", "Stat 4 Label", val(s, "stats", "stat_4_label"))}
+        ${cmsInput("trust", "point_1", "Trust Point 1", val(s, "trust", "point_1", "20+ European Countries"))}
+        ${cmsInput("trust", "point_2", "Trust Point 2", val(s, "trust", "point_2", "Dedicated DMC Support"))}
+        ${cmsInput("trust", "point_3", "Trust Point 3", val(s, "trust", "point_3", "Tailor-Made Itineraries"))}
+        ${cmsInput("trust", "point_4", "Trust Point 4", val(s, "trust", "point_4", "Competitive Contracted Rates"))}
+        ${cmsInput("stats", "stat_1_value", "Stat 1 Value", val(s, "stats", "stat_1_value", "500+"))}
+        ${cmsInput("stats", "stat_1_label", "Stat 1 Label", val(s, "stats", "stat_1_label", "Hotels Network"))}
+        ${cmsInput("stats", "stat_2_value", "Stat 2 Value", val(s, "stats", "stat_2_value", "50+"))}
+        ${cmsInput("stats", "stat_2_label", "Stat 2 Label", val(s, "stats", "stat_2_label", "Cities Covered"))}
+        ${cmsInput("stats", "stat_3_value", "Stat 3 Value", val(s, "stats", "stat_3_value", "200+"))}
+        ${cmsInput("stats", "stat_3_label", "Stat 3 Label", val(s, "stats", "stat_3_label", "Transfer Partners"))}
+        ${cmsInput("stats", "stat_4_value", "Stat 4 Value", val(s, "stats", "stat_4_value", "15+"))}
+        ${cmsInput("stats", "stat_4_label", "Stat 4 Label", val(s, "stats", "stat_4_label", "Years of Experience"))}
       </div>`, "hero", isOn(s, "hero")),
-
-      section("Featured Tours", `<div class="form-grid">
-        ${cmsInput("featured_tours", "section_title", "Section Title", val(s, "featured_tours", "section_title", "Our Popular Tours"))}
-        ${cmsInput("featured_tours", "section_subtitle", "Section Subtitle", val(s, "featured_tours", "section_subtitle"))}
-        ${cmsSelect("featured_tours", "tours_count", "Tours Count", ["3", "4", "6", "8"], val(s, "featured_tours", "tours_count", "6"))}
-        <div class="field-full"><label>Select Featured Tours</label>${tagRow(tags)}</div>
-      </div>`, "featured_tours", isOn(s, "featured_tours")),
 
       section("Why Choose Us", `<div class="form-grid">${cmsInput("why_choose", "section_title", "Section Title", val(s, "why_choose", "section_title", "Why Choose Caledor"), true)}</div>
         <div class="cms-list" data-json-section="why_choose" data-json-key="features_json">${features.map(featureRow).join("")}</div>
@@ -396,11 +390,10 @@ window.CmsSchema = (() => {
       <div class="cms-list" data-json-section="testimonials">${testimonials.map(testimonialItemRow).join("")}</div>
       <button class="add-row-btn cms-add-testimonial" type="button">+ Add Testimonial</button>`, "testimonials", isOn(s, "testimonials")),
 
-      section("Packages Section Heading", `<div class="form-grid">
-        ${cmsInput("packages_heading", "kicker", "Section Kicker", val(s, "packages_heading", "kicker", "Our Packages"))}
-        ${cmsInput("packages_heading", "title", "Section Title", val(s, "packages_heading", "title"))}
-        ${cmsTextarea("packages_heading", "subtitle", "Section Subtitle", val(s, "packages_heading", "subtitle"))}
-        <div class="field-full"><span class="settings-copy">Package cards are managed under Admin → Packages.</span></div>
+      section("Featured Experiences Heading", `<div class="form-grid">
+        ${cmsInput("packages_heading", "kicker", "Section Title (script style)", val(s, "packages_heading", "kicker", "Featured Experiences"))}
+        ${cmsTextarea("packages_heading", "subtitle", "Section Subtitle", val(s, "packages_heading", "subtitle", "Curated journeys across the UK and Europe, crafted for unforgettable moments and refined travel."))}
+        <div class="field-full"><span class="settings-copy">Package cards and images are managed under <strong>Package Settings</strong>. Display count and optional filters are under CMS → Featured Experiences.</span></div>
       </div>`, "packages_heading", true),
 
       section("Destinations", `<div class="form-grid">
@@ -419,6 +412,7 @@ window.CmsSchema = (() => {
       section("Scotland Attractions", `<div class="form-grid">
         ${cmsInput("scotland_attractions", "kicker", "Section Kicker", val(s, "scotland_attractions", "kicker", "Top Scotland Attractions"))}
         ${cmsInput("scotland_attractions", "title", "Section Title", val(s, "scotland_attractions", "title"))}
+        <div class="field-full"><span class="settings-copy">Each tile must keep its <strong>Grid Layout</strong> value (loch, kelpies, tall, wide, skye, whisky) so the mosaic grid on the website stays correct.</span></div>
       </div>
       <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>
       <button class="add-row-btn cms-add-scotland" type="button">+ Add Attraction</button>`, "scotland_attractions", isOn(s, "scotland_attractions")),
@@ -470,15 +464,15 @@ window.CmsSchema = (() => {
   /* ── ABOUT US (Figma) ── */
   function renderAbout(s) {
     const team = parseJson(val(s, "team", "members_json"));
-    const awards = parseJson(val(s, "awards", "items_json"));
     const aboutFeatures = parseJson(val(s, "about_features", "features_json"));
     const ownedBadges = parseJson(val(s, "owned_assets", "badges_json"));
 
     return [
-      section("Page Hero", `<div class="form-grid">
-        ${cmsInput("page_hero", "title", "Main Heading", val(s, "page_hero", "title"))}
-        ${cmsInput("page_hero", "subtitle", "Sub Heading", val(s, "page_hero", "subtitle"))}
-        ${cmsImage("page_hero", "background_image", "Hero Background Image", val(s, "page_hero", "background_image"))}
+      section("About Section (Homepage)", `<div class="form-grid">
+        ${cmsInput("page_hero", "title", "Section Heading", val(s, "page_hero", "title"))}
+        ${cmsInput("page_hero", "subtitle", "Optional Subheading", val(s, "page_hero", "subtitle"))}
+        ${cmsImage("page_hero", "background_image", "Background Image (optional)", val(s, "page_hero", "background_image"))}
+        <div class="field-full"><span class="settings-copy">Controls the About block on the homepage. Story text and image are in Our Story below.</span></div>
       </div>`, "page_hero", isOn(s, "page_hero")),
 
       section("Our Story", `<div class="form-grid">
@@ -504,12 +498,12 @@ window.CmsSchema = (() => {
       </div>`, "mission_vision", isOn(s, "mission_vision")),
 
       section("Meet The Team", `<div class="form-grid">
+        ${cmsInput("team", "eyebrow", "Eyebrow Label", val(s, "team", "eyebrow", "THE TEAM BEHIND YOUR JOURNEY"))}
         ${cmsInput("team", "heading", "Section Heading", val(s, "team", "heading"))}
         ${cmsInput("team", "description", "Section Subtitle", val(s, "team", "description"))}
       </div>
       <div class="cms-list" data-json-section="team" data-json-key="members_json">${team.map(teamRow).join("")}</div>
-      <button class="add-row-btn cms-add-team" type="button">+ Add Team Member</button>
-      <div style="margin-top:12px">${toggleRow("Show More Button", "team", "show_more", val(s, "team", "show_more", "0") === "1")}</div>`, "team", isOn(s, "team")),
+      <button class="add-row-btn cms-add-team" type="button">+ Add Team Member</button>`, "team", isOn(s, "team")),
 
       section("Owned Assets", `<div class="form-grid">
         ${cmsInput("owned_assets", "kicker", "Section Kicker", val(s, "owned_assets", "kicker", "Owned Assets"))}
@@ -521,10 +515,6 @@ window.CmsSchema = (() => {
       </div>
       <div class="cms-list" data-json-section="owned_assets">${ownedBadges.map(badgeRow).join("")}</div>
       <button class="add-row-btn cms-add-badge" type="button">+ Add Badge</button>`, "owned_assets", isOn(s, "owned_assets")),
-
-      section("Awards & Certifications", `<div class="form-grid">${cmsInput("awards", "heading", "Section Heading", val(s, "awards", "heading", "Our Achievements"), true)}</div>
-        <div class="cms-list" data-json-section="awards" data-json-key="items_json">${awards.map(awardRow).join("")}</div>
-        <button class="add-row-btn cms-add-award" type="button">+ Add Award</button>`, "awards", isOn(s, "awards")),
     ].join("");
   }
 
@@ -541,14 +531,15 @@ window.CmsSchema = (() => {
     ]);
 
     return [
-      section("Contact Hero", `<div class="form-grid">
-        ${cmsInput("hero", "title", "Page Title", val(s, "hero", "title", "Get In Touch"))}
-        ${cmsInput("hero", "subtitle", "Page Subtitle", val(s, "hero", "subtitle"))}
-        ${cmsImage("hero", "background_image", "Background Banner Image", val(s, "hero", "background_image"))}
-        ${cmsInput("hero", "button_label", "CTA Button Label", val(s, "hero", "button_label", "Request Proposal"), true)}
+      section("Final CTA Banner (#contact)", `<div class="form-grid">
+        ${cmsInput("hero", "title", "Banner Title", val(s, "hero", "title", "Let's Create Exceptional UK & Europe Experiences Together"))}
+        ${cmsInput("hero", "subtitle", "Banner Subtitle", val(s, "hero", "subtitle"))}
+        ${cmsImage("hero", "background_image", "Background Image", val(s, "hero", "background_image", "assets/final-cta-castle.png"))}
+        ${cmsInput("hero", "button_label", "Button Label", val(s, "hero", "button_label", "Request Proposal"), true)}
+        <div class="field-full"><span class="settings-copy">This banner appears above the proposal form on the homepage. The button scrolls to the form.</span></div>
       </div>`, "hero", isOn(s, "hero")),
 
-      section("Contact Information", `<div class="form-grid">
+      section("Contact Information (Footer)", `<div class="form-grid">
         ${cmsTextarea("info", "address", "Company Address", val(s, "info", "address", contact.address || ""))}
         ${cmsInput("info", "phone_1", "Primary Phone Number", val(s, "info", "phone_1", contact.contact_phone || ""))}
         ${cmsInput("info", "phone_2", "Phone Number 2", val(s, "info", "phone_2"))}
@@ -558,27 +549,21 @@ window.CmsSchema = (() => {
         ${cmsInput("info", "hours_weekend", "Working Hours (Sat–Sun)", val(s, "info", "hours_weekend"))}
         ${cmsInput("info", "whatsapp", "WhatsApp Number", val(s, "info", "whatsapp"))}
         <div class="field-full">${toggleRow("Show WhatsApp Chat Button", "info", "show_whatsapp", val(s, "info", "show_whatsapp", "1") === "1")}</div>
+        <div class="field-full"><span class="settings-copy">Shown in the site footer and used for the floating chat button.</span></div>
       </div>`, "info", isOn(s, "info")),
 
-      section("Contact Form Settings", `<div class="form-grid">
-        ${cmsInput("form", "heading", "Form Heading Title", val(s, "form", "heading", "Send Us a Message"), true)}
+      section("Proposal Form (#proposal)", `<div class="form-grid">
+        ${cmsInput("form", "title", "Form Section Title", val(s, "form", "title", "Request proposal"), true)}
+        ${cmsTextarea("form", "subtitle", "Form Section Subtitle", val(s, "form", "subtitle"))}
       </div>
       <div class="field-list cms-form-fields">${formFields.map(formFieldRow).join("")}</div>
       <div class="form-grid" style="margin-top:14px">
         ${cmsInput("form", "submit_text", "Submit Button Text", val(s, "form", "submit_text", "Send Message"))}
         ${cmsInput("form", "receiver_email", "Receiver Email Address", val(s, "form", "receiver_email", "leads@caledor.com"))}
         ${cmsTextarea("form", "success_message", "Success Message", val(s, "form", "success_message"))}
-        ${cmsInput("form", "title", "Form Section Title", val(s, "form", "title", "Request proposal"))}
-        ${cmsTextarea("form", "subtitle", "Form Section Subtitle", val(s, "form", "subtitle"))}
         <div class="field-full">${toggleRow("Enable CAPTCHA", "form", "captcha", val(s, "form", "captcha", "1") === "1")}</div>
         <div class="field-full">${toggleRow("Enable File Upload", "form", "file_upload", val(s, "form", "file_upload", "0") === "1")}</div>
       </div>`, "form", isOn(s, "form")),
-
-      section("Map Settings", `<div class="form-grid">
-        ${cmsTextarea("map", "embed_url", "Google Map Embed Link", val(s, "map", "embed_url"))}
-        ${cmsInput("map", "height", "Map Height (px)", val(s, "map", "height", "400"))}
-        ${cmsSelect("map", "zoom", "Map Zoom Level", ["10", "12", "14", "16", "18"], val(s, "map", "zoom", "14"))}
-      </div>`, "map", isOn(s, "map")),
 
       section("Social Media Links", `<div class="form-grid">
         ${settingInput("social", "facebook_url", "Facebook", social.facebook_url || "")}
@@ -586,75 +571,47 @@ window.CmsSchema = (() => {
         ${settingInput("social", "twitter_url", "Twitter / X", social.twitter_url || "")}
         ${settingInput("social", "youtube_url", "YouTube", social.youtube_url || "")}
         ${settingInput("social", "linkedin_url", "LinkedIn", social.linkedin_url || "", true)}
-        <div class="field-full">${toggleRow("Show Icons in Footer", "social", "show_footer", val(s, "social", "show_footer", "1") === "1")}</div>
-        <div class="field-full">${toggleRow("Show Icons on Contact Page", "social", "show_contact", val(s, "social", "show_contact", "1") === "1")}</div>
+        <div class="field-full"><span class="settings-copy">Social icons appear in the site footer.</span></div>
       </div>`, "social", isOn(s, "social")),
     ].join("");
   }
 
   function renderBlog(s) {
-    const categories = parseJson(val(s, "categories", "items_json"));
     const featuredPosts = parseJson(val(s, "homepage_featured", "post_tags_json"));
 
     return [
-      section("Blog Page Settings", `<div class="form-grid">
-        ${cmsInput("page", "title", "Page Title", val(s, "page", "title", "Travel Blog"))}
-        ${cmsInput("page", "subtitle", "Page Subtitle", val(s, "page", "subtitle", "Your Daily Adventures"))}
-        ${cmsImage("page", "background_image", "Hero Background Image", val(s, "page", "background_image"), "Recommended size: 1920×480px. Max file size: 5MB.")}
-        ${cmsTextarea("page", "description", "Page Description", val(s, "page", "description"))}
+      section("Travel Insights Section", `<div class="form-grid">
+        ${cmsInput("page", "title", "Section Kicker", val(s, "page", "title", "Travel Insights"))}
+        ${cmsInput("page", "subtitle", "Section Subtitle", val(s, "page", "subtitle", "Editorial perspectives on destinations, trends, and travel planning."))}
+        ${cmsTextarea("page", "description", "Optional Description", val(s, "page", "description"))}
+        <div class="field-full"><span class="settings-copy">Blog posts are managed below. Cards appear on the homepage Travel Insights section.</span></div>
       </div>`, "page", isOn(s, "page")),
 
-      section("Blog Listing", `<div class="form-grid">
-        ${cmsInput("listing", "posts_per_page", "Posts Per Page", val(s, "listing", "posts_per_page", "6"))}
-        ${cmsSelect("listing", "grid_columns", "Grid Columns", ["2", "3", "4"], val(s, "listing", "grid_columns", "3"))}
+      section("Homepage Blog Display", `<div class="form-grid">
+        ${cmsInput("listing", "posts_per_page", "Posts Shown on Homepage", val(s, "listing", "posts_per_page", "3"))}
         ${cmsInput("listing", "excerpt_length", "Excerpt Length (characters)", val(s, "listing", "excerpt_length", "150"))}
         ${cmsInput("listing", "read_more_text", "Read More Text", val(s, "listing", "read_more_text", "Read More"))}
       </div>
       ${toggleGrid([
-        ["Show Featured Post", "listing", "show_featured", val(s, "listing", "show_featured", "1") === "1"],
-        ["Show Author", "listing", "show_author", val(s, "listing", "show_author", "1") === "1"],
-        ["Show Date", "listing", "show_date", val(s, "listing", "show_date", "1") === "1"],
-        ["Show Read Time", "listing", "show_read_time", val(s, "listing", "show_read_time", "1") === "1"],
         ["Show Category Tags", "listing", "show_category_tags", val(s, "listing", "show_category_tags", "1") === "1"],
         ["Show Read More Button", "listing", "show_read_more", val(s, "listing", "show_read_more", "1") === "1"],
-        ["Show Pagination", "listing", "show_pagination", val(s, "listing", "show_pagination", "1") === "1"],
-        ["Show Search", "listing", "show_search", val(s, "listing", "show_search", "0") === "1"],
-        ["Enable Infinite Scroll", "listing", "infinite_scroll", val(s, "listing", "infinite_scroll", "0") === "1"],
+        ["Show Author", "listing", "show_author", val(s, "listing", "show_author", "0") === "1"],
+        ["Show Date", "listing", "show_date", val(s, "listing", "show_date", "0") === "1"],
       ])}`, "listing", isOn(s, "listing")),
 
-      section("Categories Management", `<div class="cms-list" data-json-section="blog_categories" data-json-key="items_json">${categories.map(categoryRow).join("")}</div>
-        <button class="add-row-btn cms-add-category" type="button">+ Add Category</button>
-        <div style="margin-top:12px">${toggleRow("Show Category Filter Menu on Blog Page", "categories", "show_filter", val(s, "categories", "show_filter", "1") === "1")}</div>`, "categories", isOn(s, "categories")),
-
       section("Featured Posts on Homepage", `<div class="form-grid">
-        ${cmsInput("homepage_featured", "section_title", "Section Title", val(s, "homepage_featured", "section_title", "Latest from the Blog"))}
-        ${cmsSelect("homepage_featured", "posts_count", "Number of Posts", ["2", "3", "4", "6"], val(s, "homepage_featured", "posts_count", "4"))}
-        <div class="field-full"><label>Select Posts to Feature</label>${postTagRow(featuredPosts)}</div>
-        <div class="field-full">${toggleRow("Show on Homepage", "homepage_featured", "show_on_homepage", val(s, "homepage_featured", "show_on_homepage", "1") === "1")}</div>
+        ${cmsInput("homepage_featured", "section_title", "Alternate Section Title", val(s, "homepage_featured", "section_title", "Latest from the Blog"))}
+        ${cmsSelect("homepage_featured", "posts_count", "Number of Posts", ["2", "3", "4", "6"], val(s, "homepage_featured", "posts_count", "3"))}
+        <div class="field-full"><label>Filter by Post Title Keywords (optional)</label>${postTagRow(featuredPosts)}</div>
       </div>`, "homepage_featured", isOn(s, "homepage_featured")),
-
-      section("Comments", `<div class="form-grid">
-        ${toggleRow("Enable Comments", "comments", "enabled", val(s, "comments", "enabled", "0") === "1")}
-        ${toggleRow("Manual Approval Required", "comments", "manual_approval", val(s, "comments", "manual_approval", "1") === "1")}
-      </div>`, "comments", isOn(s, "comments")),
-
-      section("Author Settings", `<div class="form-grid">
-        ${cmsSelect("author", "bio_position", "Author Bio Position", ["Below Post", "Above Post", "Sidebar"], val(s, "author", "bio_position", "Below Post"))}
-      </div>
-      ${toggleGrid([
-        ["Show Author Bio", "author", "show_bio", val(s, "author", "show_bio", "1") === "1"],
-        ["Show Author Photo", "author", "show_photo", val(s, "author", "show_photo", "1") === "1"],
-        ["Show Social Media Icons", "author", "show_social", val(s, "author", "show_social", "1") === "1"],
-      ])}`, "author", isOn(s, "author")),
     ].join("");
   }
 
   function renderPackagesPage(s, packages = []) {
-    const categories = parseJson(val(s, "categories", "items_json"));
     const pkgOptions = packages.map((p) => `<option value="${esc(p.slug)}">${esc(p.name)}</option>`).join("");
 
     return [
-      section("Manage Package Detail Pages", `<div class="form-grid">
+      section("Package Detail Pages", `<div class="form-grid">
         <div class="field-full">
           <label>Select Package to Preview / Edit Detail Page</label>
           <select id="cmsPackagePreviewSelect">
@@ -666,58 +623,14 @@ window.CmsSchema = (() => {
           <a class="btn outline sm" id="cmsPackagePreviewLink" href="#" target="_blank" rel="noopener">Open Detail Page</a>
           <a class="btn outline sm" href="#package-settings">Edit in Package Settings</a>
         </div>
-        <p class="settings-copy">Add new packages in <strong>Package Settings</strong>. All detail content (itinerary, gallery, inclusions) is managed there and shown on the public detail page.</p>
+        <p class="settings-copy">Add and edit packages in <strong>Package Settings</strong>. Itinerary, gallery, and inclusions appear on the public detail page at <code>/package/{slug}</code>.</p>
       </div>`, "detail_pages", true),
 
-      section("Packages Page Hero", `<div class="form-grid">
-        ${cmsInput("hero", "title", "Page Title", val(s, "hero", "title", "Explore Our Packages"))}
-        ${cmsInput("hero", "subtitle", "Page Subtitle", val(s, "hero", "subtitle", "Find the perfect adventure tailored for you"))}
-        ${cmsImage("hero", "background_image", "Hero Background Image", val(s, "hero", "background_image"))}
-        <div class="field-full">${toggleRow("Show Search Bar on Hero", "hero", "show_search", val(s, "hero", "show_search", "1") === "1")}</div>
-        ${cmsInput("hero", "search_placeholder", "Search Placeholder Text", val(s, "hero", "search_placeholder", "Search destinations, activities..."), true)}
-      </div>`, "hero", isOn(s, "hero")),
-
-      section("Filter & Search Settings", `<div class="form-grid">
-        ${radioGroup("filters", "filter_position", "Filter Position", [
-          { label: "Top Bar", value: "top" },
-          { label: "Left Sidebar", value: "sidebar" },
-        ], val(s, "filters", "filter_position", "top"))}
-        ${cmsSelect("filters", "default_sort", "Default Sort Order", ["Most Popular", "Price: Low to High", "Price: High to Low", "Newest"], val(s, "filters", "default_sort", "Most Popular"))}
-        <div class="field-full">${toggleRow("Show Results Count", "filters", "show_results_count", val(s, "filters", "show_results_count", "1") === "1")}</div>
-      </div>`, "filters", isOn(s, "filters")),
-
-      section("Listing Display", `<div class="form-grid">
-        ${radioGroup("listing", "default_view", "Default View", [
-          { label: "Grid", value: "grid" },
-          { label: "List", value: "list" },
-        ], val(s, "listing", "default_view", "grid"))}
-        ${cmsSelect("listing", "grid_columns", "Grid Columns", ["2", "3", "4"], val(s, "listing", "grid_columns", "3"))}
-        ${cmsInput("listing", "packages_per_page", "Packages Per Page", val(s, "listing", "packages_per_page", "12"))}
-        ${cmsSelect("listing", "card_style", "Card Style", ["Image Top with Details", "Overlay Card", "Compact List"], val(s, "listing", "card_style", "Image Top with Details"))}
-      </div>
-      ${toggleGrid([
-        ["Show Package Rating", "listing", "show_rating", val(s, "listing", "show_rating", "1") === "1"],
-        ["Show Package Price", "listing", "show_price", val(s, "listing", "show_price", "1") === "1"],
-        ["Show Duration Badge", "listing", "show_duration", val(s, "listing", "show_duration", "1") === "1"],
-        ["Show Difficulty Badge", "listing", "show_difficulty", val(s, "listing", "show_difficulty", "1") === "1"],
-      ])}`, "listing", isOn(s, "listing")),
-
-      section("Category Tabs", `<div class="form-grid">
-        ${toggleRow("Show Category Tabs", "categories", "show_tabs", val(s, "categories", "show_tabs", "1") === "1")}
-        ${toggleRow("Show 'All Packages' Tab", "categories", "show_all_tab", val(s, "categories", "show_all_tab", "1") === "1")}
-      </div>
-      <div class="cms-list" data-json-section="pkg_categories" data-json-key="items_json">${categories.map(pkgCategoryRow).join("")}</div>
-      <button class="add-row-btn cms-add-pkg-category" type="button">+ Add Category</button>`, "categories", isOn(s, "categories")),
-
-      section("Booking Call-to-Action", `<div class="form-grid">
-        ${toggleRow("Show Custom Inquiry Form", "cta", "show_inquiry_form", val(s, "cta", "show_inquiry_form", "1") === "1")}
-        ${cmsInput("cta", "title", "CTA Banner Title", val(s, "cta", "title", "Not Sure Which Package?"))}
-        ${cmsInput("cta", "subtitle", "CTA Banner Subtitle", val(s, "cta", "subtitle", "Our travel experts will help you plan the perfect trip"))}
-        ${cmsInput("cta", "button_text", "CTA Button Text", val(s, "cta", "button_text", "Get Free Consultation"))}
-        ${cmsInput("cta", "button_link", "CTA Button Link", val(s, "cta", "button_link", "#contact"))}
-        ${cmsSelect("cta", "background_style", "Background Style", ["Gradient Dark", "Solid Dark", "Gold Accent"], val(s, "cta", "background_style", "gradient-dark"))}
-        <div class="field-full">${toggleRow("Show at Bottom of Listing Page", "cta", "show_at_bottom", val(s, "cta", "show_at_bottom", "1") === "1")}</div>
-      </div>`, "cta", isOn(s, "cta")),
+      section("Homepage Featured Experiences Grid", `<div class="form-grid">
+        ${cmsInput("listing", "packages_per_page", "Packages Shown on Homepage", val(s, "listing", "packages_per_page", "5"))}
+        <div class="field-full"><span class="settings-copy">The homepage uses the Figma 2+3 card layout. Featured packages appear first. Manage cards in <strong>Package Settings</strong>.</span></div>
+        <div class="field-full">${toggleRow("Show Category Filter Tabs", "categories", "show_tabs", val(s, "categories", "show_tabs", "0") === "1")}</div>
+      </div>`, "listing", true),
     ].join("");
   }
 
@@ -818,7 +731,7 @@ window.CmsSchema = (() => {
         visible: row.querySelector("[data-field-visible]")?.classList.contains("on") !== false,
       });
     });
-    if (blogCategories.length || container.querySelector('[data-json-section="blog_categories"]')) {
+    if (blogCategories.length) {
       sections.categories = sections.categories || {};
       sections.categories.items_json = JSON.stringify(blogCategories);
     }
@@ -832,7 +745,7 @@ window.CmsSchema = (() => {
         visible: row.querySelector("[data-field-visible]")?.classList.contains("on") !== false,
       });
     });
-    if (pkgCategories.length || container.querySelector('[data-json-section="pkg_categories"]')) {
+    if (pkgCategories.length) {
       sections.categories = sections.categories || {};
       sections.categories.items_json = JSON.stringify(pkgCategories);
     }
@@ -877,16 +790,6 @@ window.CmsSchema = (() => {
       sections.why_choose.features_json = JSON.stringify(features);
     }
 
-    const tags = [];
-    container.querySelectorAll('[data-list="tags"] .tag-pill').forEach((pill) => {
-      const text = pill.childNodes[0]?.textContent?.trim();
-      if (text) tags.push(text);
-    });
-    if (tags.length || container.querySelector('[data-list="tags"]')) {
-      sections.featured_tours = sections.featured_tours || {};
-      sections.featured_tours.tour_tags_json = JSON.stringify(tags);
-    }
-
     const destinations = [];
     container.querySelectorAll('[data-list="destinations"]').forEach((row) => {
       destinations.push({
@@ -905,8 +808,9 @@ window.CmsSchema = (() => {
 
     const team = [];
     container.querySelectorAll('[data-list="team"]').forEach((row) => {
+      const photoInput = row.querySelector('[name="photo"], .cms-team-photo, .cms-image-url');
       team.push({
-        photo: row.querySelector('[name="photo"]')?.value || "",
+        photo: photoInput?.value || "",
         name: row.querySelector('[name="name"]')?.value || "",
         role: row.querySelector('[name="role"]')?.value || "",
         bio: row.querySelector('[name="bio"]')?.value || "",
@@ -914,23 +818,10 @@ window.CmsSchema = (() => {
         twitter: row.querySelector('[name="twitter"]')?.value || "",
       });
     });
-    if (team.length || container.querySelector('[data-json-section="team"]')) {
+    const validTeam = team.filter((member) => (member.name || "").trim());
+    if (validTeam.length) {
       sections.team = sections.team || {};
-      sections.team.members_json = JSON.stringify(team);
-    }
-
-    const awards = [];
-    container.querySelectorAll('[data-list="awards"]').forEach((row) => {
-      awards.push({
-        icon: row.querySelector(".icon-preview")?.textContent?.trim() || "🏆",
-        name: row.querySelector('[name="name"]')?.value || "",
-        org: row.querySelector('[name="org"]')?.value || "",
-        year: row.querySelector('[name="year"]')?.value || "",
-      });
-    });
-    if (awards.length || container.querySelector('[data-json-section="awards"]')) {
-      sections.awards = sections.awards || {};
-      sections.awards.items_json = JSON.stringify(awards);
+      sections.team.members_json = JSON.stringify(validTeam);
     }
 
     const formFields = [];
@@ -974,7 +865,7 @@ window.CmsSchema = (() => {
         image: row.querySelector('[name="image"]')?.value || "",
         label: row.querySelector('[name="label"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
-        hero: row.querySelector("[data-field-hero]")?.classList.contains("on") || false,
+        layout: row.querySelector('[name="layout"]')?.value || "loch",
       });
     });
     if (scotlandTiles.length || container.querySelector('[data-json-section="scotland_attractions"]')) {
@@ -1103,8 +994,8 @@ window.CmsSchema = (() => {
 
   return {
     esc, val, section, collectCms, collectSettings, TAB_RENDERERS, TAB_USES_SETTINGS, renderSeo,
-    featureRow, teamRow, awardRow, destinationRow, tagRow, formFieldRow, parseJson,
-    categoryRow, pkgCategoryRow, footerColumnRow, postTagRow, cmsImage, imageField,
+    featureRow, teamRow, destinationRow, formFieldRow, parseJson,
+    footerColumnRow, postTagRow, cmsImage, imageField,
     aboutFeatureRow, scotlandTileRow, premiumServiceRow, miceItemRow, statRow,
     processStepRow, testimonialItemRow, successStoryRow, badgeRow,
   };

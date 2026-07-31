@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getDb } from '../db.js';
 import { flattenCmsDefaults } from '../cms-defaults.js';
+import { syncCanonicalTeamSection, forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection } from '../cms-repair.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.join(__dirname, '..');
@@ -78,6 +79,12 @@ function upsertMissingCms(db) {
   console.log(`✓ CMS defaults checked (${added} new row(s) added)`);
 }
 
+function syncTeam(db) {
+  if (forceSyncCanonicalTeamSection(db)) {
+    console.log('✓ Leadership team synced (Mr. Alok Singh, Ms. Neha Sawant)');
+  }
+}
+
 async function runImportMedia() {
   try {
     await import('./import-media.js');
@@ -95,6 +102,12 @@ function main() {
 
   const db = getDb();
   upsertMissingCms(db);
+  if (forceSyncCanonicalHeroSection(db)) {
+    console.log('✓ Hero section synced (DMC partner copy, trust points, stats)');
+  }
+  if (forceSyncCanonicalTeamSection(db)) {
+    console.log('✓ Leadership team synced (Mr. Alok Singh, Ms. Neha Sawant)');
+  }
 
   console.log('✓ Database ready at backend/data/caledor.db');
 }

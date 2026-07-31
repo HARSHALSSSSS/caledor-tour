@@ -15,10 +15,11 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="premium-services.css" />
   </head>
-  <body>
-    <header class="ps-header">
+  <body class="subpage">
+    <header class="site-header">
       <a class="brand" href="/" aria-label="Caledor DMC home">
         <img
           class="brand-logo"
@@ -29,8 +30,26 @@
           decoding="async"
         />
       </a>
-      <a class="button primary sm" href="/#contact">Enquire Now</a>
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <a href="/#services">Experiences</a>
+        <a href="/#mice" class="nav-highlight">MICE & Corporate</a>
+        <a href="/#packages">Packages</a>
+        <a href="/#faq">FAQ</a>
+      </nav>
+      <a class="header-cta" href="/#proposal">Enquire Now</a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </header>
+    <div class="mobile-nav-panel" id="mobileNav" hidden>
+      <nav aria-label="Mobile navigation">
+        <a href="/#services">Experiences</a>
+        <a href="/#mice" class="nav-highlight">MICE & Corporate</a>
+        <a href="/#packages">Packages</a>
+        <a href="/#faq">FAQ</a>
+        <a class="button primary" href="/#proposal">Enquire Now</a>
+      </nav>
+    </div>
 
     <main id="premiumServicesPage">
       <section class="ps-hero">
@@ -226,19 +245,56 @@
             European luxury services.
           </p>
           <div class="ps-cta-actions">
-            <a class="button primary" href="/#contact">Enquire Now</a>
+            <a class="button primary" href="/#proposal">Enquire Now</a>
             <a class="button ghost" href="/#packages">Tour Experiences</a>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="ps-footer">
-      <p>&copy; 2026 Caledor DMC. All rights reserved.</p>
-      <nav aria-label="Footer links">
-        <a href="/">Home</a>
-        <a href="/#contact">Contact</a>
-      </nav>
+    <footer class="footer section-dark" id="siteFooter">
+      <div class="footer-shell">
+        <div class="footer-top">
+          <div class="footer-brand-block" id="footerBrandCol">
+            <h3 class="footer-brand-title" id="footerBrandName">Caledor DMC</h3>
+            <p id="footerDescription">Your trusted partner for luxury destination management across the UK and Europe.</p>
+            <p class="footer-brand-legal" id="footerLegal">&copy; 2026 Caledor DMC Ltd (SC893789). All rights reserved.</p>
+            <div class="footer-newsletter" id="footerNewsletter">
+              <h3 id="footerNewsletterTitle">NEWSLETTER</h3>
+              <form class="newsletter-form" id="footerNewsletterForm">
+                <input type="email" id="footerNewsletterInput" placeholder="Email address" />
+                <button type="submit" id="footerNewsletterButton">Subscribe</button>
+              </form>
+            </div>
+          </div>
+          <div class="footer-columns" id="footerNavCols"></div>
+          <div class="footer-contact-block footer-col" id="footerContactCol">
+            <h3>Contact</h3>
+            <p id="footerAddress">4 Lynedoch Place, Glasgow, Scotland, G3 6AB</p>
+            <p id="footerPhonePrimary">+91 97693 50333</p>
+            <p id="footerPhoneSecondary">+44 7917 854171</p>
+            <p id="footerEmailPrimary">neha.sawant@caledordmc.co.uk</p>
+            <p id="footerEmailSecondary">alok.singh@caledordmc.co.uk</p>
+          </div>
+        </div>
+        <div class="footer-bottom" id="footerBottom">
+          <p class="copyright" id="footerCopyright">&copy; 2026 Caledor DMC</p>
+          <div class="footer-policy-links" id="footerPolicyLinks"></div>
+          <div class="footer-social-row socials" id="footerSocials">
+            <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm6.5-.75a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg></a>
+            <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 8.75h4v12.25H3V8.75zm7 0h3.84v1.68h.05c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.67 4.8 6.14v6.49H15.6v-5.75c0-1.37-.03-3.13-1.9-3.13-1.92 0-2.21 1.5-2.21 3.05v5.83H10V8.75z"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2H21.5l-7.5 8.573L22.5 22h-6.43l-5.03-6.573L5.2 22H1.94l8.04-9.188L1.5 2h6.59l4.55 6.02L18.244 2zm-1.13 18h1.77L7.01 3.93H5.11L17.114 20z"/></svg></a>
+          </div>
+        </div>
+      </div>
     </footer>
+
+    <script src="/js/config.js"></script>
+    <script src="/js/site-chrome.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.SiteChrome) SiteChrome.init({ scroll: true });
+      });
+    </script>
   </body>
 </html>

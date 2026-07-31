@@ -1,5 +1,10 @@
 /** Package detail editor — itinerary, highlights, gallery, admin form helpers */
 window.PackageEditor = (() => {
+  function packagePublicUrl(slug) {
+    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
+    return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
+  }
+
   function parseJson(raw, fb = []) {
     try { return JSON.parse(raw || "[]"); } catch { return fb; }
   }
@@ -54,7 +59,7 @@ window.PackageEditor = (() => {
         <div class="settings-head">
           <div>
             <h2 class="settings-title">Select Package to Edit</h2>
-            <p class="panel-subtitle">Packages added here appear in CMS Packages Page and on the website detail page.</p>
+            <p class="panel-subtitle">Packages added here appear in the homepage Featured Experiences section and on <code>/package/{slug}</code> detail pages.</p>
           </div>
         </div>
         <div class="settings-body">
@@ -78,7 +83,8 @@ window.PackageEditor = (() => {
           <div class="form-grid">
             ${textRow("name", "Package Name")}
             ${textRow("slug", "URL Slug")}
-            ${textRow("badge", "Badge Label", "MULTI-DAY")}
+            ${textRow("badge", "Country Tag", "ITALY")}
+            <div class="field-full"><span class="settings-copy">Displayed on homepage Featured Experiences cards. Use country names like ITALY, FRANCE, SCOTLAND, ENGLAND.</span></div>
             ${textRow("category", "Category", "Luxury Escapes")}
             ${textRow("duration", "Duration", "7 Days")}
             ${textRow("group_size", "Group Size", "2–8 Guests")}
@@ -138,7 +144,7 @@ window.PackageEditor = (() => {
           <td>
             <button class="btn secondary sm" type="button" data-action="edit-package" data-id="${p.id}">Edit</button>
             <button class="btn secondary sm" type="button" data-action="delete-package" data-id="${p.id}">Delete</button>
-            <a class="btn outline sm" href="../package-detail.html?slug=${encodeURIComponent(p.slug)}" target="_blank">View</a>
+            <a class="btn outline sm" href="${esc(packagePublicUrl(p.slug))}" target="_blank" rel="noopener">View</a>
           </td></tr>`).join("") || '<tr><td colspan="4">No packages yet</td></tr>'}
         </tbody></table>
       </div>
@@ -194,7 +200,7 @@ window.PackageEditor = (() => {
     if (window.CmsUI) window.CmsUI.wire(form);
 
     const preview = document.getElementById("previewPackageLink");
-    if (preview && pkg.slug) preview.href = `../package-detail.html?slug=${encodeURIComponent(pkg.slug)}`;
+    if (preview && pkg.slug) preview.href = packagePublicUrl(pkg.slug);
 
     const select = document.getElementById("packageSelect");
     if (select) select.value = String(pkg.id);

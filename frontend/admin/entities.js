@@ -152,7 +152,7 @@ window.AdminEntities = (() => {
           </div>
           <div class="field-full actions-row">
             <button class="btn primary" type="button" data-action="save-faq-section">Save Section Settings</button>
-            <a class="btn outline sm" href="/#faq" target="_blank" rel="noopener">Preview on Website</a>
+            <a class="btn outline sm" href="${esc(sitePublicUrl("faq"))}" target="_blank" rel="noopener">Preview on Website</a>
           </div>
         </div>`)}
 
@@ -252,21 +252,16 @@ window.AdminEntities = (() => {
     </section>`;
   }
 
-  async function bannerView(api) {
-    const cms = await api("/cms/home").catch(() => ({ sections: {} }));
-    const bg = cms.sections?.hero?.background_image || "";
-    const imageField = window.CmsSchema?.cmsImage
-      ? window.CmsSchema.cmsImage("hero", "background_image", "Hero Background Image", bg)
-      : `<div class="field-full"><label>Hero Background URL</label>
-          <input id="bannerImageUrl" data-cms-section="hero" data-cms-key="background_image" value="${esc(bg)}" /></div>`;
-    return `<section class="content-grid">
-      ${panel("Hero Banner", "Updates the homepage hero background image", `
-        <div class="form-grid">
-          ${imageField}
-          <div class="field-full"><span class="settings-copy">Save to apply on the live homepage hero.</span></div>
-          <div class="field-full"><button class="btn primary" type="button" data-action="save-banner">Save Banner</button></div>
-        </div>`)}
-    </section>`;
+  function packagePublicUrl(slug) {
+    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
+    return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
+  }
+
+  function sitePublicUrl(hash = "") {
+    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
+    if (!hash) return `${window.location.origin}${root}/`;
+    const clean = String(hash).replace(/^#/, "");
+    return `${window.location.origin}${root}/#${clean}`;
   }
 
   function field(label, placeholder, name, full = false) {
@@ -279,6 +274,6 @@ window.AdminEntities = (() => {
   }
 
   return {
-    packagesView, galleryView, blogView, bookingsView, faqView, notificationsView, usersView, bannerView, panel,
+    packagesView, galleryView, blogView, bookingsView, faqView, notificationsView, usersView, panel, packagePublicUrl, sitePublicUrl,
   };
 })();

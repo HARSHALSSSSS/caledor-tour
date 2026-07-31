@@ -59,6 +59,8 @@ const SCOTLAND_LAYOUT_CLASSES = {
   whisky: " scotland-tile-whisky",
 };
 
+const SCOTLAND_LAYOUT_ORDER = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
+
 const TEAM_DEFAULTS = [
   {
     name: "Mr. Alok Singh",
@@ -77,7 +79,7 @@ const TEAM_DEFAULTS = [
 const CONTACT_CTA_DEFAULTS = {
   title: "Let's Create Exceptional UK & Europe Experiences Together",
   subtitle: "Partner with a DMC that understands luxury, reliability, and bespoke operations.",
-  background_image: "assets/final-cta-hero.png",
+  background_image: "assets/final-cta-castle.png",
   button_label: "Request Proposal",
 };
 
@@ -90,6 +92,24 @@ const HERO_DEFAULTS = {
   secondary_cta_label: "Explore Destinations",
   secondary_cta_url: "#destinations",
   background_image: "assets/hero-background.png",
+};
+
+const TRUST_DEFAULTS = {
+  point_1: "20+ European Countries",
+  point_2: "Dedicated DMC Support",
+  point_3: "Tailor-Made Itineraries",
+  point_4: "Competitive Contracted Rates",
+};
+
+const STATS_DEFAULTS = {
+  stat_1_value: "500+",
+  stat_1_label: "Hotels Network",
+  stat_2_value: "50+",
+  stat_2_label: "Cities Covered",
+  stat_3_value: "200+",
+  stat_3_label: "Transfer Partners",
+  stat_4_value: "15+",
+  stat_4_label: "Years of Experience",
 };
 
 const PREMIUM_SERVICE_SLUGS = {
@@ -133,6 +153,7 @@ function escapeHtml(value) {
 }
 
 function parseJson(raw, fb = []) {
+  if (Array.isArray(raw)) return raw;
   try {
     return JSON.parse(raw || "[]");
   } catch {
@@ -180,8 +201,10 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   const heroSection = document.getElementById("hero") || document.querySelector(".hero");
   setSectionVisible(heroSection, hero.enabled !== "0");
 
-  const useHeroDefaults = !hero.title || String(hero.title).includes("Discover Your Next");
-  const h = useHeroDefaults ? { ...HERO_DEFAULTS, enabled: hero.enabled } : { ...HERO_DEFAULTS, ...hero };
+  const legacyHero = hero.title && String(hero.title).includes("Discover Your Next");
+  const h = legacyHero ? { ...HERO_DEFAULTS, enabled: hero.enabled } : { ...HERO_DEFAULTS, ...hero };
+  const t = { ...TRUST_DEFAULTS, ...trust };
+  const s = { ...STATS_DEFAULTS, ...stats };
 
   const eyebrow = document.getElementById("heroEyebrow") || document.querySelector(".hero .eyebrow");
   const heading = document.getElementById("heroTitle") || document.querySelector(".hero h1");
@@ -216,21 +239,16 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
     secondary.href = h.secondary_cta_url || HERO_DEFAULTS.secondary_cta_url;
   }
 
-  const trustValues = [
-    trust.point_1 || "20+ European Countries",
-    trust.point_2 || "Dedicated DMC Support",
-    trust.point_3 || "Tailor-Made Itineraries",
-    trust.point_4 || "Competitive Contracted Rates",
-  ].filter(Boolean);
+  const trustValues = [t.point_1, t.point_2, t.point_3, t.point_4].filter(Boolean);
   document.querySelectorAll(".hero-trust span").forEach((item, index) => {
     if (trustValues[index]) item.textContent = trustValues[index];
   });
 
   const statValues = [
-    [stats.stat_1_value || "500+", stats.stat_1_label || "Hotels Network"],
-    [stats.stat_2_value || "50+", stats.stat_2_label || "Cities Covered"],
-    [stats.stat_3_value || "200+", stats.stat_3_label || "Transfer Partners"],
-    [stats.stat_4_value || "15+", stats.stat_4_label || "Years of Experience"],
+    [s.stat_1_value, s.stat_1_label],
+    [s.stat_2_value, s.stat_2_label],
+    [s.stat_3_value, s.stat_3_label],
+    [s.stat_4_value, s.stat_4_label],
   ];
   document.querySelectorAll(".hero-stats article").forEach((card, index) => {
     const [value, label] = statValues[index] || [];
@@ -279,31 +297,14 @@ function applyBrandSettings(settings = {}) {
   const footerDesc = document.getElementById("footerDescription");
   if (footerDesc) footerDesc.textContent = general.site_description || tagline;
 
+  const brandTitle = document.getElementById("footerBrandName");
+  if (brandTitle) brandTitle.textContent = brand;
+
   const copyright = document.getElementById("footerCopyright");
-  if (copyright && general.copyright) copyright.textContent = general.copyright;
+  if (copyright && general.copyright_short) copyright.textContent = general.copyright_short;
 
-  const contactEmail = contact.contact_email || "info@caledor.com";
-  const contactPhone = contact.contact_phone || "+44 20 0000 0000";
-  const contactAddress = contact.address || "12 Waterfront Lane, London, United Kingdom";
-
-  document.querySelectorAll('a[href^="mailto:"]').forEach((link) => {
-    link.href = `mailto:${contactEmail}?subject=Request%20Proposal`;
-  });
-
-  const footerEmail = document.getElementById("footerEmail");
-  const footerPhone = document.getElementById("footerPhone");
-  const footerAddress = document.getElementById("footerAddress");
-  if (footerEmail) footerEmail.textContent = contactEmail;
-  if (footerPhone) footerPhone.textContent = contactPhone;
-  if (footerAddress) footerAddress.textContent = contactAddress;
-
-  document.querySelectorAll("#footerSocials a").forEach((link) => {
-    const label = (link.getAttribute("aria-label") || "").toLowerCase();
-    if (label === "facebook" && social.facebook_url) link.href = social.facebook_url;
-    if (label === "instagram" && social.instagram_url) link.href = social.instagram_url;
-    if (label === "linkedin" && social.linkedin_url) link.href = social.linkedin_url;
-    if (label === "twitter" && social.twitter_url) link.href = social.twitter_url;
-  });
+  const footerLegal = document.getElementById("footerLegal");
+  if (footerLegal && general.copyright) footerLegal.textContent = general.copyright;
 }
 
 function applyWhyChooseSection(section = {}) {
@@ -326,30 +327,9 @@ function applyWhyChooseSection(section = {}) {
     </article>`).join("");
 }
 
-function applyFeaturedToursSection(section = {}) {
+function applyFeaturedToursSection() {
   const root = document.getElementById("featuredToursSection");
-  setSectionVisible(root, section.enabled !== "0");
-  if (!root) return;
-
-  const kicker = document.getElementById("featuredToursKicker");
-  const subtitle = document.getElementById("featuredToursSubtitle");
-  if (kicker && section.section_title) kicker.textContent = section.section_title;
-  if (subtitle && section.section_subtitle) subtitle.textContent = section.section_subtitle;
-
-  const grid = document.getElementById("featuredToursGrid");
-  if (!grid) return;
-
-  const tags = parseJson(section.tour_tags_json).map((t) => t.toLowerCase());
-  const limit = parseInt(section.tours_count || "6", 10);
-  let packages = cmsState.packages || [];
-
-  if (tags.length) {
-    const matched = packages.filter((pkg) => tags.some((tag) => (pkg.name || "").toLowerCase().includes(tag)));
-    packages = matched.length ? matched : packages;
-  }
-
-  if (!packages.length) return;
-  grid.innerHTML = packages.slice(0, limit).map((pkg) => packageCard(pkg)).join("");
+  if (root) root.setAttribute("hidden", "");
 }
 
 function applyTestimonialsSection(section = {}) {
@@ -386,6 +366,48 @@ function applyTestimonialsSection(section = {}) {
 
   if (testimonialTimer) clearInterval(testimonialTimer);
   testimonialTimer = null;
+}
+
+function resolveTeamMembers(team = {}) {
+  const cmsMembers = parseJson(team.members_json).filter((m) => (m.name || "").trim());
+  const hasAlok = cmsMembers.some((m) => (m.name || "").includes("Alok Singh"));
+  const hasNeha = cmsMembers.some((m) => (m.name || "").includes("Neha Sawant"));
+  if (cmsMembers.length >= 2 && hasAlok && hasNeha) return cmsMembers;
+  return TEAM_DEFAULTS;
+}
+
+function renderTeamGrid(team = {}) {
+  const teamSection = document.getElementById("teamSection");
+  setSectionVisible(teamSection, team.enabled !== "0");
+
+  const teamEyebrow = document.getElementById("teamEyebrow");
+  const teamKicker = document.getElementById("teamKicker");
+  const teamSubtitle = document.getElementById("teamSubtitle");
+  if (teamEyebrow) teamEyebrow.textContent = team.eyebrow || "THE TEAM BEHIND YOUR JOURNEY";
+  if (teamKicker) teamKicker.textContent = team.heading || "Our Leadership Team";
+  if (teamSubtitle) {
+    teamSubtitle.textContent = team.description || "Meet the people who make exceptional travel possible.";
+  }
+
+  const teamGrid = document.getElementById("teamGrid");
+  if (!teamGrid) return;
+
+  const useMembers = resolveTeamMembers(team);
+  teamGrid.innerHTML = useMembers.map((member) => {
+    const photo = assetUrl(member.photo, cmsState.aboutUpdatedAt) || member.photo || "assets/team-alok-singh-portrait.jpg";
+    const role = (member.role || "").toUpperCase();
+    return `
+      <div class="leader-row">
+        <div class="leader-photo">
+          <img src="${escapeHtml(photo)}" alt="${escapeHtml(member.name || "Team member")}" loading="lazy" />
+        </div>
+        <div class="leader-copy">
+          <h3>${escapeHtml(member.name || "")}</h3>
+          <p class="leader-role"><span aria-hidden="true">|</span> ${escapeHtml(role)}</p>
+          <p class="leader-bio">${escapeHtml(member.bio || "")}</p>
+        </div>
+      </div>`;
+  }).join("");
 }
 
 function applyAboutContent(sections = {}) {
@@ -440,41 +462,7 @@ function applyAboutContent(sections = {}) {
       </article>`;
   }
 
-  const teamSection = document.getElementById("teamSection");
-  setSectionVisible(teamSection, team.enabled !== "0");
-  const teamEyebrow = document.getElementById("teamEyebrow");
-  const teamKicker = document.getElementById("teamKicker");
-  const teamSubtitle = document.getElementById("teamSubtitle");
-  if (teamEyebrow) teamEyebrow.textContent = team.eyebrow || "THE TEAM BEHIND YOUR JOURNEY";
-  if (teamKicker) teamKicker.textContent = team.heading || "Our Leadership Team";
-  if (teamSubtitle) {
-    teamSubtitle.textContent = team.description || "Meet the people who make exceptional travel possible.";
-  }
-
-  const teamGrid = document.getElementById("teamGrid");
-  if (teamGrid) {
-    const useMembers = TEAM_DEFAULTS;
-    if (!useMembers.length) return;
-    teamGrid.innerHTML = useMembers.map((member) => {
-      const photo = assetUrl(member.photo, cmsState.aboutUpdatedAt) || "assets/team-alok-singh-portrait.jpg";
-      const role = (member.role || "").toUpperCase();
-      return `
-      <div class="leader-row">
-        <div class="leader-photo">
-          <img src="${escapeHtml(photo)}" alt="${escapeHtml(member.name || "Team member")}" loading="lazy" />
-        </div>
-        <div class="leader-copy">
-          <h3>${escapeHtml(member.name || "")}</h3>
-          <p class="leader-role"><span aria-hidden="true">|</span> ${escapeHtml(role)}</p>
-          <p class="leader-bio">${escapeHtml(member.bio || "")}</p>
-          ${member.linkedin || member.twitter ? `<div class="team-socials">
-            ${member.linkedin ? `<a href="${escapeHtml(member.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>` : ""}
-            ${member.twitter ? `<a href="${escapeHtml(member.twitter)}" target="_blank" rel="noopener">Twitter</a>` : ""}
-          </div>` : ""}
-        </div>
-      </div>`;
-    }).join("");
-  }
+  renderTeamGrid(team);
 
   const awardsSection = document.getElementById("awardsSection");
   const ownedAssets = sections.owned_assets || {};
@@ -579,55 +567,33 @@ function applyContactContent(sections = {}, settings = {}) {
     && !String(hero.background_image).includes("unsplash.com")
     && !String(hero.background_image).endsWith("final-cta-bg.png")
     && !String(hero.background_image).endsWith("final-cta-bg.jpg")
+    && !String(hero.background_image).includes("final-cta-hero")
     ? hero.background_image
     : CONTACT_CTA_DEFAULTS.background_image;
-
-  const contactSection = document.getElementById("contact");
-  const useArtBanner = String(ctaBg).includes("final-cta-hero");
-  contactSection?.classList.toggle("contact-cta--art", useArtBanner);
 
   if (title) title.innerHTML = formatContactCtaTitle(ctaTitle);
   if (subtitle) subtitle.textContent = ctaSubtitle;
   if (button) {
     button.textContent = ctaButton;
-    const email = info.email_1 || settings.contact?.contact_email || "info@caledor.com";
-    button.href = `mailto:${email}?subject=Request%20Proposal`;
+    button.href = "#proposal";
   }
   if (heroBg) {
-    if (useArtBanner) {
-      heroBg.style.backgroundImage = bgUrl(ctaBg, cmsState.contactUpdatedAt);
-      heroBg.style.backgroundSize = "cover";
-      heroBg.style.backgroundPosition = "center center";
-      heroBg.style.opacity = "1";
-    } else {
-      const overlay = "linear-gradient(180deg, rgba(5, 10, 20, 0.28) 0%, rgba(5, 10, 20, 0.48) 100%)";
-      heroBg.style.backgroundImage = `${overlay}, ${bgUrl(ctaBg, cmsState.contactUpdatedAt)}`;
-      heroBg.style.backgroundSize = "cover";
-      heroBg.style.backgroundPosition = "center center";
-      heroBg.style.opacity = "1";
-    }
+    const overlay = "linear-gradient(180deg, rgba(5, 10, 20, 0.42) 0%, rgba(5, 10, 20, 0.68) 100%)";
+    heroBg.style.backgroundImage = `${overlay}, ${bgUrl(ctaBg, cmsState.contactUpdatedAt)}`;
+    heroBg.style.backgroundSize = "cover";
+    heroBg.style.backgroundPosition = "center center";
+    heroBg.style.opacity = "1";
   }
+
+  cmsState.contactInfo = info;
 
   const formTitle = document.querySelector(".request-proposal-title");
   const formSubtitle = document.querySelector(".request-proposal-subtitle");
-  if (formTitle) formTitle.textContent = form.heading || form.title || "Request proposal";
+  if (formTitle) formTitle.textContent = form.title || form.heading || "Request proposal";
   if (formSubtitle) formSubtitle.textContent = form.subtitle || formSubtitle?.textContent || "";
 
   setSectionVisible(document.getElementById("proposal"), form.enabled !== "0");
   if (form.enabled !== "0") renderProposalForm(form);
-
-  const infoSection = document.getElementById("contactInfoSection");
-  setSectionVisible(infoSection, info.enabled !== "0");
-  const infoGrid = document.getElementById("contactInfoGrid");
-  if (infoGrid && info.enabled !== "0") {
-    infoGrid.innerHTML = [
-      info.address ? `<article><h3>Address</h3><p>${escapeHtml(info.address)}</p></article>` : "",
-      info.phone_1 ? `<article><h3>Phone</h3><p>${escapeHtml(info.phone_1)}${info.phone_2 ? `<br>${escapeHtml(info.phone_2)}` : ""}</p></article>` : "",
-      info.email_1 ? `<article><h3>Email</h3><p>${escapeHtml(info.email_1)}${info.email_2 ? `<br>${escapeHtml(info.email_2)}` : ""}</p></article>` : "",
-      info.hours_weekday ? `<article><h3>Working Hours</h3><p>${escapeHtml(info.hours_weekday)}${info.hours_weekend ? `<br>${escapeHtml(info.hours_weekend)}` : ""}</p></article>` : "",
-      info.whatsapp && info.show_whatsapp === "1" ? `<article><h3>WhatsApp</h3><p><a href="https://wa.me/${escapeHtml(info.whatsapp.replace(/\D/g, ""))}" target="_blank" rel="noopener">${escapeHtml(info.whatsapp)}</a></p></article>` : "",
-    ].filter(Boolean).join("");
-  }
 
   const chatBubble = document.querySelector(".chat-bubble");
   if (chatBubble) {
@@ -635,88 +601,21 @@ function applyContactContent(sections = {}, settings = {}) {
       chatBubble.hidden = false;
       chatBubble.onclick = () => { window.open(`https://wa.me/${info.whatsapp.replace(/\D/g, "")}`, "_blank"); };
     } else {
-      chatBubble.onclick = () => { window.location.hash = "#contact"; };
+      chatBubble.onclick = () => { window.location.hash = "#proposal"; };
     }
   }
 
-  const mapSection = document.getElementById("contactMapSection");
-  const mapFrame = document.getElementById("contactMapFrame");
-  setSectionVisible(mapSection, map.enabled !== "0");
-  if (mapFrame && map.embed_url) {
-    mapFrame.src = map.embed_url;
-    mapFrame.style.height = `${map.height || 400}px`;
-    mapFrame.style.width = "100%";
-    mapFrame.style.border = "0";
-    mapFrame.style.borderRadius = "12px";
-  }
-
-  const contactSocials = document.getElementById("contactSocials");
-  if (contactSocials) {
-    if (socialCms.show_contact === "0") {
-      contactSocials.innerHTML = "";
-    } else {
-      const links = [
-        ["Facebook", social.facebook_url],
-        ["Instagram", social.instagram_url],
-        ["Twitter", social.twitter_url],
-        ["YouTube", social.youtube_url],
-        ["LinkedIn", social.linkedin_url],
-      ].filter(([, url]) => url);
-      contactSocials.innerHTML = links.map(([label, url]) =>
-        `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`).join("");
-    }
-  }
-
-  const footerSocials = document.getElementById("footerSocials");
-  if (footerSocials) {
-    if (socialCms.show_footer === "0") footerSocials.setAttribute("hidden", "");
-    else footerSocials.removeAttribute("hidden");
+  if (window.SiteChrome?.applyFooter) {
+    SiteChrome.applyFooter(cmsState.footer || {}, settings, info);
   }
 }
 
 function applyFooterCms(sections = {}, settings = {}) {
   cmsState.footer = sections;
   applyBrandSettings(settings);
-
   setSectionVisible(document.getElementById("siteFooter"), sections.brand?.enabled !== "0");
-
-  const navCols = document.getElementById("footerNavCols");
-  if (navCols && sections.navigation?.enabled !== "0") {
-    const columns = parseJson(sections.navigation?.columns_json);
-    navCols.innerHTML = columns.map((col) => `
-      <div>
-        <h3>${escapeHtml(col.title || "")}</h3>
-        ${(col.links || []).map((link) => `<a href="${escapeHtml(link.url || "#")}">${escapeHtml(link.label || "")}</a>`).join("")}
-      </div>`).join("");
-  } else if (navCols) {
-    navCols.innerHTML = "";
-  }
-
-  const newsletter = sections.newsletter || {};
-  const newsletterEl = document.getElementById("footerNewsletter");
-  setSectionVisible(newsletterEl, newsletter.enabled === "1");
-  if (newsletterEl && newsletter.enabled === "1") {
-    const title = document.getElementById("footerNewsletterTitle");
-    const subtitle = document.getElementById("footerNewsletterSubtitle");
-    const input = document.getElementById("footerNewsletterInput");
-    const button = document.getElementById("footerNewsletterButton");
-    if (title && newsletter.title) title.textContent = newsletter.title;
-    if (subtitle) {
-      subtitle.textContent = newsletter.subtitle || "";
-      subtitle.hidden = !newsletter.subtitle;
-    }
-    if (input && newsletter.placeholder) input.placeholder = newsletter.placeholder;
-    if (button && newsletter.button_text) button.textContent = newsletter.button_text;
-  }
-
-  const bottom = sections.bottom_bar || {};
-  const policyLinks = document.getElementById("footerPolicyLinks");
-  if (policyLinks && bottom.enabled !== "0") {
-    policyLinks.innerHTML = [
-      bottom.privacy_url ? `<a href="${escapeHtml(bottom.privacy_url)}">Privacy Policy</a>` : "",
-      bottom.terms_url ? `<a href="${escapeHtml(bottom.terms_url)}">Terms</a>` : "",
-      bottom.cookie_url ? `<a href="${escapeHtml(bottom.cookie_url)}">Cookies</a>` : "",
-    ].filter(Boolean).join("");
+  if (window.SiteChrome?.applyFooter) {
+    SiteChrome.applyFooter(sections, settings, cmsState.contactInfo || {});
   }
 }
 
@@ -776,23 +675,10 @@ function applyPackagesPageCms(sections = {}) {
   const cta = sections.cta || {};
 
   const heroEl = document.getElementById("packagesHero");
-  setSectionVisible(heroEl, hero.enabled !== "0");
-  if (heroEl && hero.enabled !== "0") {
-    const bg = document.getElementById("packagesHeroBg");
-    const title = document.getElementById("packagesHeroTitle");
-    const subtitle = document.getElementById("packagesHeroSubtitle");
-    const searchWrap = document.getElementById("packagesSearchWrap");
-    const search = document.getElementById("packagesSearch");
-    if (bg && hero.background_image) bg.style.backgroundImage = bgUrl(hero.background_image, cmsState.packagesPageUpdatedAt);
-    if (title && hero.title) title.textContent = hero.title;
-    if (subtitle && hero.subtitle) subtitle.textContent = hero.subtitle;
-    setSectionVisible(searchWrap, hero.show_search !== "0");
-    if (search && hero.search_placeholder) search.placeholder = hero.search_placeholder;
-  }
+  setSectionVisible(heroEl, false);
 
   const heading = document.getElementById("packagesHeading");
-  if (heading && hero.enabled !== "0") heading.setAttribute("hidden", "");
-  else heading?.removeAttribute("hidden");
+  heading?.removeAttribute("hidden");
 
   const tabsEl = document.getElementById("packageCategoryTabs");
   if (tabsEl && categories.show_tabs !== "0") {
@@ -831,14 +717,68 @@ function applyPackagesPageCms(sections = {}) {
 
   const grid = document.getElementById("packageGrid");
   if (grid) {
-    if (window.innerWidth > 900 && listing.grid_columns) {
-      grid.style.gridTemplateColumns = `repeat(${Math.min(parseInt(listing.grid_columns, 10) || 3, 4)}, minmax(0, 1fr))`;
-    } else {
-      grid.style.gridTemplateColumns = "";
-    }
+    grid.style.removeProperty("grid-template-columns");
   }
 
   renderPackageGrid();
+}
+
+function packageCountryLabel(pkg) {
+  const badge = (pkg.badge || "").trim();
+  const countryNames = ["ITALY", "FRANCE", "SCOTLAND", "ENGLAND", "SWITZERLAND", "SPAIN", "GERMANY", "IRELAND", "AUSTRIA", "BELGIUM", "NETHERLANDS", "PORTUGAL"];
+  if (countryNames.includes(badge.toUpperCase())) return badge.toUpperCase();
+
+  const text = `${pkg.name} ${pkg.tagline || ""} ${pkg.description || ""}`.toLowerCase();
+  const map = [
+    ["italian", "ITALY"], ["italy", "ITALY"],
+    ["french", "FRANCE"], ["france", "FRANCE"], ["riviera", "FRANCE"], ["côte", "FRANCE"],
+    ["scottish", "SCOTLAND"], ["scotland", "SCOTLAND"], ["highlands", "SCOTLAND"],
+    ["london", "ENGLAND"], ["england", "ENGLAND"],
+    ["swiss", "SWITZERLAND"], ["switzerland", "SWITZERLAND"], ["alps", "SWITZERLAND"],
+    ["dublin", "IRELAND"], ["irish", "IRELAND"],
+    ["amsterdam", "NETHERLANDS"], ["nordic", "NORDIC"],
+  ];
+  for (const [key, label] of map) {
+    if (text.includes(key)) return label;
+  }
+  return badge && badge.length <= 14 ? badge.toUpperCase() : "EUROPE";
+}
+
+const PACKAGE_DISPLAY_ORDER = [
+  "italian-heritage-tour",
+  "french-riviera-retreat",
+  "scottish-highlands-journey",
+  "london-royal-escape",
+  "swiss-alps-experience",
+];
+
+function sortPackagesForDisplay(packages) {
+  return [...packages].sort((a, b) => {
+    const ai = PACKAGE_DISPLAY_ORDER.indexOf(a.slug);
+    const bi = PACKAGE_DISPLAY_ORDER.indexOf(b.slug);
+    const ar = ai === -1 ? 999 : ai;
+    const br = bi === -1 ? 999 : bi;
+    if (ar !== br) return ar - br;
+    return Number(b.featured || 0) - Number(a.featured || 0);
+  });
+}
+
+function featuredExperienceCard(pkg) {
+  const image = assetUrl(pkg.image_url, pkg.updated_at) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
+  const detailUrl = `/package/${encodeURIComponent(pkg.slug || pkg.id)}`;
+  const country = packageCountryLabel(pkg);
+  const description = truncateText(pkg.tagline || pkg.description, 130);
+  return `
+    <a class="featured-card featured-experience-card package-card-link" href="${escapeHtml(detailUrl)}">
+      <div class="featured-card-media">
+        <img class="media-cover" src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" loading="lazy" />
+      </div>
+      <div class="featured-card-body">
+        <span class="featured-country-tag">${escapeHtml(country)}</span>
+        <h3>${escapeHtml(pkg.name)}</h3>
+        <p>${escapeHtml(description)}</p>
+      </div>
+    </a>`;
 }
 
 function packageCard(pkg, listing = {}) {
@@ -847,7 +787,7 @@ function packageCard(pkg, listing = {}) {
   const duration = pkg.duration || "Custom itinerary";
   const showPrice = listing.show_price !== "0";
   const showDuration = listing.show_duration !== "0";
-  const detailUrl = `package-detail.html?slug=${encodeURIComponent(pkg.slug || pkg.id)}`;
+  const detailUrl = `/package/${encodeURIComponent(pkg.slug || pkg.id)}`;
   return `
     <a class="featured-card package-card-link" href="${escapeHtml(detailUrl)}">
       <img class="media-cover" src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" loading="lazy" />
@@ -866,8 +806,8 @@ function renderPackageGrid() {
   const grid = document.getElementById("packageGrid");
   if (!grid) return;
   const listing = cmsState.packagesPage?.listing || {};
-  const limit = parseInt(listing.packages_per_page || "12", 10);
-  let packages = cmsState.packages || [];
+  const limit = Math.min(parseInt(listing.packages_per_page || "5", 10), 5);
+  let packages = cmsState.packages?.length ? cmsState.packages : getDefaultPackages();
 
   if (activePackageCategory !== "all") {
     packages = packages.filter((pkg) => {
@@ -886,10 +826,12 @@ function renderPackageGrid() {
   }
 
   if (!packages.length) {
-    grid.innerHTML = `<p class="packages-empty">No packages published yet. Add packages in the admin panel.</p>`;
-    return;
+    packages = getDefaultPackages();
   }
-  grid.innerHTML = packages.slice(0, limit).map((pkg) => packageCard(pkg, listing)).join("");
+
+  packages = sortPackagesForDisplay(packages);
+  grid.style.removeProperty("grid-template-columns");
+  grid.innerHTML = packages.slice(0, limit).map((pkg) => featuredExperienceCard(pkg)).join("");
 }
 
 function blogCard(post, listing = {}) {
@@ -947,15 +889,28 @@ function renderBlogGrid() {
   }
 }
 
+function getDefaultPackages() {
+  return window.CALEDOR_PACKAGE_DEFAULTS?.getFeatured?.() || [];
+}
+
+function mergePackageList(apiPackages = []) {
+  const defaults = getDefaultPackages();
+  if (!apiPackages.length) return defaults;
+  const bySlug = new Map(defaults.map((p) => [p.slug, p]));
+  apiPackages.forEach((p) => bySlug.set(p.slug, { ...bySlug.get(p.slug), ...p }));
+  return sortPackagesForDisplay(Array.from(bySlug.values()));
+}
+
 async function loadPackages() {
   try {
     const data = await fetchJson("/packages?active=true");
-    cmsState.packages = data.packages || [];
-    renderPackageGrid();
-    applyFeaturedToursSection(cmsState.home?.featured_tours || {});
+    cmsState.packages = mergePackageList(data.packages || []);
   } catch (err) {
     console.error("loadPackages:", err);
+    cmsState.packages = getDefaultPackages();
   }
+  renderPackageGrid();
+  applyFeaturedToursSection(cmsState.home?.featured_tours || {});
 }
 
 async function loadBlogPosts() {
@@ -1068,6 +1023,16 @@ async function loadGallery() {
   }
 }
 
+function resolveScotlandItems(section = {}) {
+  const byLayout = new Map(SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => [item.layout, { ...item }]));
+  parseJson(section.items_json).forEach((item) => {
+    if (item?.image && item?.label && SCOTLAND_LAYOUT_CLASSES[item.layout]) {
+      byLayout.set(item.layout, { ...byLayout.get(item.layout), ...item });
+    }
+  });
+  return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
+}
+
 function applyScotlandAttractionsSection(section = {}) {
   const root = document.getElementById("scotlandAttractionsSection") || document.getElementById("services");
   setSectionVisible(root, section.enabled !== "0");
@@ -1080,8 +1045,7 @@ function applyScotlandAttractionsSection(section = {}) {
 
   const grid = document.getElementById("scotlandAttractionsGrid");
   if (!grid) return;
-  const items = parseJson(section.items_json);
-  const useItems = SCOTLAND_ATTRACTIONS_DEFAULTS;
+  const useItems = resolveScotlandItems(section);
   if (!useItems.length) return;
 
   grid.innerHTML = useItems.map((item) => {
@@ -1267,10 +1231,8 @@ async function loadCmsHome() {
     applyGallerySection(sections.gallery_section || {});
     applyHomeSections(sections);
     const packagesKicker = document.getElementById("packagesKicker");
-    const packagesTitle = document.getElementById("packagesTitle");
     const packagesSubtitle = document.getElementById("packagesSubtitle");
     if (packagesKicker && sections.packages_heading?.kicker) packagesKicker.textContent = sections.packages_heading.kicker;
-    if (packagesTitle && sections.packages_heading?.title) packagesTitle.textContent = sections.packages_heading.title;
     if (packagesSubtitle && sections.packages_heading?.subtitle) packagesSubtitle.textContent = sections.packages_heading.subtitle;
   } catch {
     // fallback to static hero
@@ -1283,9 +1245,10 @@ async function loadCmsAbout() {
     cmsState.about = data.sections || {};
     cmsState.aboutUpdatedAt = data.updated_at || Date.now();
     if (data.updated_at) cmsRevision = String(data.updated_at);
-    applyAboutContent(data.sections || {});
-  } catch {
-    // keep static
+    applyAboutContent(cmsState.about);
+  } catch (err) {
+    console.warn("loadCmsAbout:", err);
+    if (cmsState.about?.team) renderTeamGrid(cmsState.about.team);
   }
 }
 
@@ -1494,23 +1457,14 @@ function bindProposalForm(formConfig = {}) {
 
 function bindChatBubble() {
   document.querySelector(".chat-bubble")?.addEventListener("click", () => {
-    window.location.hash = "#contact";
+    window.location.hash = "#proposal";
   });
 }
 
 function observeSections() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-
-  document.querySelectorAll(".section-light, .section-dark").forEach((section) => {
-    observer.observe(section);
-  });
+  if (window.SiteChrome?.initScrollReveal) {
+    SiteChrome.initScrollReveal();
+  }
 
   const hero = document.querySelector(".hero");
   if (hero) {
@@ -1617,6 +1571,9 @@ async function init() {
   } finally {
     document.body.classList.remove("is-loading");
     document.body.classList.add("cms-ready");
+    if (window.SiteChrome?.initScrollReveal) {
+      window.SiteChrome.initScrollReveal();
+    }
   }
 }
 

@@ -18,14 +18,12 @@ const routes = [
   { id: "overview", label: "Dashboard", icon: "dashboard", title: "Dashboard Overview", crumbs: ["Admin", "Overview"] },
   { id: "cms-settings/home", label: "CMS Settings", icon: "settings", title: "CMS Settings", crumbs: ["Admin", "CMS Settings"] },
   { id: "package-settings", label: "Package Settings", icon: "package", title: "Package Settings", crumbs: ["Admin", "Package Settings"] },
-  { id: "banner-settings", label: "Banner Settings", icon: "banner", title: "Banner Settings", crumbs: ["Admin", "Banner Settings"] },
   { id: "user-management", label: "User Management", icon: "users", title: "User Management", crumbs: ["Admin", "User Management"] },
   { id: "booking-management", label: "Booking Management", icon: "booking", title: "Booking Management", crumbs: ["Admin", "Booking Management"] },
   { id: "gallery", label: "Gallery", icon: "gallery", title: "Gallery", crumbs: ["Admin", "Gallery"] },
   { id: "faq-management", label: "FAQ Management", icon: "faq", title: "FAQ Management", crumbs: ["Admin", "FAQ Management"] },
   { id: "seo-settings", label: "SEO Settings", icon: "seo", title: "SEO Settings", crumbs: ["Admin", "SEO Settings"] },
   { id: "notifications", label: "Notifications", icon: "bell", title: "Notifications", crumbs: ["Admin", "Notifications"] },
-  { id: "analytics", label: "Analytics", icon: "analytics", title: "Analytics", crumbs: ["Admin", "Analytics"] },
 ];
 
 const cmsTabs = [
@@ -33,7 +31,7 @@ const cmsTabs = [
   { id: "about-us", label: "About Us" },
   { id: "contact", label: "Contact" },
   { id: "blog", label: "Blog" },
-  { id: "packages-page", label: "Packages Page" },
+  { id: "packages-page", label: "Featured Experiences" },
   { id: "footer", label: "Footer" },
 ];
 
@@ -312,6 +310,7 @@ async function overviewView() {
   return `
     <section class="content-grid">
       ${dashboardStats(stats)}
+      <p class="settings-copy" style="margin:0 0 12px">Charts below use illustrative sample data. Booking stats and the recent bookings table are live.</p>
       <div class="overview-grid">
         ${chartView()}
         ${distributionView()}
@@ -415,14 +414,6 @@ async function saveSeoSettings() {
   await api("/settings", { method: "PUT", body: JSON.stringify({ settings }) });
 }
 
-async function saveBanner() {
-  const input = document.getElementById("img-hero-background_image")
-    || document.querySelector('[data-cms-section="hero"][data-cms-key="background_image"]');
-  if (!input) return;
-  const sections = { hero: { background_image: input.value } };
-  await api("/cms/home", { method: "PUT", body: JSON.stringify({ sections }) });
-}
-
 async function saveFaqSection() {
   const viewEl = document.getElementById("view");
   const sections = window.CmsSchema.collectCms(viewEl);
@@ -441,10 +432,6 @@ function simpleSection(title, subtitle, cards = [], body = "") {
 
 function packageView() {
   return window.AdminEntities.packagesView(api);
-}
-
-function bannerView() {
-  return window.AdminEntities.bannerView(api);
 }
 
 function userView() {
@@ -478,163 +465,6 @@ function notificationsView() {
   return window.AdminEntities.notificationsView(api);
 }
 
-function analyticsView() {
-  return `
-    <section class="content-grid">
-      <div class="stats-grid">
-        <article class="stat-card"><div class="stat-label">Sessions</div><div class="stat-value">12.8k</div><div class="stat-change">+9.2%</div></article>
-        <article class="stat-card"><div class="stat-label">Leads</div><div class="stat-value">426</div><div class="stat-change">+16.5%</div></article>
-        <article class="stat-card"><div class="stat-label">Conversion</div><div class="stat-value">4.8%</div><div class="stat-change">+1.4%</div></article>
-        <article class="stat-card"><div class="stat-label">Bounce Rate</div><div class="stat-value">28%</div><div class="stat-change down">-3.1%</div></article>
-      </div>
-      <div class="overview-grid">
-        ${chartView()}
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <h2 class="panel-title">Channel Mix</h2>
-              <p class="panel-subtitle">Traffic by source</p>
-            </div>
-          </div>
-          <div class="distribution">
-            <div class="dist-row"><div class="dist-label"><span>Organic</span><strong>48%</strong></div><div class="track"><span style="width:48%; background:#f1c61e"></span></div></div>
-            <div class="dist-row"><div class="dist-label"><span>Paid</span><strong>28%</strong></div><div class="track"><span style="width:28%; background:#4e89f7"></span></div></div>
-            <div class="dist-row"><div class="dist-label"><span>Direct</span><strong>16%</strong></div><div class="track"><span style="width:16%; background:#18c58f"></span></div></div>
-            <div class="dist-row"><div class="dist-label"><span>Referral</span><strong>8%</strong></div><div class="track"><span style="width:8%; background:#ef5b59"></span></div></div>
-          </div>
-        </div>
-      </div>
-    </section>`;
-}
-
-function packagesPageView() {
-  return `
-    <section class="content-grid">
-      <div class="tabs">
-        <span class="tab active" style="cursor:default;">Packages Page</span>
-      </div>
-      ${section(
-        "Packages Page Hero",
-        "Top banner for the packages listing",
-        `
-          <div class="form-grid">
-            ${field("Hero Title", "Packages")}
-            ${field("Hero Subtitle", "Curated journeys across the UK and Europe")}
-            ${imageUploader("Hero Image", "Recommended size: 1440 x 1024 px")}
-          </div>
-        `
-      )}
-      ${section(
-        "Filter & Search Settings",
-        "Controls for the packages listing page",
-        `
-          <div class="form-grid">
-            ${selectField("Primary Filter", ["Type", "Left Column"], "Type")}
-            ${field("Search Placeholder", "Search by destination")}
-            ${selectField("Show Result Count", ["Yes", "No"], "Yes")}
-            ${field("Default Sort", "Most Popular")}
-          </div>
-        `
-      )}
-      ${section(
-        "Listing Display",
-        "Grid and card presentation controls",
-        `
-          <div class="form-grid">
-            ${selectField("Layout", ["Grid", "List"], "Grid")}
-            ${selectField("Cards per Row", ["2", "3", "4"], "3")}
-            ${field("Show Package Badge", "Yes")}
-            ${field("Show Booking Button", "Yes")}
-          </div>
-        `
-      )}
-      ${section(
-        "Category Tabs",
-        "Destination tabs shown at the top of the listing",
-        `
-          <div class="mini-list">
-            <div class="mini-card"><strong>Adventure & Trekking</strong><span>18 packages</span></div>
-            <div class="mini-card"><strong>Luxury Escapes</strong><span>7 packages</span></div>
-            <div class="mini-card"><strong>Cultural Heritage</strong><span>9 packages</span></div>
-          </div>
-        `
-      )}
-      ${section(
-        "Sticky Call to Action",
-        "Bottom CTA card for the listing page",
-        `
-          <div class="form-grid">
-            ${field("CTA Title", "Not sure what fits your brief?")}
-            ${field("CTA Button", "Speak to Us")}
-            ${field("CTA Link", "/contact")}
-          </div>
-        `
-      )}
-    </section>`;
-}
-
-function footerView() {
-  return `
-    <section class="content-grid">
-      ${section(
-        "Brand Details",
-        "Footer brand block and short description",
-        `
-          <div class="form-grid">
-            ${field("Brand Name", "Caledor DMC")}
-            ${field("Tagline", "Trusted DMC partner for UK & Europe")}
-            ${textareaField("Description", "Premium destination management for the UK and Europe.")}
-          </div>
-        `
-      )}
-      ${section(
-        "Footer Links",
-        "Main footer navigation columns",
-        `
-          <div class="mini-list">
-            <div class="mini-card"><strong>Company</strong><span>About, Team, Careers</span></div>
-            <div class="mini-card"><strong>Explore</strong><span>Destinations, Packages, Blog</span></div>
-            <div class="mini-card"><strong>Support</strong><span>FAQ, Contact, Terms</span></div>
-          </div>
-        `
-      )}
-      ${section(
-        "Footer Contact Details",
-        "Address, email, and hotline settings",
-        `
-          <div class="form-grid">
-            ${field("Email", "info@caledor.com")}
-            ${field("Phone", "+44 20 0000 0000")}
-            ${field("Address", "12 Waterfront Lane, London")}
-            ${field("Show Map Link", "Yes")}
-          </div>
-        `
-      )}
-      ${section(
-        "Newsletter Signup",
-        "Footer newsletter call to action",
-        `
-          <div class="form-grid">
-            ${field("Newsletter Title", "Stay inspired")}
-            ${field("Newsletter Button", "Subscribe")}
-          </div>
-        `
-      )}
-      ${section(
-        "Bottom Bar",
-        "Copyright and policy links",
-        `
-          <div class="form-grid">
-            ${field("Copyright Text", "All rights reserved.")}
-            ${field("Privacy Policy Link", "/privacy")}
-            ${field("Terms Link", "/terms")}
-            ${field("Cookie Link", "/cookie")}
-          </div>
-        `
-      )}
-    </section>`;
-}
-
 function renderSidebar(active) {
   sidebarNav.innerHTML = routes
     .map((route) => `
@@ -647,8 +477,17 @@ function renderSidebar(active) {
 
 function getRoute() {
   const raw = window.location.hash.replace(/^#/, "") || "overview";
+  if (raw === "banner-settings") {
+    window.location.replace("#cms-settings/home");
+    return { section: "cms-settings", tab: "home", raw: "cms-settings/home" };
+  }
   const [section, tab] = raw.split("/");
   return { section, tab: tab || "home", raw };
+}
+
+function sitePublicUrl(hash = "") {
+  const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
+  return `${window.location.origin}${root}/${hash ? `#${hash.replace(/^#/, "")}` : ""}`;
 }
 
 function setLoggedIn(isLoggedIn) {
@@ -720,16 +559,14 @@ function setTopbar(route) {
 
   const actionMap = {
     overview: `${actionButton("Last 30 Days", "secondary", "last-30-days")}${actionButton("Export Report", "primary", "export-report")}`,
-    "cms-settings": `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    "package-settings": `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    "banner-settings": `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    "user-management": `${actionButton("Invite User", "secondary", "invite-user")}${actionButton("Save Changes", "primary", "save-changes")}`,
+    "cms-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
+    "package-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
+    "user-management": "",
     "booking-management": `${actionButton("Filter", "secondary", "filter")}${actionButton("Export", "primary", "export")}`,
     gallery: `${actionButton("Upload", "secondary", "upload")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    "faq-management": `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Section Settings", "primary", "save-faq-section")}`,
-    "seo-settings": `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    notifications: `${actionButton("Preview", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
-    analytics: `${actionButton("Last 30 Days", "secondary", "last-30-days")}${actionButton("Export Report", "primary", "export-report")}`,
+    "faq-management": `${actionButton("Preview FAQ", "secondary", "preview-faq")}${actionButton("Save Section Settings", "primary", "save-faq-section")}`,
+    "seo-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
+    notifications: "",
   };
 
   topbarActions.innerHTML = actionMap[route.section] || actionButton("Save Changes", "primary", "save-changes");
@@ -758,11 +595,6 @@ async function handleSaveAction() {
     if (routeInfo.section === "seo-settings") {
       await saveSeoSettings();
       showToast("SEO settings saved");
-      return;
-    }
-    if (routeInfo.section === "banner-settings") {
-      await saveBanner();
-      showToast("Banner saved — homepage hero updated");
       return;
     }
     if (routeInfo.section === "faq-management") {
@@ -903,21 +735,16 @@ function wireEntityHandlers() {
       return;
     }
       if (action === "preview") {
-        window.open("/", "_blank");
+        window.open(sitePublicUrl(), "_blank");
+        return;
+      }
+      if (action === "preview-faq") {
+        window.open(sitePublicUrl("faq"), "_blank");
         return;
       }
       if (action === "discard-changes") {
         render();
         showToast("Changes discarded");
-        return;
-      }
-      if (action === "save-banner") {
-        try {
-          await saveBanner();
-          showToast("Banner saved");
-        } catch (err) {
-          showToast(err.message);
-        }
         return;
       }
       if (action === "delete-package") {
@@ -1108,6 +935,11 @@ function connectAdminSocket() {
   });
 }
 
+function packagePublicUrl(slug) {
+  const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
+  return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
+}
+
 async function render() {
   if (!token) return;
 
@@ -1119,20 +951,18 @@ async function render() {
     ? { section: "cms-settings", title: "CMS Settings", crumbs: ["Admin", "CMS Settings"] }
     : { ...(routes.find((item) => item.id === routeInfo.section) || routes[0]), section: routeInfo.section };
   setTopbar(route);
-  stickyFooter.hidden = !["cms-settings", "package-settings", "banner-settings"].includes(routeInfo.section);
+  stickyFooter.hidden = !["cms-settings", "package-settings"].includes(routeInfo.section);
 
   const views = {
     overview: overviewView,
     "cms-settings": () => cmsView(routeInfo.tab),
     "package-settings": packageView,
-    "banner-settings": bannerView,
     "user-management": userView,
     "booking-management": bookingsView,
     gallery: galleryView,
     "faq-management": faqManagementView,
     "seo-settings": seoView,
     notifications: notificationsView,
-    analytics: analyticsView,
   };
 
   const viewRenderer = views[routeInfo.section] || overviewView;
@@ -1158,7 +988,7 @@ async function render() {
   if (routeInfo.section === "cms-settings" && routeInfo.tab === "packages-page") {
     document.getElementById("cmsPackagePreviewSelect")?.addEventListener("change", (e) => {
       const link = document.getElementById("cmsPackagePreviewLink");
-      if (link && e.target.value) link.href = `../package-detail.html?slug=${encodeURIComponent(e.target.value)}`;
+      if (link && e.target.value) link.href = packagePublicUrl(e.target.value);
     });
   }
 }

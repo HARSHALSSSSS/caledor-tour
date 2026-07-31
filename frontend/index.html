@@ -11,9 +11,18 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260731-hero" />
     <style>
-      body.is-loading main { visibility: hidden; }
+      body.is-loading main {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      body.cms-ready main {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.35s ease;
+      }
     </style>
   </head>
   <body class="is-loading">
@@ -23,11 +32,11 @@
       </a>
       <nav class="desktop-nav" aria-label="Primary navigation">
         <a href="#services">Experiences</a>
-        <a href="#mice" class="nav-accent">MICE & Corporate</a>
+        <a href="#mice" class="nav-highlight">MICE & Corporate</a>
         <a href="#packages">Packages</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <a class="header-cta" href="#contact">Enquire Now</a>
+      <a class="header-cta" href="#proposal">Enquire Now</a>
       <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -35,10 +44,10 @@
     <div class="mobile-nav-panel" id="mobileNav" hidden>
       <nav aria-label="Mobile navigation">
         <a href="#services">Experiences</a>
-        <a href="#mice">MICE & Corporate</a>
+        <a href="#mice" class="nav-highlight">MICE & Corporate</a>
         <a href="#packages">Packages</a>
         <a href="#faq">FAQ</a>
-        <a class="button primary" href="#contact">Enquire Now</a>
+        <a class="button primary" href="#proposal">Enquire Now</a>
       </nav>
     </div>
 
@@ -326,7 +335,7 @@
         </div>
       </section>
 
-      <section class="packages section-light" id="packages">
+      <section class="packages packages-featured section-light" id="packages">
         <div class="packages-hero" id="packagesHero" hidden>
           <div class="packages-hero-bg" id="packagesHeroBg"></div>
           <div class="packages-hero-content">
@@ -338,14 +347,16 @@
             </div>
           </div>
         </div>
-        <div class="section-heading centered" id="packagesHeading">
-          <p class="section-kicker" id="packagesKicker">Our Packages</p>
-          <h2 id="packagesTitle">Curated journeys across the UK and Europe</h2>
-          <p id="packagesSubtitle">Every package below is managed from the admin panel.</p>
+        <div class="featured-intro centered" id="packagesHeading">
+          <p class="section-kicker featured-kicker" id="packagesKicker">Featured Experiences</p>
+          <p class="featured-subtitle" id="packagesSubtitle">
+            Curated journeys across the UK and Europe, crafted for unforgettable moments and refined travel.
+          </p>
+          <span class="featured-intro-rule" aria-hidden="true"></span>
         </div>
         <div class="package-tabs" id="packageCategoryTabs" hidden></div>
         <p class="packages-results-count" id="packagesResultsCount" hidden></p>
-        <div class="featured-grid package-grid" id="packageGrid"></div>
+        <div class="featured-experiences-grid" id="packageGrid"></div>
         <div class="packages-cta" id="packagesCta" hidden>
           <h3 id="packagesCtaTitle">Not Sure Which Package?</h3>
           <p id="packagesCtaSubtitle">Our travel experts will help you plan the perfect trip</p>
@@ -427,15 +438,16 @@
         </div>
       </section>
 
-      <section class="featured section-light" id="featuredToursSection">
+      <section class="featured section-light" id="featuredToursSection" hidden>
         <div class="featured-intro centered">
           <p class="section-kicker featured-kicker" id="featuredToursKicker">Featured Experiences</p>
           <p class="featured-subtitle" id="featuredToursSubtitle">
             Curated journeys across the UK and Europe, crafted for
             unforgettable moments and refined travel.
           </p>
+          <span class="featured-intro-rule" aria-hidden="true"></span>
         </div>
-        <div class="featured-grid popular-tours-grid" id="featuredToursGrid"></div>
+        <div class="featured-experiences-grid" id="featuredToursGrid"></div>
       </section>
 
       <section class="mice section-dark" id="mice">
@@ -680,25 +692,13 @@
         </div>
       </section>
 
-      <section class="contact contact-cta contact-cta--art section-dark" id="contact">
+      <section class="contact contact-cta section-dark" id="contact">
         <div class="contact-bg" id="contactHeroBg" aria-hidden="true"></div>
         <div class="contact-cta-content">
           <h2 id="contactHeroTitle">Let&rsquo;s Create Exceptional UK &amp; Europe<br />Experiences Together</h2>
           <p id="contactHeroSubtitle">Partner with a DMC that understands luxury, reliability, and bespoke operations.</p>
-          <a class="button ghost contact-button" id="contactHeroButton" href="mailto:info@caledor.com?subject=Request%20Proposal">Request Proposal</a>
+          <a class="button ghost contact-button" id="contactHeroButton" href="#proposal">Request Proposal</a>
         </div>
-      </section>
-
-      <section class="contact-info section-light" id="contactInfoSection" hidden>
-        <div class="section-heading centered">
-          <h2>Contact Information</h2>
-        </div>
-        <div class="contact-info-grid" id="contactInfoGrid"></div>
-        <div class="contact-socials" id="contactSocials"></div>
-      </section>
-
-      <section class="contact-map section-light" id="contactMapSection" hidden>
-        <iframe id="contactMapFrame" title="Office location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </section>
 
       <section class="request-proposal section-dark" id="proposal">
@@ -715,46 +715,47 @@
     </main>
 
     <footer class="footer section-dark" id="siteFooter">
-      <div class="footer-grid" id="footerGrid">
-        <div id="footerBrandCol">
-          <a class="brand brand-footer" href="#top" aria-label="Caledor DMC home">
-            <img class="brand-logo brand-logo-sm" src="assets/brand-logo.png" alt="Caledor DMC" decoding="async" />
-          </a>
-          <p id="footerDescription">Trusted DMC partner for customized UK and Europe travel programs.</p>
-        </div>
-        <div id="footerNavCols"></div>
-        <div id="footerContactCol">
-          <h3>Contact</h3>
-          <p id="footerEmail">info@caledor.com</p>
-          <p id="footerPhone">+44 20 0000 0000</p>
-          <p id="footerAddress">12 Waterfront Lane, London, United Kingdom</p>
-        </div>
-        <div id="footerSocialCol">
-          <h3>Follow</h3>
-          <div class="socials" id="footerSocials">
-            <a href="#" aria-label="Facebook">f</a>
-            <a href="#" aria-label="Instagram">ig</a>
-            <a href="#" aria-label="LinkedIn">in</a>
+      <div class="footer-shell">
+        <div class="footer-top">
+          <div class="footer-brand-block" id="footerBrandCol">
+            <h3 class="footer-brand-title" id="footerBrandName">Caledor DMC</h3>
+            <p id="footerDescription">Your trusted partner for luxury destination management across the UK and Europe.</p>
+            <p class="footer-brand-legal" id="footerLegal">&copy; 2026 Caledor DMC Ltd (SC893789). All rights reserved.</p>
+            <div class="footer-newsletter" id="footerNewsletter">
+              <h3 id="footerNewsletterTitle">NEWSLETTER</h3>
+              <form class="newsletter-form" id="footerNewsletterForm">
+                <input type="email" id="footerNewsletterInput" placeholder="Email address" />
+                <button type="submit" id="footerNewsletterButton">Subscribe</button>
+              </form>
+            </div>
+          </div>
+          <div class="footer-columns" id="footerNavCols"></div>
+          <div class="footer-contact-block footer-col" id="footerContactCol">
+            <h3>Contact</h3>
+            <p id="footerAddress">4 Lynedoch Place, Glasgow, Scotland, G3 6AB</p>
+            <p id="footerPhonePrimary">+91 97693 50333</p>
+            <p id="footerPhoneSecondary">+44 7917 854171</p>
+            <p id="footerEmailPrimary">neha.sawant@caledordmc.co.uk</p>
+            <p id="footerEmailSecondary">alok.singh@caledordmc.co.uk</p>
           </div>
         </div>
-      </div>
-      <div class="footer-newsletter" id="footerNewsletter" hidden>
-        <h3 id="footerNewsletterTitle">Stay inspired</h3>
-        <p id="footerNewsletterSubtitle"></p>
-        <form class="newsletter-form" id="footerNewsletterForm">
-          <input type="email" id="footerNewsletterInput" placeholder="Your email address" />
-          <button type="submit" id="footerNewsletterButton">Subscribe</button>
-        </form>
-      </div>
-      <div class="footer-bottom" id="footerBottom">
-        <p class="copyright" id="footerCopyright">&copy; 2026 Caledor DMC. All rights reserved.</p>
-        <div class="footer-policy-links" id="footerPolicyLinks"></div>
+        <div class="footer-bottom" id="footerBottom">
+          <p class="copyright" id="footerCopyright">&copy; 2026 Caledor DMC</p>
+          <div class="footer-policy-links" id="footerPolicyLinks"></div>
+          <div class="footer-social-row socials" id="footerSocials">
+            <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm6.5-.75a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg></a>
+            <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 8.75h4v12.25H3V8.75zm7 0h3.84v1.68h.05c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.67 4.8 6.14v6.49H15.6v-5.75c0-1.37-.03-3.13-1.9-3.13-1.92 0-2.21 1.5-2.21 3.05v5.83H10V8.75z"/></svg></a>
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2H21.5l-7.5 8.573L22.5 22h-6.43l-5.03-6.573L5.2 22H1.94l8.04-9.188L1.5 2h6.59l4.55 6.02L18.244 2zm-1.13 18h1.77L7.01 3.93H5.11L17.114 20z"/></svg></a>
+          </div>
+        </div>
       </div>
     </footer>
 
     <div class="chat-bubble" aria-label="Chat shortcut">S</div>
     <script src="/js/config.js"></script>
+    <script src="/js/site-chrome.js"></script>
+    <script src="/js/package-defaults.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=20260731-hero"></script>
   </body>
 </html>
