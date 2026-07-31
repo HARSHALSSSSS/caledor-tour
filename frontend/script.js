@@ -30,6 +30,12 @@ let blogSearchQuery = "";
 
 let testimonialTimer = null;
 
+function truncateText(text, max = 120) {
+  const value = String(text ?? "").trim();
+  if (value.length <= max) return value;
+  return `${value.slice(0, max).trim()}…`;
+}
+
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
     "&": "&amp;",
@@ -168,10 +174,9 @@ function applyBrandSettings(settings = {}) {
     document.head.appendChild(m);
   }
 
-  const headerBrand = document.querySelector(".site-header .brand-word");
-  const footerBrand = document.querySelector("#footerBrandCol .brand span:last-child");
-  if (headerBrand) headerBrand.innerHTML = `${escapeHtml(brand)} <small>| DMC</small>`;
-  if (footerBrand) footerBrand.textContent = brand;
+  document.querySelectorAll(".brand-logo").forEach((logo) => {
+    logo.alt = brand;
+  });
 
   const footerDesc = document.getElementById("footerDescription");
   if (footerDesc) footerDesc.textContent = general.site_description || tagline;
@@ -696,8 +701,12 @@ function applyPackagesPageCms(sections = {}) {
   }
 
   const grid = document.getElementById("packageGrid");
-  if (grid && listing.grid_columns) {
-    grid.style.gridTemplateColumns = `repeat(${Math.min(parseInt(listing.grid_columns, 10) || 3, 4)}, minmax(0, 1fr))`;
+  if (grid) {
+    if (window.innerWidth > 900 && listing.grid_columns) {
+      grid.style.gridTemplateColumns = `repeat(${Math.min(parseInt(listing.grid_columns, 10) || 3, 4)}, minmax(0, 1fr))`;
+    } else {
+      grid.style.gridTemplateColumns = "";
+    }
   }
 
   renderPackageGrid();
@@ -712,11 +721,11 @@ function packageCard(pkg, listing = {}) {
   const detailUrl = `package-detail.html?slug=${encodeURIComponent(pkg.slug || pkg.id)}`;
   return `
     <a class="featured-card package-card-link" href="${escapeHtml(detailUrl)}">
-      <img src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" />
+      <img class="media-cover" src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" loading="lazy" />
       <div class="featured-card-body">
         <span>${escapeHtml(pkg.badge || pkg.category || "Package")}</span>
         <h3>${escapeHtml(pkg.name)}</h3>
-        <p>${escapeHtml(pkg.tagline || pkg.description || `${duration} package${showPrice ? ` starting at ${price}` : ""}.`)}</p>
+        <p>${escapeHtml(truncateText(pkg.tagline || pkg.description, 110))}</p>
         ${showDuration ? `<small class="pkg-duration">${escapeHtml(duration)}</small>` : ""}
         ${showPrice ? `<strong class="pkg-price">${escapeHtml(price)}</strong>` : ""}
         <span class="pkg-explore">Explore Journey →</span>

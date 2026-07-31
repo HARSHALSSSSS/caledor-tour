@@ -29,6 +29,7 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 .container {
@@ -38,6 +39,11 @@ body {
 
 img {
   display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.media-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -131,26 +137,31 @@ a {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.26rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+  gap: 10px;
+  min-width: 0;
+  line-height: 1;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 44px;
+  max-width: min(156px, 46vw);
+  object-fit: contain;
+  object-position: left center;
+}
+
+.brand-logo-sm {
+  height: 38px;
+  max-width: 140px;
 }
 
 .brand-mark {
-  display: grid;
-  width: 31px;
-  height: 31px;
-  place-items: center;
-  color: var(--gold);
-  background: rgba(12, 22, 42, 0.72);
-  border: 1px solid rgba(202, 169, 87, 0.45);
-  border-radius: 50%;
-  font-size: 1.08rem;
-  font-weight: 700;
-  letter-spacing: 0;
+  display: none;
+}
+
+.brand-word {
+  display: none;
 }
 
 .brand-word small {
@@ -1180,8 +1191,25 @@ p {
 .package-grid .featured-card:nth-child(5) img {
   width: 100%;
   height: auto;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
+  max-height: 240px;
   object-fit: cover;
+}
+
+.package-grid .featured-card-body h3,
+.popular-tours-grid .featured-card-body h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.package-grid .featured-card-body p,
+.popular-tours-grid .featured-card-body p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
 }
 
 .package-grid .featured-card-body {
@@ -3312,4 +3340,251 @@ body.nav-open {
   text-align: center;
   padding: 32px 16px;
   color: rgba(15, 23, 42, 0.62);
+}
+
+/* ── Responsive polish: tablet + mobile ── */
+@media (max-width: 900px) {
+  .container {
+    width: min(var(--max), calc(100% - 32px));
+  }
+
+  .package-grid,
+  .popular-tours-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .hero-content p:not(.eyebrow) {
+    font-size: 0.95rem;
+    padding-inline: 4px;
+  }
+
+  .hero-actions {
+    width: 100%;
+    padding-inline: 4px;
+  }
+
+  .hero-actions .button {
+    flex: 1 1 180px;
+    min-height: 44px;
+  }
+
+  .destination-grid article img,
+  .premium-service-grid article img,
+  .success-grid img,
+  .scotland-tile img,
+  .gallery-cell img,
+  .blog-grid article img,
+  .featured-card img,
+  .media-cover {
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    width: min(var(--max), calc(100% - 24px));
+  }
+
+  .brand-logo {
+    height: 38px;
+    max-width: min(132px, 42vw);
+  }
+
+  .site-header {
+    width: calc(100% - 16px);
+    padding: 8px 12px;
+  }
+
+  .section-dark,
+  .section-light {
+    padding: 56px 16px;
+  }
+
+  .hero {
+    min-height: 620px;
+    padding-top: 108px;
+    padding-bottom: 96px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 9vw, 2.75rem);
+  }
+
+  h2 {
+    font-size: clamp(1.55rem, 6.5vw, 2.2rem);
+  }
+
+  .hero-trust {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    font-size: 0.68rem;
+  }
+
+  .hero-stats {
+    gap: 10px;
+  }
+
+  .hero-stats article {
+    padding: 12px 10px;
+  }
+
+  .package-grid,
+  .popular-tours-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .package-grid .package-card-link,
+  .popular-tours-grid .package-card-link {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-items: stretch;
+    min-height: 0;
+    border-radius: 14px;
+  }
+
+  .package-grid .package-card-link img,
+  .popular-tours-grid .package-card-link img,
+  .package-grid .package-card-link:nth-child(n) img,
+  .popular-tours-grid .package-card-link:nth-child(n) img {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 100%;
+    height: 100%;
+    min-height: 112px;
+    max-height: none;
+    aspect-ratio: 1;
+    border-radius: 14px 0 0 14px;
+  }
+
+  .package-grid .package-card-link .featured-card-body,
+  .popular-tours-grid .package-card-link .featured-card-body {
+    grid-column: 2;
+    padding: 10px 12px 12px;
+    align-self: center;
+    min-width: 0;
+  }
+
+  .package-grid .package-card-link .featured-card-body h3,
+  .popular-tours-grid .package-card-link .featured-card-body h3 {
+    margin-top: 4px;
+    font-size: 1.08rem;
+    line-height: 1.15;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .package-grid .package-card-link .featured-card-body p,
+  .popular-tours-grid .package-card-link .featured-card-body p {
+    margin-top: 4px;
+    font-size: 0.74rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .package-grid .pkg-duration,
+  .package-grid .pkg-price,
+  .package-grid .pkg-explore,
+  .popular-tours-grid .pkg-duration,
+  .popular-tours-grid .pkg-price,
+  .popular-tours-grid .pkg-explore {
+    font-size: 0.72rem;
+  }
+
+  .featured-card:not(.package-card-link) img {
+    height: 190px;
+    aspect-ratio: 16 / 10;
+  }
+
+  .about-split {
+    gap: 24px;
+  }
+
+  .about .feature-grid.two {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .destination-grid,
+  .premium-service-grid,
+  .blog-grid,
+  .contact-form,
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .scotland-attractions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery-grid {
+    columns: 1;
+  }
+
+  .proposal-form,
+  .contact-form {
+    padding: 18px 16px;
+  }
+
+  .button,
+  .header-cta {
+    min-height: 44px;
+    font-size: 0.8rem;
+  }
+
+  .mobile-nav-panel .button.primary {
+    min-height: 46px;
+  }
+
+  .chat-bubble {
+    width: 52px;
+    height: 52px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .packages-hero {
+    min-height: 220px;
+    margin-bottom: 20px;
+    border-radius: 14px;
+  }
+
+  .packages-hero-content {
+    padding: 52px 16px 40px;
+  }
+
+  .packages-search-wrap input,
+  .blog-search-wrap input {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 400px) {
+  .package-grid .package-card-link,
+  .popular-tours-grid .package-card-link {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .package-grid .package-card-link img,
+  .popular-tours-grid .package-card-link img,
+  .package-grid .package-card-link:nth-child(n) img,
+  .popular-tours-grid .package-card-link:nth-child(n) img {
+    min-height: 96px;
+  }
+
+  .hero-trust {
+    grid-template-columns: 1fr;
+  }
+
+  .packages-hero-content {
+    padding: 48px 16px 36px;
+  }
 }
