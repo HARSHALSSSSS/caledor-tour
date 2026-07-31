@@ -210,7 +210,7 @@ window.AdminEntities = (() => {
     return `<section class="content-grid">
       <div class="panel">
         <div class="settings-head">
-          <div><h2 class="settings-title">Notifications</h2><p class="panel-subtitle">Live from contact forms and bookings</p></div>
+          <div><h2 class="settings-title">Notifications</h2><p class="panel-subtitle">Live from contact form submissions</p></div>
           <button class="btn secondary" type="button" data-action="mark-all-read">Mark All Read</button>
         </div>
         <div class="settings-body mini-list">
@@ -252,16 +252,12 @@ window.AdminEntities = (() => {
     </section>`;
   }
 
-  function packagePublicUrl(slug) {
-    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
-    return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
+  function sitePublicUrl(hash = "") {
+    return window.AdminNav?.siteUrl(hash) || `${window.location.origin}/`;
   }
 
-  function sitePublicUrl(hash = "") {
-    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
-    if (!hash) return `${window.location.origin}${root}/`;
-    const clean = String(hash).replace(/^#/, "");
-    return `${window.location.origin}${root}/#${clean}`;
+  function packagePublicUrl(slug) {
+    return window.AdminNav?.packageUrl(slug) || "";
   }
 
   function field(label, placeholder, name, full = false) {

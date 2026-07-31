@@ -413,6 +413,12 @@ textarea {
   box-shadow: 0 8px 20px rgba(24, 197, 143, 0.2);
 }
 
+.btn.danger {
+  color: #fff;
+  background: linear-gradient(135deg, #ef5b59, #d63f3d);
+  box-shadow: 0 8px 20px rgba(239, 91, 89, 0.18);
+}
+
 .btn.ghost {
   color: var(--muted);
   background: transparent;

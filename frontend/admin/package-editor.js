@@ -1,8 +1,9 @@
 /** Package detail editor — itinerary, highlights, gallery, admin form helpers */
 window.PackageEditor = (() => {
+  const nav = () => window.AdminNav;
+
   function packagePublicUrl(slug) {
-    const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
-    return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
+    return nav()?.packageUrl(slug) || "";
   }
 
   function parseJson(raw, fb = []) {
@@ -51,8 +52,10 @@ window.PackageEditor = (() => {
   }
 
   function renderForm(packages = [], selectedId = "") {
+    const selected = packages.find((p) => String(p.id) === String(selectedId)) || packages[0];
     const options = packages.map((p) =>
-      `<option value="${p.id}"${String(p.id) === String(selectedId) ? " selected" : ""}>${esc(p.name)}</option>`).join("");
+      `<option value="${p.id}" data-slug="${esc(p.slug)}"${String(p.id) === String(selectedId || selected?.id) ? " selected" : ""}>${esc(p.name)}</option>`).join("");
+    const previewHref = selected?.slug ? packagePublicUrl(selected.slug) : "#";
 
     return `<section class="content-grid">
       <article class="settings-panel">
@@ -69,7 +72,7 @@ window.PackageEditor = (() => {
               <select id="packageSelect">${options || '<option value="">No packages yet</option>'}</select>
             </div>
             <div class="field-full actions-row">
-              <a class="btn outline sm" id="previewPackageLink" href="#" target="_blank" rel="noopener">Preview Detail Page</a>
+              <a class="btn outline sm" id="previewPackageLink" href="${esc(previewHref)}" target="_blank" rel="noopener" data-action="preview-package-detail"${selected?.slug ? "" : ' aria-disabled="true"'}>Preview Detail Page</a>
               <button class="btn secondary sm" type="button" data-action="reset-package-form">New Package</button>
             </div>
           </div>
@@ -128,6 +131,7 @@ window.PackageEditor = (() => {
 
           <div class="field-full actions-row" style="margin-top:18px">
             <button class="btn primary" type="submit">Save Package</button>
+            <button class="btn danger" type="button" data-action="delete-package" id="deletePackageBtn" hidden>Delete Package</button>
             <label class="toggle-row"><span>Featured</span>
               <input type="checkbox" name="featured" value="1" /></label>
             <label class="toggle-row"><span>Active</span>
@@ -200,10 +204,16 @@ window.PackageEditor = (() => {
     if (window.CmsUI) window.CmsUI.wire(form);
 
     const preview = document.getElementById("previewPackageLink");
-    if (preview && pkg.slug) preview.href = packagePublicUrl(pkg.slug);
+    nav()?.syncPackagePreviewLink("previewPackageLink", pkg.slug || "");
 
     const select = document.getElementById("packageSelect");
     if (select) select.value = String(pkg.id);
+
+    const deleteBtn = document.getElementById("deletePackageBtn");
+    if (deleteBtn) {
+      deleteBtn.hidden = !pkg.id;
+      deleteBtn.dataset.id = pkg.id ? String(pkg.id) : "";
+    }
   }
 
   function fieldValue(form, name) {
@@ -280,10 +290,21 @@ window.PackageEditor = (() => {
     if (select && !select._pkgWired) {
       select._pkgWired = true;
       select.addEventListener("change", async () => {
-        if (!select.value) return;
+        if (!select.value) {
+          nav()?.syncPackagePreviewLink("previewPackageLink", "");
+          return;
+        }
         const { package: pkg } = await api(`/packages/${select.value}`);
         loadIntoForm(pkg);
         if (window.CmsUI) window.CmsUI.wire(document.getElementById("view"));
+      });
+    }
+
+    const slugInput = document.querySelector('#packageForm [name="slug"]');
+    if (slugInput && !slugInput._pkgWired) {
+      slugInput._pkgWired = true;
+      slugInput.addEventListener("input", () => {
+        nav()?.syncPackagePreviewLink("previewPackageLink", slugInput.value.trim());
       });
     }
 

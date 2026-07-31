@@ -620,7 +620,7 @@ window.CmsSchema = (() => {
           </select>
         </div>
         <div class="field-full actions-row">
-          <a class="btn outline sm" id="cmsPackagePreviewLink" href="#" target="_blank" rel="noopener">Open Detail Page</a>
+          <a class="btn outline sm" id="cmsPackagePreviewLink" href="#" target="_blank" rel="noopener" data-action="preview-package-detail" aria-disabled="true">Open Detail Page</a>
           <a class="btn outline sm" href="#package-settings">Edit in Package Settings</a>
         </div>
         <p class="settings-copy">Add and edit packages in <strong>Package Settings</strong>. Itinerary, gallery, and inclusions appear on the public detail page at <code>/package/{slug}</code>.</p>

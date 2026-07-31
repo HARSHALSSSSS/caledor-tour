@@ -19,7 +19,6 @@ const routes = [
   { id: "cms-settings/home", label: "CMS Settings", icon: "settings", title: "CMS Settings", crumbs: ["Admin", "CMS Settings"] },
   { id: "package-settings", label: "Package Settings", icon: "package", title: "Package Settings", crumbs: ["Admin", "Package Settings"] },
   { id: "user-management", label: "User Management", icon: "users", title: "User Management", crumbs: ["Admin", "User Management"] },
-  { id: "booking-management", label: "Booking Management", icon: "booking", title: "Booking Management", crumbs: ["Admin", "Booking Management"] },
   { id: "gallery", label: "Gallery", icon: "gallery", title: "Gallery", crumbs: ["Admin", "Gallery"] },
   { id: "faq-management", label: "FAQ Management", icon: "faq", title: "FAQ Management", crumbs: ["Admin", "FAQ Management"] },
   { id: "notifications", label: "Notifications", icon: "bell", title: "Notifications", crumbs: ["Admin", "Notifications"] },
@@ -47,34 +46,87 @@ const icons = {
   analytics: "M5 19V9M12 19V5M19 19v-7",
 };
 
-const sampleMonths = [
-  ["Jan", 28, 14],
-  ["Feb", 44, 26],
-  ["Mar", 20, 11],
-  ["Apr", 56, 36],
-  ["May", 31, 18],
-  ["Jun", 70, 48],
-  ["Jul", 24, 15],
-  ["Aug", 63, 40],
-  ["Sep", 42, 24],
-  ["Oct", 67, 44],
-  ["Nov", 38, 22],
-  ["Dec", 58, 37],
-];
+async function overviewView() {
+  let stats = {
+    activePackages: 0,
+    totalUsers: 0,
+    unreadContacts: 0,
+    unreadNotifications: 0,
+  };
 
-const sampleBookings = [
-  ["#TRV-9042", "Sarah Jenkins", "Scottish Highlands Luxury Tour", "Oct 12, 2025", "confirmed", "$3,450"],
-  ["#TRV-9041", "Michael Chen", "Swiss Alps Private Retreat", "Oct 15, 2025", "pending", "$5,200"],
-  ["#TRV-9040", "Emma Thompson", "London Royal Escape", "Oct 10, 2025", "completed", "$1,890"],
-  ["#TRV-9039", "David Miller", "Italian Heritage Grand Tour", "Nov 02, 2025", "cancelled", "$4,100"],
-  ["#TRV-9038", "Robert Garcia", "French Riviera Villa Escape", "Oct 22, 2025", "confirmed", "$6,750"],
-];
+  let contacts = [];
+  try {
+    const [live, contactData] = await Promise.all([
+      api("/dashboard/stats"),
+      api("/contact").catch(() => ({ submissions: [] })),
+    ]);
+    stats = { ...stats, ...live };
+    contacts = contactData.submissions || [];
+  } catch {
+    // show empty state
+  }
 
-const sampleNotifs = [
-  { type: "booking", title: "New booking received", message: "Swiss Alps Private Retreat was requested.", created_at: "2026-07-26T09:18:00Z" },
-  { type: "contact", title: "New contact submission", message: "A new partnership enquiry came from London.", created_at: "2026-07-26T08:40:00Z" },
-  { type: "info", title: "CMS saved", message: "Home page content updated successfully.", created_at: "2026-07-25T17:02:00Z" },
-];
+  const quickLinks = [
+    ["CMS Settings", "#cms-settings/home", "Edit homepage hero, about, footer, and more"],
+    ["Package Settings", "#package-settings", "Manage featured experiences and detail pages"],
+    ["Gallery", "#gallery", "Upload photos for the homepage gallery"],
+    ["FAQ Management", "#faq-management", "Update questions shown on the website"],
+  ];
+
+  return `
+    <section class="content-grid">
+      <div class="stats-grid">
+        <article class="stat-card">
+          <div class="stat-label">Active Packages</div>
+          <div class="stat-value">${Number(stats.activePackages || 0).toLocaleString()}</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Admin Users</div>
+          <div class="stat-value">${Number(stats.totalUsers || 0).toLocaleString()}</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">Unread Enquiries</div>
+          <div class="stat-value">${Number(stats.newSubmissions || stats.unreadContacts || 0).toLocaleString()}</div>
+        </article>
+      </div>
+
+      <div class="section-card-grid">
+        ${quickLinks.map(([title, href, copy]) => `
+          <a class="section-card" href="${href}" style="text-decoration:none;color:inherit">
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(copy)}</p>
+          </a>`).join("")}
+      </div>
+
+      <article class="table-panel">
+        <div class="table-head">
+          <div>
+            <h2 class="panel-title">Recent Enquiries</h2>
+            <p class="panel-subtitle">Latest messages from the website contact form</p>
+          </div>
+          <a class="table-link" href="#notifications">View All -></a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Message</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>${contacts.length ? contacts.slice(0, 5).map((s) => `
+            <tr>
+              <td>${escapeHtml(s.name)}</td>
+              <td>${escapeHtml(s.email)}</td>
+              <td>${escapeHtml((s.message || "").slice(0, 72))}${(s.message || "").length > 72 ? "…" : ""}</td>
+              <td><span class="status ${escapeHtml(s.status || "unread")}">${escapeHtml(s.status || "unread")}</span></td>
+            </tr>`).join("") : '<tr><td colspan="4">No enquiries yet</td></tr>'}
+          </tbody>
+        </table>
+      </article>
+    </section>`;
+}
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -182,162 +234,6 @@ function section(title, subtitle, body, toggleOn = true) {
     </article>`;
 }
 
-function dashboardStats(stats) {
-  const totalBookings = Number(stats.totalBookings || 0);
-  const activePackages = Number(stats.activePackages || 0);
-  const monthlyRevenue = Number(stats.monthlyRevenue || 0);
-  const totalUsers = Number(stats.totalUsers || 0);
-  const cards = [
-    ["Total Bookings", totalBookings.toLocaleString(), "+12.5%", "up"],
-    ["Active Packages", activePackages.toLocaleString(), "+3.2%", "up"],
-    ["Monthly Revenue", `$${monthlyRevenue.toLocaleString()}`, "+18.7%", "up"],
-    ["New Users", totalUsers.toLocaleString(), "-2.4%", "down"],
-  ];
-  return `<div class="stats-grid">${cards.map(([label, value, change, dir]) => `
-    <article class="stat-card">
-      <div class="stat-label">${label}</div>
-      <div class="stat-value">${value}</div>
-      <div class="stat-change ${dir === "down" ? "down" : ""}">${change}</div>
-    </article>`).join("")}</div>`;
-}
-
-function chartView() {
-  const max = Math.max(...sampleMonths.map(([, bookings, views]) => bookings + views));
-  return `
-    <div class="panel">
-      <div class="panel-head">
-        <div>
-          <h2 class="panel-title">Booking Trends</h2>
-          <p class="panel-subtitle">Bookings vs views over the last 12 months</p>
-        </div>
-        <div class="chip-row">
-          <span class="chip gold">Bookings</span>
-          <span class="chip">Views</span>
-        </div>
-      </div>
-      <div class="chart">
-        ${sampleMonths.map(([month, bookings, views]) => {
-          const total = bookings + views;
-          const height = Math.max(44, Math.round((total / max) * 156));
-          const bookingHeight = Math.round((bookings / total) * 100);
-          const viewsHeight = Math.round((views / total) * 100);
-          return `
-            <div class="month">
-              <div class="bar-stack" style="height:${height}px">
-                <div class="bar views" style="height:${viewsHeight}%"></div>
-                <div class="bar bookings" style="height:${bookingHeight}%"></div>
-              </div>
-              <div class="month-label">${month}</div>
-            </div>`;
-        }).join("")}
-      </div>
-    </div>`;
-}
-
-function distributionView() {
-  const rows = [
-    ["Luxury Adventure", 45, "#f1c61e"],
-    ["Nature & Wilderness", 25, "#4e89f7"],
-    ["Cultural Heritage", 20, "#18c58f"],
-    ["Beach & Coastline", 10, "#ef5b59"],
-  ];
-  return `
-    <div class="panel">
-      <div class="panel-head">
-        <div>
-          <h2 class="panel-title">Distribution by Category</h2>
-          <p class="panel-subtitle">Booking split for the active period</p>
-        </div>
-      </div>
-      <div class="distribution">
-        ${rows.map(([label, value, color]) => `
-          <div class="dist-row">
-            <div class="dist-label"><span>${label}</span><strong>${value}%</strong></div>
-            <div class="track"><span style="width:${value}%; background:${color};"></span></div>
-          </div>`).join("")}
-      </div>
-    </div>`;
-}
-
-function tableRows() {
-  return sampleBookings.map(([id, customer, pkg, date, status, amount]) => `
-    <tr>
-      <td>${id}</td>
-      <td><div class="customer-cell"><div class="customer-avatar">${customer.split(" ").map((part) => part[0]).join("").slice(0, 2)}</div>${escapeHtml(customer)}</div></td>
-      <td>${escapeHtml(pkg)}</td>
-      <td>${escapeHtml(date)}</td>
-      <td><span class="status ${status}">${status}</span></td>
-      <td class="amount">${amount}</td>
-    </tr>`).join("");
-}
-
-async function bookingTableRows() {
-  try {
-    const data = await api("/bookings?limit=5");
-    const bookings = data.bookings || [];
-    if (!bookings.length) return tableRows();
-    return bookings.map((b) => `
-      <tr>
-        <td>${escapeHtml(b.booking_id)}</td>
-        <td><div class="customer-cell"><div class="customer-avatar">${escapeHtml(b.customer_name.split(" ").map((p) => p[0]).join("").slice(0, 2))}</div>${escapeHtml(b.customer_name)}</div></td>
-        <td>${escapeHtml(b.package_name)}</td>
-        <td>${escapeHtml(b.travel_date || "—")}</td>
-        <td><span class="status ${escapeHtml(b.status)}">${escapeHtml(b.status)}</span></td>
-        <td class="amount">${b.amount != null ? `$${Number(b.amount).toLocaleString()}` : "—"}</td>
-      </tr>`).join("");
-  } catch {
-    return tableRows();
-  }
-}
-
-async function overviewView() {
-  let stats = {
-    totalBookings: 1248,
-    activePackages: 42,
-    monthlyRevenue: 142500,
-    totalUsers: 256,
-  };
-
-  try {
-    const live = await api("/dashboard/stats");
-    stats = { ...stats, ...live };
-  } catch {
-    // fallback to visual sample data
-  }
-
-  return `
-    <section class="content-grid">
-      ${dashboardStats(stats)}
-      <p class="settings-copy" style="margin:0 0 12px">Charts below use illustrative sample data. Booking stats and the recent bookings table are live.</p>
-      <div class="overview-grid">
-        ${chartView()}
-        ${distributionView()}
-      </div>
-      <article class="table-panel">
-        <div class="table-head">
-          <div>
-            <h2 class="panel-title">Recent Bookings</h2>
-            <p class="panel-subtitle">Latest confirmed and pending reservation activity</p>
-          </div>
-          <a class="table-link" href="#booking-management">View All Bookings -></a>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Customer</th>
-              <th>Package</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>${await bookingTableRows()}</tbody>
-        </table>
-      </article>
-    </section>`;
-}
-
 async function cmsView(tab) {
   const { TAB_RENDERERS, TAB_USES_SETTINGS, collectCms, collectSettings } = window.CmsSchema;
   const tabs = cmsTabs
@@ -430,10 +326,6 @@ function userView() {
   return window.AdminEntities.usersView(api);
 }
 
-function bookingsView() {
-  return window.AdminEntities.bookingsView(api);
-}
-
 function galleryView() {
   return window.AdminEntities.galleryView(api);
 }
@@ -462,13 +354,44 @@ function getRoute() {
     window.location.replace("#cms-settings/home");
     return { section: "cms-settings", tab: "home", raw: "cms-settings/home" };
   }
+  if (raw === "booking-management") {
+    window.location.replace("#overview");
+    return { section: "overview", tab: "home", raw: "overview" };
+  }
   const [section, tab] = raw.split("/");
   return { section, tab: tab || "home", raw };
 }
 
 function sitePublicUrl(hash = "") {
-  const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
-  return `${window.location.origin}${root}/${hash ? `#${hash.replace(/^#/, "")}` : ""}`;
+  return window.AdminNav?.siteUrl(hash) || `${window.location.origin}/`;
+}
+
+function packagePublicUrl(slug) {
+  return window.AdminNav?.packageUrl(slug) || "";
+}
+
+function wireCmsPackagePreview() {
+  const select = document.getElementById("cmsPackagePreviewSelect");
+  const link = document.getElementById("cmsPackagePreviewLink");
+  if (!select || !link) return;
+
+  const sync = () => window.AdminNav?.syncPackagePreviewLink("cmsPackagePreviewLink", select.value.trim());
+
+  if (!select._cmsPreviewWired) {
+    select._cmsPreviewWired = true;
+    select.addEventListener("change", sync);
+  }
+  sync();
+
+  if (!link._cmsPreviewWired) {
+    link._cmsPreviewWired = true;
+    link.addEventListener("click", (e) => {
+      if (!select.value.trim()) {
+        e.preventDefault();
+        showToast("Choose a package first");
+      }
+    });
+  }
 }
 
 function setLoggedIn(isLoggedIn) {
@@ -539,12 +462,11 @@ function setTopbar(route) {
   crumbs.innerHTML = crumbsHtml(route.crumbs);
 
   const actionMap = {
-    overview: `${actionButton("Last 30 Days", "secondary", "last-30-days")}${actionButton("Export Report", "primary", "export-report")}`,
+    overview: actionButton("Refresh", "secondary", "refresh-dashboard"),
     "cms-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
     "package-settings": `${actionButton("Preview Site", "secondary", "preview")}${actionButton("Save Changes", "primary", "save-changes")}`,
     "user-management": "",
-    "booking-management": `${actionButton("Filter", "secondary", "filter")}${actionButton("Export", "primary", "export")}`,
-    gallery: `${actionButton("Upload", "secondary", "upload")}${actionButton("Save Changes", "primary", "save-changes")}`,
+    gallery: actionButton("Add Image", "primary", "scroll-gallery-form"),
     "faq-management": `${actionButton("Preview FAQ", "secondary", "preview-faq")}${actionButton("Save Section Settings", "primary", "save-faq-section")}`,
     notifications: "",
   };
@@ -710,11 +632,20 @@ function wireEntityHandlers() {
       return;
     }
       if (action === "preview") {
-        window.open(sitePublicUrl(), "_blank");
+        window.open(sitePublicUrl(), "_blank", "noopener");
         return;
       }
       if (action === "preview-faq") {
-        window.open(sitePublicUrl("faq"), "_blank");
+        window.open(sitePublicUrl("faq"), "_blank", "noopener");
+        return;
+      }
+      if (action === "preview-package-detail") {
+        e.preventDefault();
+        try {
+          window.AdminNav.openPackagePreview();
+        } catch (err) {
+          showToast(err.message || "Select a package first");
+        }
         return;
       }
       if (action === "discard-changes") {
@@ -722,11 +653,39 @@ function wireEntityHandlers() {
         showToast("Changes discarded");
         return;
       }
+      if (action === "refresh-dashboard") {
+        render();
+        showToast("Dashboard refreshed");
+        return;
+      }
+      if (action === "scroll-gallery-form") {
+        document.getElementById("galleryForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelector('#galleryForm input[name="title"]')?.focus();
+        return;
+      }
+      if (action === "change-image") {
+        const uploader = button.closest(".image-uploader");
+        const input = uploader?.querySelector("input.cms-image-url, input[data-cms-key]");
+        const url = prompt("Enter image URL:", input?.value || "");
+        if (url == null || !input) return;
+        input.value = url;
+        input.dispatchEvent(new Event("input"));
+        return;
+      }
+      if (action === "delete-row") {
+        button.closest(".feature-row, [data-list], .itinerary-row, .list-item-row, .gallery-row-editor")?.remove();
+        return;
+      }
       if (action === "delete-package") {
-        if (!confirm("Delete this package?")) return;
+        const pkgId = button.dataset.id || document.getElementById("packageForm")?.querySelector('[name="id"]')?.value;
+        if (!pkgId) {
+          showToast("Select a package to delete");
+          return;
+        }
+        if (!confirm("Delete this package permanently? It will be removed from the website.")) return;
         try {
-          await api(`/packages/${button.dataset.id}`, { method: "DELETE" });
-          showToast("Package deleted");
+          await api(`/packages/${pkgId}`, { method: "DELETE" });
+          showToast("Package deleted — removed from website");
           render();
         } catch (err) {
           showToast(err.message);
@@ -744,6 +703,12 @@ function wireEntityHandlers() {
       if (action === "reset-package-form") {
         document.getElementById("packageForm")?.reset();
         document.getElementById("packageSelect").value = "";
+        const deleteBtn = document.getElementById("deletePackageBtn");
+        if (deleteBtn) {
+          deleteBtn.hidden = true;
+          deleteBtn.dataset.id = "";
+        }
+        window.AdminNav?.syncPackagePreviewLink("previewPackageLink", "");
         ["highlightsList", "itineraryList", "galleryList", "inclusionsList", "exclusionsList"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.innerHTML = "";
@@ -854,24 +819,15 @@ function wireEntityHandlers() {
         } catch (err) {
           showToast(err.message);
         }
+        return;
       }
     });
+}
 
-  document.querySelectorAll("[data-action='update-booking-status']").forEach((select) => {
-    select.addEventListener("change", async () => {
-      try {
-        await api(`/bookings/${select.dataset.id}`, {
-          method: "PUT",
-          body: JSON.stringify({ status: select.value }),
-        });
-        showToast("Booking status updated");
-      } catch (err) {
-        showToast(err.message);
-      }
-    });
-  });
-
+function wireDynamicHandlers() {
   document.querySelectorAll("[data-action='update-contact-status']").forEach((select) => {
+    if (select._wired) return;
+    select._wired = true;
     select.addEventListener("change", async () => {
       try {
         await api(`/contact/${select.dataset.id}`, {
@@ -886,15 +842,15 @@ function wireEntityHandlers() {
   });
 
   document.querySelectorAll("[data-cms-section][data-cms-key]").forEach((input) => {
-    if (input.closest(".image-uploader")) {
-      input.addEventListener("input", () => {
-        const thumb = input.closest(".image-uploader")?.querySelector(".thumb");
-        if (thumb && input.value) {
-          thumb.style.backgroundImage = `url('${input.value}')`;
-          thumb.style.backgroundSize = "cover";
-        }
-      });
-    }
+    if (input._thumbWired || !input.closest(".image-uploader")) return;
+    input._thumbWired = true;
+    input.addEventListener("input", () => {
+      const thumb = input.closest(".image-uploader")?.querySelector(".thumb");
+      if (thumb && input.value) {
+        thumb.style.backgroundImage = `url('${input.value}')`;
+        thumb.style.backgroundSize = "cover";
+      }
+    });
   });
 }
 
@@ -902,17 +858,9 @@ function connectAdminSocket() {
   if (typeof io === "undefined") return;
   const socket = window.CALEDOR_CONFIG?.connectSocket?.() ?? io();
   socket.emit("join:admin");
-  socket.on("booking:new", () => {
+  socket.on("contact:new", () => {
     if (getRoute().section === "notifications" || getRoute().section === "overview") render();
   });
-  socket.on("contact:new", () => {
-    if (getRoute().section === "notifications") render();
-  });
-}
-
-function packagePublicUrl(slug) {
-  const root = window.location.pathname.replace(/\/admin(?:\/index\.html)?$/i, "") || "";
-  return `${window.location.origin}${root}/package/${encodeURIComponent(slug)}`;
 }
 
 async function render() {
@@ -933,7 +881,6 @@ async function render() {
     "cms-settings": () => cmsView(routeInfo.tab),
     "package-settings": packageView,
     "user-management": userView,
-    "booking-management": bookingsView,
     gallery: galleryView,
     "faq-management": faqManagementView,
     notifications: notificationsView,
@@ -951,19 +898,24 @@ async function render() {
 
   renderActionHooks();
   wireEntityHandlers();
+  wireDynamicHandlers();
   if (window.CmsUI) window.CmsUI.wire(view);
   if (routeInfo.section === "package-settings" && window.PackageEditor) {
     window.PackageEditor.wire(api, render);
     const select = document.getElementById("packageSelect");
     if (select?.value) {
-      api(`/packages/${select.value}`).then(({ package: pkg }) => window.PackageEditor.loadIntoForm(pkg)).catch(() => {});
+      api(`/packages/${select.value}`)
+        .then(({ package: pkg }) => {
+          window.PackageEditor.loadIntoForm(pkg);
+          window.AdminNav?.syncPackagePreviewLink("previewPackageLink", pkg.slug || "");
+        })
+        .catch(() => {});
+    } else {
+      window.AdminNav?.syncPackagePreviewLink("previewPackageLink", select?.selectedOptions?.[0]?.dataset?.slug || "");
     }
   }
   if (routeInfo.section === "cms-settings" && routeInfo.tab === "packages-page") {
-    document.getElementById("cmsPackagePreviewSelect")?.addEventListener("change", (e) => {
-      const link = document.getElementById("cmsPackagePreviewLink");
-      if (link && e.target.value) link.href = packagePublicUrl(e.target.value);
-    });
+    wireCmsPackagePreview();
   }
 }
 
