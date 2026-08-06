@@ -775,8 +775,16 @@ function sortPackagesForDisplay(packages) {
   });
 }
 
+function packageCardImage(pkg) {
+  const gallery = parseJson(pkg.gallery_json);
+  const raw = pkg.image_url || gallery[0]?.url || gallery[0]?.image_url || "";
+  const version = pkg.updated_at || cmsRevision || Date.now();
+  return assetUrl(raw, version)
+    || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
+}
+
 function featuredExperienceCard(pkg) {
-  const image = assetUrl(pkg.image_url, pkg.updated_at) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
+  const image = packageCardImage(pkg);
   const detailUrl = `/package/${encodeURIComponent(pkg.slug || pkg.id)}`;
   const country = packageCountryLabel(pkg);
   const description = truncateText(pkg.tagline || pkg.description, 130);
@@ -794,7 +802,7 @@ function featuredExperienceCard(pkg) {
 }
 
 function packageCard(pkg, listing = {}) {
-  const image = assetUrl(pkg.image_url, pkg.updated_at) || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
+  const image = packageCardImage(pkg);
   const price = pkg.price_from != null ? `${pkg.currency || "$"}${Number(pkg.price_from).toLocaleString()}` : "On request";
   const duration = pkg.duration || "Custom itinerary";
   const showPrice = listing.show_price !== "0";
@@ -802,7 +810,7 @@ function packageCard(pkg, listing = {}) {
   const detailUrl = `/package/${encodeURIComponent(pkg.slug || pkg.id)}`;
   return `
     <a class="featured-card package-card-link" href="${escapeHtml(detailUrl)}">
-      <img class="media-cover" src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" loading="lazy" />
+      <img class="media-cover" ${withImageFallback(image, pkg.name)} />
       <div class="featured-card-body">
         <span>${escapeHtml(pkg.badge || pkg.category || "Package")}</span>
         <h3>${escapeHtml(pkg.name)}</h3>
@@ -905,12 +913,48 @@ function getDefaultPackages() {
   return window.CALEDOR_PACKAGE_DEFAULTS?.getFeatured?.() || [];
 }
 
+const PACKAGE_SLUG_ALIASES = {
+  "scottish-highlands-luxury-tour": "scottish-highlands-journey",
+  "french-riviera-villa-escape": "french-riviera-retreat",
+  "italian-heritage-grand-tour": "italian-heritage-tour",
+  "swiss-alps-private-retreat": "swiss-alps-experience",
+};
+
+function defaultPackageBySlug(slug) {
+  const normalized = PACKAGE_SLUG_ALIASES[slug] || slug;
+  return window.CALEDOR_PACKAGE_DEFAULTS?.getBySlug?.(normalized) || null;
+}
+
+/** API/admin packages win. Defaults only fill missing text — never keep hardcoded-only cards. */
 function mergePackageList(apiPackages = []) {
-  const defaults = getDefaultPackages();
-  if (!apiPackages.length) return defaults;
-  const bySlug = new Map(defaults.map((p) => [p.slug, p]));
-  apiPackages.forEach((p) => bySlug.set(p.slug, { ...bySlug.get(p.slug), ...p }));
-  return sortPackagesForDisplay(Array.from(bySlug.values()));
+  if (!apiPackages.length) return getDefaultPackages();
+
+  return sortPackagesForDisplay(apiPackages.map((api) => {
+    const def = defaultPackageBySlug(api.slug) || {};
+    const merged = { ...def, ...api };
+
+    // Always prefer live admin image fields
+    if (api.image_url) merged.image_url = api.image_url;
+    else {
+      const gallery = parseJson(api.gallery_json);
+      const fromGallery = gallery[0]?.url || gallery[0]?.image_url;
+      if (fromGallery) merged.image_url = fromGallery;
+      else if (!merged.image_url) merged.image_url = def.image_url || "";
+    }
+
+    if (api.gallery_json != null && String(api.gallery_json).trim() !== "" && String(api.gallery_json).trim() !== "[]") {
+      merged.gallery_json = api.gallery_json;
+    } else if (!merged.gallery_json) {
+      merged.gallery_json = def.gallery_json || "[]";
+    }
+
+    ["highlights", "inclusions", "exclusions", "itinerary"].forEach((key) => {
+      const apiVal = parseJson(api[key]);
+      if (apiVal.length) merged[key] = typeof api[key] === "string" ? api[key] : JSON.stringify(apiVal);
+    });
+
+    return merged;
+  }));
 }
 
 async function loadPackages() {

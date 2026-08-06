@@ -78,7 +78,9 @@ function getDefaultPackage(slug) {
 /** Prefer live admin/API values; fill gaps from local defaults only. */
 function mergePackage(apiPkg = {}, defaults = {}) {
   const hasApi = Boolean(apiPkg && (apiPkg.id || apiPkg.slug || apiPkg.name));
-  const base = hasApi ? { ...defaults, ...apiPkg } : { ...defaults };
+  if (!hasApi) return { ...defaults };
+
+  const base = { ...defaults, ...apiPkg };
 
   ["highlights", "inclusions", "exclusions", "itinerary"].forEach((key) => {
     const apiVal = parseJson(apiPkg[key]);
@@ -88,9 +90,24 @@ function mergePackage(apiPkg = {}, defaults = {}) {
 
   const apiGallery = parseJson(apiPkg.gallery_json);
   const defGallery = parseJson(defaults.gallery_json);
-  base.gallery_json = JSON.stringify(apiGallery.length ? apiGallery : defGallery);
+  // Prefer admin gallery whenever API sent one (including replacing defaults)
+  if (Object.prototype.hasOwnProperty.call(apiPkg, "gallery_json") && apiGallery.length) {
+    base.gallery_json = JSON.stringify(apiGallery);
+  } else if (apiGallery.length) {
+    base.gallery_json = JSON.stringify(apiGallery);
+  } else {
+    base.gallery_json = JSON.stringify(defGallery);
+  }
 
-  if (!base.image_url) base.image_url = defaults.image_url || "";
+  // Admin hero image always wins when set
+  if (apiPkg.image_url) {
+    base.image_url = apiPkg.image_url;
+  } else if (apiGallery[0]?.url || apiGallery[0]?.image_url) {
+    base.image_url = apiGallery[0].url || apiGallery[0].image_url;
+  } else if (!base.image_url) {
+    base.image_url = defaults.image_url || "";
+  }
+
   if (!base.description) base.description = defaults.description || "";
   if (!base.tagline) base.tagline = defaults.tagline || "";
   if (!base.badge) base.badge = defaults.badge || "";
@@ -120,9 +137,11 @@ function renderPackage(pkg, related = []) {
   const heroImage = pkg.image_url || gallery[0]?.url || gallery[0]?.image_url || gallery[0];
   if (heroBg) {
     const url = heroImage
-      ? assetUrl(typeof heroImage === "string" ? heroImage : heroImage.url, pkg.updated_at)
+      ? assetUrl(typeof heroImage === "string" ? heroImage : heroImage.url, pkg.updated_at || Date.now())
       : IMAGE_FALLBACK;
     heroBg.style.backgroundImage = `url("${String(url || IMAGE_FALLBACK).replace(/"/g, "%22")}")`;
+    heroBg.style.backgroundSize = "cover";
+    heroBg.style.backgroundPosition = "center";
   }
 
   const setText = (id, val) => {

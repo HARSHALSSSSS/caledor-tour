@@ -256,6 +256,15 @@ window.PackageEditor = (() => {
     const featuredEl = form.querySelector('[name="featured"]');
     const activeEl = form.querySelector('[name="active"]');
 
+    // Hero image: form field, image uploader input, or first gallery image
+    let image_url = (
+      form.querySelector('#img-pkg-hero-image')?.value
+      || fieldValue(form, "image_url")
+      || ""
+    ).trim();
+    const galleryClean = gallery.filter((g) => g.url);
+    if (!image_url && galleryClean[0]?.url) image_url = galleryClean[0].url;
+
     return {
       id: form.querySelector('[name="id"]')?.value || "",
       name: fieldValue(form, "name"),
@@ -273,12 +282,12 @@ window.PackageEditor = (() => {
       gallery_heading: fieldValue(form, "gallery_heading"),
       tagline: fieldValue(form, "tagline"),
       description: fieldValue(form, "description"),
-      image_url: fieldValue(form, "image_url"),
+      image_url,
       highlights: JSON.stringify(highlights),
       inclusions: JSON.stringify(inclusions),
       exclusions: JSON.stringify(exclusions),
       itinerary: JSON.stringify(itinerary.filter((d) => d.title || d.description || d.day)),
-      gallery_json: JSON.stringify(gallery.filter((g) => g.url)),
+      gallery_json: JSON.stringify(galleryClean),
       related_slugs_json,
       featured: featuredEl?.checked ? 1 : 0,
       active: activeEl?.checked ? 1 : 0,

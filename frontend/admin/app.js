@@ -515,11 +515,19 @@ async function savePackageForm() {
   delete payload.id;
   if (!payload.name?.trim()) throw new Error("Package name is required");
   if (!payload.slug?.trim()) payload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (id) {
-    await api(`/packages/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-  } else {
-    await api("/packages", { method: "POST", body: JSON.stringify(payload) });
+  if (!payload.image_url) {
+    throw new Error("Please upload or paste a Hero Image before saving");
   }
+  let saved;
+  if (id) {
+    saved = await api(`/packages/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+  } else {
+    saved = await api("/packages", { method: "POST", body: JSON.stringify(payload) });
+  }
+  if (saved?.package && window.PackageEditor?.loadIntoForm) {
+    window.PackageEditor.loadIntoForm(saved.package);
+  }
+  return saved;
 }
 
 function formData(form) {
