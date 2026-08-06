@@ -4,17 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Package Details | Caledor DMC</title>
-    <link rel="icon" href="assets/brand-logo.png" type="image/png" />
+    <base href="/" />
+    <link rel="icon" href="/assets/brand-logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="package-detail.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260806-pkg" />
+    <link rel="stylesheet" href="/package-detail.css?v=20260806-pkg" />
   </head>
   <body class="subpage">
     <header class="site-header">
       <a class="brand" href="/" aria-label="Caledor DMC home">
-        <img class="brand-logo" src="assets/brand-logo.png" alt="Caledor DMC" width="156" height="44" decoding="async" />
+        <img class="brand-logo" src="/assets/brand-logo.png" alt="Caledor DMC" width="156" height="44" decoding="async" />
       </a>
       <nav class="desktop-nav" aria-label="Primary navigation">
         <a href="/#services">Experiences</a>
@@ -43,13 +44,13 @@
         <div class="pkg-hero-overlay"></div>
         <div class="pkg-hero-content">
           <span class="pkg-badge" id="pkgBadge">MULTI-DAY</span>
-          <h1 id="pkgTitle">Scottish Highlands Journey</h1>
-          <p id="pkgTagline">A curated path through misty lochs and ancient castles.</p>
+          <h1 id="pkgTitle">Loading experience…</h1>
+          <p id="pkgTagline"></p>
           <div class="pkg-quick-info" id="pkgQuickInfo">
-            <article><span>Duration</span><strong id="pkgDuration">7 Days</strong></article>
-            <article><span>Group Size</span><strong id="pkgGroupSize">2–8 Guests</strong></article>
-            <article><span>Difficulty</span><strong id="pkgDifficulty">Moderate</strong></article>
-            <article><span>Season</span><strong id="pkgSeason">Year-Round</strong></article>
+            <article><span>Duration</span><strong id="pkgDuration">—</strong></article>
+            <article><span>Group Size</span><strong id="pkgGroupSize">—</strong></article>
+            <article><span>Difficulty</span><strong id="pkgDifficulty">—</strong></article>
+            <article><span>Season</span><strong id="pkgSeason">—</strong></article>
           </div>
         </div>
       </section>
@@ -59,7 +60,7 @@
           <div>
             <p class="section-label" id="pkgAboutLabel">The Expedition</p>
             <h2>About This Experience</h2>
-            <div id="pkgDescription"></div>
+            <div id="pkgDescription"><p>Loading details…</p></div>
           </div>
           <aside class="highlights-card">
             <h3>Experience Highlights</h3>
@@ -157,6 +158,6 @@
     <script src="/js/site-chrome.js"></script>
     <script src="/js/package-defaults.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="package-detail.js"></script>
+    <script src="/package-detail.js?v=20260806-pkg"></script>
   </body>
 </html>

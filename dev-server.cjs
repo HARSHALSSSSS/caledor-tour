@@ -24,7 +24,7 @@ app.use("/socket.io", backendProxy("/socket.io"));
 app.use(express.static(FRONTEND_DIR));
 
 app.get("/package/:slug", (req, res) => {
-  res.redirect(`/package-detail.html?slug=${encodeURIComponent(req.params.slug)}`);
+  res.sendFile(path.join(FRONTEND_DIR, "package-detail.html"));
 });
 
 app.get("/premium-services", (_req, res) => {

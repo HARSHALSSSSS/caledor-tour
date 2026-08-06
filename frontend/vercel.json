@@ -20,5 +20,19 @@
       "source": "/premium-services",
       "destination": "/premium-services.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/package-detail.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/package-detail.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
   ]
 }
