@@ -97,18 +97,17 @@ if (faqCount.count === 0) {
   for (const f of faqs) faqStmt.run(...f);
 }
 
-// Sample gallery
+// Sample gallery — matches website Photo Gallery
 const galleryUrls = [
-  ['Mountain landscape', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=500&q=85'],
-  ['Gala dinner', 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=500&q=85'],
-  ['Paris street', 'https://images.unsplash.com/photo-1522093007474-d86e9bf7ba6f?auto=format&fit=crop&w=500&q=85'],
-  ['London', 'https://images.unsplash.com/photo-1505761671935-60b3a7427bad?auto=format&fit=crop&w=500&q=85'],
-  ['Alpine lake', 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=500&q=85'],
-  ['Venice', 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=500&q=85'],
-  ['Amsterdam', 'https://images.unsplash.com/photo-1541849546-216549ae216d?auto=format&fit=crop&w=500&q=85'],
-  ['Coast', 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=500&q=85'],
-  ['Architecture', 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&w=500&q=85'],
-  ['Belgium city', 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=500&q=85'],
+  ['British Curry Championship Winner', '/uploads/gallery/gallery-01-winner-certificate.png'],
+  ['On the Road', '/uploads/gallery/gallery-02-team-vehicle.png'],
+  ['Scotland Community Event', '/uploads/gallery/gallery-03-scotland-event.png'],
+  ['Award Presentation', '/uploads/gallery/gallery-04-award-presentation.png'],
+  ['Team Portrait', '/uploads/gallery/gallery-05-team-portrait.png'],
+  ['Partners and Team', '/uploads/gallery/gallery-06-partners.png'],
+  ['Certifications', '/uploads/gallery/gallery-07-certificates.png'],
+  ['Group Experience', '/uploads/gallery/gallery-08-group-walk.png'],
+  ['Celebrity Guest Experience', '/uploads/gallery/gallery-09-outdoor-guest.png'],
 ];
 
 const galleryCount = db.prepare('SELECT COUNT(*) as count FROM gallery_items').get();

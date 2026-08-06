@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getDb } from '../db.js';
 import { flattenCmsDefaults } from '../cms-defaults.js';
-import { syncCanonicalTeamSection, forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection } from '../cms-repair.js';
+import { forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection, syncCanonicalGallerySection, syncAdminDisplayName } from '../cms-repair.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.join(__dirname, '..');
@@ -107,6 +107,12 @@ function main() {
   }
   if (forceSyncCanonicalTeamSection(db)) {
     console.log('✓ Leadership team synced (Mr. Alok Singh, Ms. Neha Sawant)');
+  }
+  if (syncCanonicalGallerySection(db)) {
+    console.log('✓ Gallery synced with website Photo Gallery images');
+  }
+  if (syncAdminDisplayName(db)) {
+    console.log('✓ Admin display name cleaned');
   }
 
   console.log('✓ Database ready at backend/data/caledor.db');

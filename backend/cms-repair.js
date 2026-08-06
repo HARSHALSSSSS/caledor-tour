@@ -73,3 +73,53 @@ export function forceSyncCanonicalHeroSection(db) {
   if (stats) upsertCmsSection(db, 'home', 'stats', stats);
   return true;
 }
+
+/** Homepage Photo Gallery images — must match frontend/index.html static gallery. */
+export const WEB_GALLERY_DEFAULTS = [
+  { title: 'British Curry Championship Winner', alt_text: 'British Curry Championship Winner', image_url: '/uploads/gallery/gallery-01-winner-certificate.png', album: 'Events', sort_order: 1 },
+  { title: 'On the Road', alt_text: 'On the Road', image_url: '/uploads/gallery/gallery-02-team-vehicle.png', album: 'Events', sort_order: 2 },
+  { title: 'Scotland Community Event', alt_text: 'Scotland Community Event', image_url: '/uploads/gallery/gallery-03-scotland-event.png', album: 'Events', sort_order: 3 },
+  { title: 'Award Presentation', alt_text: 'Award Presentation', image_url: '/uploads/gallery/gallery-04-award-presentation.png', album: 'Events', sort_order: 4 },
+  { title: 'Team Portrait', alt_text: 'Team Portrait', image_url: '/uploads/gallery/gallery-05-team-portrait.png', album: 'Events', sort_order: 5 },
+  { title: 'Partners and Team', alt_text: 'Partners and Team', image_url: '/uploads/gallery/gallery-06-partners.png', album: 'Events', sort_order: 6 },
+  { title: 'Certifications', alt_text: 'Certifications', image_url: '/uploads/gallery/gallery-07-certificates.png', album: 'Events', sort_order: 7 },
+  { title: 'Group Experience', alt_text: 'Group Experience', image_url: '/uploads/gallery/gallery-08-group-walk.png', album: 'Events', sort_order: 8 },
+  { title: 'Celebrity Guest Experience', alt_text: 'Celebrity Guest Experience', image_url: '/uploads/gallery/gallery-09-outdoor-guest.png', album: 'Events', sort_order: 9 },
+];
+
+/** Sync admin gallery with the live website gallery images (no web HTML changes). */
+export function syncCanonicalGallerySection(db) {
+  const existing = db.prepare('SELECT id, image_url FROM gallery_items').all();
+  const hasWeb = existing.some((row) => String(row.image_url || '').includes('/uploads/gallery/gallery-01'));
+  const hasUnsplash = existing.some((row) => String(row.image_url || '').includes('unsplash.com'));
+
+  if (hasWeb && !hasUnsplash) return false;
+
+  const wipe = db.transaction(() => {
+    if (hasUnsplash || !hasWeb) {
+      db.prepare(
+        `DELETE FROM gallery_items WHERE image_url LIKE '%unsplash.com%' OR image_url NOT LIKE '/uploads/gallery/%'`
+      ).run();
+    }
+    const find = db.prepare('SELECT id FROM gallery_items WHERE image_url = ?');
+    const insert = db.prepare(
+      `INSERT INTO gallery_items (title, alt_text, image_url, album, sort_order, active)
+       VALUES (?, ?, ?, ?, ?, 1)`
+    );
+    for (const item of WEB_GALLERY_DEFAULTS) {
+      if (!find.get(item.image_url)) {
+        insert.run(item.title, item.alt_text, item.image_url, item.album, item.sort_order);
+      }
+    }
+  });
+  wipe();
+  return true;
+}
+
+/** Rename default Alex Graham account label to generic Admin. */
+export function syncAdminDisplayName(db) {
+  const result = db.prepare(
+    `UPDATE users SET name = 'Admin' WHERE email = 'admin@caledor.com' AND (name = 'Alex Graham' OR name LIKE 'Alex%')`
+  ).run();
+  return result.changes > 0;
+}

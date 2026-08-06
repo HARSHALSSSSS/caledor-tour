@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcrypt';
 import { flattenCmsDefaults } from './cms-defaults.js';
-import { syncCanonicalTeamSection, syncCanonicalHeroSection } from './cms-repair.js';
+import { syncCanonicalTeamSection, syncCanonicalHeroSection, syncCanonicalGallerySection, syncAdminDisplayName } from './cms-repair.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, 'data', 'caledor.db');
@@ -25,6 +25,8 @@ export function getDb() {
   seedDefaultCms();
   syncCanonicalHeroSection(db);
   syncCanonicalTeamSection(db);
+  syncCanonicalGallerySection(db);
+  syncAdminDisplayName(db);
   return db;
 }
 
@@ -265,7 +267,7 @@ function seedDefaults() {
   if (userCount.count === 0) {
     const hash = bcrypt.hashSync('admin123', 10);
     db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-      'Alex Graham', 'admin@caledor.com', hash, 'super_admin'
+      'Admin', 'admin@caledor.com', hash, 'super_admin'
     );
   }
 

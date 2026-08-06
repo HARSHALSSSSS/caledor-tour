@@ -25,33 +25,60 @@ window.AdminEntities = (() => {
 
   async function galleryView(api) {
     const data = await api("/gallery").catch(() => ({ items: [] }));
-    const items = data.items || [];
+    let items = data.items || [];
+
+    // Fallback mirror of website Photo Gallery if API is empty (same paths as index.html)
+    if (!items.length) {
+      items = [
+        { id: "web-1", title: "British Curry Championship Winner", image_url: "/uploads/gallery/gallery-01-winner-certificate.png", sort_order: 1, album: "Events" },
+        { id: "web-2", title: "On the Road", image_url: "/uploads/gallery/gallery-02-team-vehicle.png", sort_order: 2, album: "Events" },
+        { id: "web-3", title: "Scotland Community Event", image_url: "/uploads/gallery/gallery-03-scotland-event.png", sort_order: 3, album: "Events" },
+        { id: "web-4", title: "Award Presentation", image_url: "/uploads/gallery/gallery-04-award-presentation.png", sort_order: 4, album: "Events" },
+        { id: "web-5", title: "Team Portrait", image_url: "/uploads/gallery/gallery-05-team-portrait.png", sort_order: 5, album: "Events" },
+        { id: "web-6", title: "Partners and Team", image_url: "/uploads/gallery/gallery-06-partners.png", sort_order: 6, album: "Events" },
+        { id: "web-7", title: "Certifications", image_url: "/uploads/gallery/gallery-07-certificates.png", sort_order: 7, album: "Events" },
+        { id: "web-8", title: "Group Experience", image_url: "/uploads/gallery/gallery-08-group-walk.png", sort_order: 8, album: "Events" },
+        { id: "web-9", title: "Celebrity Guest Experience", image_url: "/uploads/gallery/gallery-09-outdoor-guest.png", sort_order: 9, album: "Events" },
+      ];
+    }
+
     const imageField = window.CmsSchema?.imageField
       ? window.CmsSchema.imageField("gallery-new-image", "Image", "", { name: "image_url" })
       : field("Image URL", "https://images.unsplash.com/...", "image_url", true);
+
     return `<section class="content-grid">
-      ${panel("Add Gallery Image", "Upload photos shown in the homepage Photo Gallery section", `
+      ${panel("Add Gallery Image", "Upload photos for the homepage Photo Gallery. New images appear on the website after you add them.", `
         <form id="galleryForm" class="form-grid">
           ${field("Title", "Event or photo title", "title")}
           ${imageField}
           ${field("Alt Text", "Describe the image for accessibility", "alt_text")}
-          ${field("Sort Order", "1", "sort_order")}
+          ${field("Sort Order", "10", "sort_order")}
           <div class="field"><label>Album</label><input name="album" value="Events" placeholder="Events" /></div>
           <div class="field-full"><button class="btn primary" type="submit" data-action="save-gallery">Add Image</button></div>
         </form>`)}
       <div class="table-panel">
         <div class="table-head">
-          <div><h2 class="panel-title">Gallery Images</h2><p class="panel-subtitle">${items.length} photo${items.length === 1 ? "" : "s"} on the website</p></div>
+          <div>
+            <h2 class="panel-title">Website Photo Gallery</h2>
+            <p class="panel-subtitle">${items.length} photo${items.length === 1 ? "" : "s"} — same images shown on the homepage gallery</p>
+          </div>
         </div>
-        <div class="gallery-admin-grid">${items.map((item) => `
+        <div class="gallery-admin-grid">${items.map((item) => {
+          const src = esc(window.CALEDOR_CONFIG?.mediaUrl?.(item.image_url) ?? item.image_url);
+          const canDelete = item.id && !String(item.id).startsWith("web-");
+          return `
           <div class="gallery-admin-item">
-            <div class="gallery-admin-thumb" style="background-image:url('${esc(window.CALEDOR_CONFIG?.mediaUrl?.(item.image_url) ?? item.image_url)}')"></div>
+            <div class="gallery-admin-thumb" style="background-image:url('${src}');background-size:cover;background-position:center"></div>
             <div class="gallery-admin-meta">
               <strong>${esc(item.title || "Untitled")}</strong>
               <span>Order ${esc(String(item.sort_order ?? 0))}</span>
             </div>
-            <button class="btn secondary sm" type="button" data-action="delete-gallery" data-id="${item.id}">Delete</button>
-          </div>`).join("") || '<p class="panel-subtitle">No gallery images yet. Upload your first photo above.</p>'}
+            ${canDelete
+              ? `<button class="btn secondary sm" type="button" data-action="delete-gallery" data-id="${item.id}">Delete</button>`
+              : `<span class="settings-copy">Syncing…</span>`}
+          </div>`;
+        }).join("")}
+        </div>
       </div>
     </section>`;
   }

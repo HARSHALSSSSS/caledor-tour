@@ -444,17 +444,9 @@ async function checkAuth() {
 
 function updateProfile() {
   if (!currentUser) return;
-  const initials = currentUser.name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  document.getElementById("avatarInitials").textContent = initials;
-  document.getElementById("profileName").textContent = currentUser.name;
-  document.getElementById("profileRole").textContent = currentUser.role === "super_admin"
-    ? "Super Admin"
-    : currentUser.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  document.getElementById("avatarInitials").textContent = "AD";
+  document.getElementById("profileName").textContent = "Admin";
+  document.getElementById("profileRole").textContent = "Administrator";
 }
 
 function setTopbar(route) {

@@ -1,15 +1,93 @@
 /** CMS admin UI interactions — dynamic lists, image preview, toggles, uploads */
 window.CmsUI = (() => {
+  const MAX_EDGE = 1600;
+  const JPEG_QUALITY = 0.82;
+
+  function setUploadBusy(target, busy, label) {
+    const btn = document.querySelector(`.cms-upload-image[data-target="${target}"]`);
+    if (!btn) return;
+    if (busy) {
+      if (!btn.dataset.originalLabel) btn.dataset.originalLabel = btn.textContent;
+      btn.textContent = label || "Uploading…";
+      btn.disabled = true;
+    } else {
+      btn.textContent = btn.dataset.originalLabel || "Upload Image";
+      btn.disabled = false;
+    }
+  }
+
+  function showLocalPreview(target, file) {
+    const input = findImageInput(target);
+    const thumb = document.querySelector(`.cms-thumb[data-for="${target}"]`)
+      || input?.closest(".image-uploader")?.querySelector(".cms-thumb");
+    if (!thumb || !file) return null;
+    const objectUrl = URL.createObjectURL(file);
+    thumb.style.backgroundImage = `url('${objectUrl}')`;
+    thumb.style.backgroundSize = "cover";
+    thumb.style.backgroundPosition = "center";
+    return objectUrl;
+  }
+
+  function loadImageElement(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read image"));
+      };
+      img.src = url;
+    });
+  }
+
+  /** Compress large photos before upload so admin uploads feel fast. */
+  async function compressImage(file) {
+    if (!file || !/^image\//.test(file.type)) return file;
+    if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
+    if (file.size < 350 * 1024) return file;
+
+    try {
+      const img = await loadImageElement(file);
+      const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const preferJpeg = !/png/i.test(file.type) || file.size > 1024 * 1024;
+      const mime = preferJpeg ? "image/jpeg" : "image/png";
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((result) => resolve(result), mime, preferJpeg ? JPEG_QUALITY : undefined);
+      });
+      if (!blob || blob.size >= file.size) return file;
+
+      const base = (file.name || "image").replace(/\.[^.]+$/, "");
+      const ext = mime === "image/jpeg" ? ".jpg" : ".png";
+      return new File([blob], `${base}${ext}`, { type: mime, lastModified: Date.now() });
+    } catch {
+      return file;
+    }
+  }
+
   async function uploadImage(file) {
+    const optimized = await compressImage(file);
     const token = localStorage.getItem("caledor_token");
     const form = new FormData();
-    form.append("image", file);
+    form.append("image", optimized);
     const res = await fetch(window.CALEDOR_CONFIG?.uploadUrl?.() ?? "/api/upload", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Upload failed");
     return data.url;
   }
@@ -99,8 +177,12 @@ window.CmsUI = (() => {
       fileInput.addEventListener("change", async () => {
         const file = fileInput.files?.[0];
         if (!file) return;
-        const input = findImageInput(fileInput.dataset.target);
+        const target = fileInput.dataset.target;
+        const input = findImageInput(target);
+        const localPreview = showLocalPreview(target, file);
+        setUploadBusy(target, true, "Optimizing…");
         try {
+          setUploadBusy(target, true, "Uploading…");
           const url = await uploadImage(file);
           if (input) {
             input.value = url;
@@ -108,7 +190,10 @@ window.CmsUI = (() => {
           }
         } catch (err) {
           alert(err.message || "Upload failed");
+          if (input) syncThumb(input);
         } finally {
+          if (localPreview) URL.revokeObjectURL(localPreview);
+          setUploadBusy(target, false);
           fileInput.value = "";
         }
       });
@@ -190,5 +275,5 @@ window.CmsUI = (() => {
     }
   }
 
-  return { wire, uploadImage };
+  return { wire, uploadImage, compressImage };
 })();
