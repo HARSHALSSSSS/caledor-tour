@@ -123,9 +123,17 @@ const PREMIUM_SERVICE_SLUGS = {
 
 function premiumServiceLink(item = {}) {
   const link = String(item.link || "").trim();
-  if (link && link !== "#contact") return link;
-  const slug = PREMIUM_SERVICE_SLUGS[item.title || ""];
+  if (link && link !== "#contact" && link !== "#" && !link.endsWith("#contact")) return link;
+  const title = String(item.title || "").trim();
+  const slug = PREMIUM_SERVICE_SLUGS[title]
+    || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return slug ? `/premium-services#${slug}` : "/premium-services";
+}
+
+function withImageFallback(src, alt = "") {
+  const safe = escapeHtml(src || "");
+  const fallback = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80";
+  return `src="${safe}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"`;
 }
 
 function formatContactCtaTitle(title) {
@@ -669,16 +677,20 @@ function applyBlogCms(sections = {}) {
 
 function applyPackagesPageCms(sections = {}) {
   cmsState.packagesPage = sections;
-  const hero = sections.hero || {};
   const listing = sections.listing || {};
   const categories = sections.categories || {};
   const cta = sections.cta || {};
 
+  const packagesSection = document.getElementById("packages");
+  const homeHeading = cmsState.home?.packages_heading || sections.packages_heading || {};
+  const packagesVisible = listing.enabled !== "0" && homeHeading.enabled !== "0";
+  setSectionVisible(packagesSection, packagesVisible);
+
   const heroEl = document.getElementById("packagesHero");
   setSectionVisible(heroEl, false);
 
-  const heading = document.getElementById("packagesHeading");
-  heading?.removeAttribute("hidden");
+  const headingEl = document.getElementById("packagesHeading");
+  headingEl?.removeAttribute("hidden");
 
   const tabsEl = document.getElementById("packageCategoryTabs");
   if (tabsEl && categories.show_tabs !== "0") {
@@ -771,7 +783,7 @@ function featuredExperienceCard(pkg) {
   return `
     <a class="featured-card featured-experience-card package-card-link" href="${escapeHtml(detailUrl)}">
       <div class="featured-card-media">
-        <img class="media-cover" src="${escapeHtml(image)}" alt="${escapeHtml(pkg.name)}" loading="lazy" />
+        <img class="media-cover" ${withImageFallback(image, pkg.name)} />
       </div>
       <div class="featured-card-body">
         <span class="featured-country-tag">${escapeHtml(country)}</span>
@@ -989,7 +1001,7 @@ function applyDestinationsSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article>
-      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.name)}" loading="lazy" />
+      <img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), item.name)} />
       <h3>${escapeHtml(item.name)}</h3>
       <p>${escapeHtml(item.places || "")}</p>
     </article>
@@ -1013,9 +1025,9 @@ async function loadGallery() {
     const data = await fetchJson("/gallery");
     const items = data.items || [];
     if (!items.length) return;
-    grid.innerHTML = items.map((item, index) => `
+  grid.innerHTML = items.map((item, index) => `
       <figure class="gallery-cell${index === 0 ? " gallery-cell-hero" : ""}">
-        <img class="media-cover" src="${escapeHtml(assetUrl(item.image_url, item.updated_at || cmsRevision))}" alt="${escapeHtml(item.alt_text || item.title || "Gallery image")}" loading="lazy" />
+        <img class="media-cover" ${withImageFallback(assetUrl(item.image_url, item.updated_at || cmsRevision), item.alt_text || item.title || "Gallery image")} />
       </figure>
     `).join("");
   } catch {
@@ -1052,7 +1064,7 @@ function applyScotlandAttractionsSection(section = {}) {
     const layoutClass = SCOTLAND_LAYOUT_CLASSES[item.layout] || "";
     return `
     <article class="scotland-tile${layoutClass}">
-      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.label || "Scotland attraction")}" loading="lazy" />
+      <img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), item.alt || item.label || "Scotland attraction")} />
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
     </article>`;
   }).join("");
@@ -1077,13 +1089,14 @@ function applyPremiumServicesSection(section = {}) {
 
   grid.innerHTML = items.map((item) => `
     <article>
-      <img src="${escapeHtml(assetUrl(item.image, cmsState.homeUpdatedAt))}" alt="${escapeHtml(item.alt || item.title || "Premium service")}" loading="lazy" />
+      <img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), item.alt || item.title || "Premium service")} />
       <div>
         <h3>${escapeHtml(item.title || "")}</h3>
         <p>${escapeHtml(item.description || "")}</p>
-        <a href="${escapeHtml(premiumServiceLink(item))}">Learn more</a>
+        <a class="learn-more-link" href="${escapeHtml(premiumServiceLink(item))}">Learn more</a>
       </div>
     </article>`).join("");
+  if (window.SiteChrome?.initScrollReveal) window.SiteChrome.initScrollReveal();
 }
 
 function applyMiceSection(section = {}) {
@@ -1227,6 +1240,14 @@ async function loadCmsHome() {
       sections.packages_heading?.title,
       sections.packages_heading?.subtitle
     );
+    const packagesSection = document.getElementById("packages");
+  if (packagesSection && sections.packages_heading) {
+    const listingEnabled = cmsState.packagesPage?.listing?.enabled;
+    setSectionVisible(
+      packagesSection,
+      sections.packages_heading.enabled !== "0" && listingEnabled !== "0"
+    );
+  }
     applyDestinationsSection(sections.destinations || {});
     applyGallerySection(sections.gallery_section || {});
     applyHomeSections(sections);
@@ -1461,6 +1482,19 @@ function bindChatBubble() {
   });
 }
 
+function wireImageFallbacks() {
+  const fallback = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80";
+  document.querySelectorAll("img").forEach((img) => {
+    if (img._fallbackWired) return;
+    img._fallbackWired = true;
+    img.addEventListener("error", () => {
+      if (img.dataset.fallbackApplied) return;
+      img.dataset.fallbackApplied = "1";
+      img.src = fallback;
+    });
+  });
+}
+
 function observeSections() {
   if (window.SiteChrome?.initScrollReveal) {
     SiteChrome.initScrollReveal();
@@ -1543,6 +1577,50 @@ function wireMobileNav() {
   });
 }
 
+function wireNavHighlight() {
+  const links = [
+    ...document.querySelectorAll(".desktop-nav a[href^='#']"),
+    ...document.querySelectorAll("#mobileNav a[href^='#']"),
+  ];
+  if (!links.length) return;
+
+  const sections = links
+    .map((link) => {
+      const id = link.getAttribute("href")?.replace(/^#/, "");
+      const el = id ? document.getElementById(id) : null;
+      return el ? { link, el, id } : null;
+    })
+    .filter(Boolean);
+
+  const setActive = (id) => {
+    links.forEach((link) => {
+      const match = link.getAttribute("href") === `#${id}`;
+      link.classList.toggle("is-active", match);
+      if (match) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  };
+
+  links.forEach((link) => {
+    link.addEventListener("click", () => {
+      const id = link.getAttribute("href")?.replace(/^#/, "");
+      if (id) setActive(id);
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+    if (visible[0]?.target?.id) setActive(visible[0].target.id);
+  }, { rootMargin: "-28% 0px -55% 0px", threshold: [0.1, 0.35, 0.6] });
+
+  sections.forEach(({ el }) => observer.observe(el));
+
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash) setActive(hash);
+}
+
 async function init() {
   try {
     bindAccordion();
@@ -1553,6 +1631,8 @@ async function init() {
     observeSections();
     connectLiveUpdates();
     wireMobileNav();
+    wireNavHighlight();
+    wireImageFallbacks();
 
     await loadSettings();
     await loadPackages();
@@ -1571,6 +1651,7 @@ async function init() {
   } finally {
     document.body.classList.remove("is-loading");
     document.body.classList.add("cms-ready");
+    wireImageFallbacks();
     if (window.SiteChrome?.initScrollReveal) {
       window.SiteChrome.initScrollReveal();
     }

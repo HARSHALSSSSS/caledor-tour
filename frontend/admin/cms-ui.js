@@ -59,7 +59,21 @@ window.CmsUI = (() => {
     container.querySelectorAll(".switch").forEach((sw) => {
       if (sw._wired) return;
       sw._wired = true;
-      sw.addEventListener("click", () => sw.classList.toggle("on"));
+      sw.setAttribute("role", "switch");
+      sw.setAttribute("aria-checked", sw.classList.contains("on") ? "true" : "false");
+      sw.addEventListener("click", () => {
+        sw.classList.toggle("on");
+        const on = sw.classList.contains("on");
+        sw.setAttribute("aria-checked", on ? "true" : "false");
+        sw.dataset.switchValue = on ? "1" : "0";
+        const panel = sw.closest(".settings-panel");
+        if (panel && sw.classList.contains("section-switch")) {
+          panel.classList.toggle("section-disabled", !on);
+        }
+      });
+      if (sw.classList.contains("section-switch") && !sw.classList.contains("on")) {
+        sw.closest(".settings-panel")?.classList.add("section-disabled");
+      }
     });
 
     container.querySelectorAll(".cms-image-url, .cms-team-photo").forEach((input) => {

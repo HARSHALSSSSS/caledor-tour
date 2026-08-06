@@ -869,6 +869,19 @@ select {
   background: var(--gold);
 }
 
+.settings-panel.section-disabled .settings-body {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(0.2);
+}
+
+.settings-panel.section-disabled .settings-title::after {
+  content: " (Hidden on website)";
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .switch.on::after {
   left: 21px;
 }

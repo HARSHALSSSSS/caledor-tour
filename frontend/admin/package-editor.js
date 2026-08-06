@@ -61,19 +61,19 @@ window.PackageEditor = (() => {
       <article class="settings-panel">
         <div class="settings-head">
           <div>
-            <h2 class="settings-title">Select Package to Edit</h2>
-            <p class="panel-subtitle">Packages added here appear in the homepage Featured Experiences section and on <code>/package/{slug}</code> detail pages.</p>
+            <h2 class="settings-title">Package Settings</h2>
+            <p class="panel-subtitle">Edit a package below, then Save. Changes appear on the homepage Featured Experiences section and at <code>/package/{slug}</code>.</p>
           </div>
         </div>
         <div class="settings-body">
           <div class="form-grid">
             <div class="field-full">
-              <label>Package</label>
-              <select id="packageSelect">${options || '<option value="">No packages yet</option>'}</select>
+              <label>Select package to edit</label>
+              <select id="packageSelect">${options || '<option value="">No packages yet — create one below</option>'}</select>
             </div>
             <div class="field-full actions-row">
               <a class="btn outline sm" id="previewPackageLink" href="${esc(previewHref)}" target="_blank" rel="noopener" data-action="preview-package-detail"${selected?.slug ? "" : ' aria-disabled="true"'}>Preview Detail Page</a>
-              <button class="btn secondary sm" type="button" data-action="reset-package-form">New Package</button>
+              <button class="btn secondary sm" type="button" data-action="reset-package-form">+ New Package</button>
             </div>
           </div>
         </div>

@@ -394,7 +394,7 @@ window.CmsSchema = (() => {
         ${cmsInput("packages_heading", "kicker", "Section Title (script style)", val(s, "packages_heading", "kicker", "Featured Experiences"))}
         ${cmsTextarea("packages_heading", "subtitle", "Section Subtitle", val(s, "packages_heading", "subtitle", "Curated journeys across the UK and Europe, crafted for unforgettable moments and refined travel."))}
         <div class="field-full"><span class="settings-copy">Package cards and images are managed under <strong>Package Settings</strong>. Display count and optional filters are under CMS → Featured Experiences.</span></div>
-      </div>`, "packages_heading", true),
+      </div>`, "packages_heading", isOn(s, "packages_heading")),
 
       section("Destinations", `<div class="form-grid">
         ${cmsInput("destinations", "kicker", "Section Kicker", val(s, "destinations", "kicker", "Explore Our Destinations"))}
@@ -611,26 +611,34 @@ window.CmsSchema = (() => {
     const pkgOptions = packages.map((p) => `<option value="${esc(p.slug)}">${esc(p.name)}</option>`).join("");
 
     return [
-      section("Package Detail Pages", `<div class="form-grid">
-        <div class="field-full">
-          <label>Select Package to Preview / Edit Detail Page</label>
-          <select id="cmsPackagePreviewSelect">
-            <option value="">Choose a package...</option>
-            ${pkgOptions}
-          </select>
+      `<article class="settings-panel">
+        <div class="settings-head"><div><h2 class="settings-title">Manage Packages</h2>
+          <p class="panel-subtitle">Create, edit, and delete packages in Package Settings. Changes appear on the homepage Featured Experiences grid and on each package detail page.</p>
+        </div></div>
+        <div class="settings-body">
+          <div class="form-grid">
+            <div class="field-full actions-row">
+              <a class="btn primary" href="#package-settings">Open Package Settings</a>
+            </div>
+            <div class="field-full">
+              <label>Quick Preview Detail Page</label>
+              <select id="cmsPackagePreviewSelect">
+                <option value="">Choose a package...</option>
+                ${pkgOptions}
+              </select>
+            </div>
+            <div class="field-full actions-row">
+              <a class="btn outline sm" id="cmsPackagePreviewLink" href="#" target="_blank" rel="noopener" data-action="preview-package-detail" aria-disabled="true">Open Detail Page</a>
+            </div>
+          </div>
         </div>
-        <div class="field-full actions-row">
-          <a class="btn outline sm" id="cmsPackagePreviewLink" href="#" target="_blank" rel="noopener" data-action="preview-package-detail" aria-disabled="true">Open Detail Page</a>
-          <a class="btn outline sm" href="#package-settings">Edit in Package Settings</a>
-        </div>
-        <p class="settings-copy">Add and edit packages in <strong>Package Settings</strong>. Itinerary, gallery, and inclusions appear on the public detail page at <code>/package/{slug}</code>.</p>
-      </div>`, "detail_pages", true),
+      </article>`,
 
       section("Homepage Featured Experiences Grid", `<div class="form-grid">
         ${cmsInput("listing", "packages_per_page", "Packages Shown on Homepage", val(s, "listing", "packages_per_page", "5"))}
         <div class="field-full"><span class="settings-copy">The homepage uses the Figma 2+3 card layout. Featured packages appear first. Manage cards in <strong>Package Settings</strong>.</span></div>
         <div class="field-full">${toggleRow("Show Category Filter Tabs", "categories", "show_tabs", val(s, "categories", "show_tabs", "0") === "1")}</div>
-      </div>`, "listing", true),
+      </div>`, "listing", isOn(s, "listing")),
     ].join("");
   }
 
@@ -871,7 +879,18 @@ window.CmsSchema = (() => {
         title: row.querySelector('[name="title"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
         description: row.querySelector('[name="description"]')?.value || "",
-        link: row.querySelector('[name="link"]')?.value || "#contact",
+        link: row.querySelector('[name="link"]')?.value || (() => {
+          const title = row.querySelector('[name="title"]')?.value || "";
+          const map = {
+            "Hotel Bookings": "/premium-services#hotel-bookings",
+            "Holiday Packages": "/premium-services#holiday-packages",
+            "Sightseeing Tours": "/premium-services#sightseeing-tours",
+            "Vehicle At Disposal": "/premium-services#vehicle-at-disposal",
+            "Airport Transfers": "/premium-services#airport-transfers",
+            "Restaurant Reservations": "/premium-services#restaurant-reservations",
+          };
+          return map[title] || "/premium-services";
+        })(),
       });
     });
     if (premiumServices.length || container.querySelector('[data-json-section="premium_services"]')) {

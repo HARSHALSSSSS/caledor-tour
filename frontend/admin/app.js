@@ -529,12 +529,6 @@ function formData(form) {
 let entityHandlersWired = false;
 
 function wireEntityHandlers() {
-  document.querySelectorAll(".switch").forEach((sw) => {
-    if (sw._wired) return;
-    sw._wired = true;
-    sw.addEventListener("click", () => sw.classList.toggle("on"));
-  });
-
   if (entityHandlersWired) return;
   entityHandlersWired = true;
 

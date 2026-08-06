@@ -20,6 +20,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 96px;
 }
 
 body {
@@ -206,7 +207,15 @@ a {
   color: var(--gold-2);
 }
 
+.desktop-nav a.is-active,
+.desktop-nav a[aria-current="page"],
 .desktop-nav a.nav-highlight {
+  color: var(--gold-2);
+}
+
+.mobile-nav-panel a.is-active,
+.mobile-nav-panel a[aria-current="page"],
+.mobile-nav-panel a.nav-highlight {
   color: var(--gold-2);
 }
 
@@ -1158,14 +1167,43 @@ p {
   font-size: 0.88rem;
 }
 
-.premium-service-grid a {
+.premium-service-grid a,
+.premium-service-grid .learn-more-link {
   display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-top: 8px;
   color: var(--gold);
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  transition: color 0.25s ease, transform 0.25s ease, gap 0.25s ease;
+}
+
+.premium-service-grid a::after,
+.premium-service-grid .learn-more-link::after {
+  content: "→";
+  transition: transform 0.25s ease;
+}
+
+.premium-service-grid a:hover,
+.premium-service-grid .learn-more-link:hover {
+  color: var(--gold-2);
+  gap: 10px;
+}
+
+.premium-service-grid a:hover::after,
+.premium-service-grid .learn-more-link:hover::after {
+  transform: translateX(3px);
+}
+
+.premium-service-grid article {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+
+.premium-service-grid article:hover {
+  transform: translateY(-6px);
 }
 
 .fit {
@@ -2678,6 +2716,50 @@ details p {
 .reveal-delay-1 { transition-delay: 0.08s; }
 .reveal-delay-2 { transition-delay: 0.16s; }
 .reveal-delay-3 { transition-delay: 0.24s; }
+
+.featured-experience-card,
+.featured-card,
+.scotland-tile,
+.leader-card,
+.destination-card,
+.gallery-cell {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, filter 0.4s ease;
+}
+
+.featured-experience-card:hover,
+.featured-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 48px rgba(8, 12, 22, 0.16);
+}
+
+.scotland-tile:hover,
+.gallery-cell:hover {
+  transform: translateY(-4px) scale(1.01);
+  filter: brightness(1.04);
+}
+
+.leader-card:hover,
+.destination-card:hover {
+  transform: translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal-on-scroll,
+  .featured-experience-card,
+  .featured-card,
+  .scotland-tile,
+  .leader-card,
+  .destination-card,
+  .gallery-cell,
+  .premium-service-grid article,
+  .premium-service-grid a,
+  .premium-service-grid .learn-more-link {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
 
 .contact-cta .contact-bg {
   opacity: 1;
