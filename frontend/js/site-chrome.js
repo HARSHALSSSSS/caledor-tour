@@ -172,32 +172,41 @@
   function initScrollReveal() {
     const markVisible = (el) => {
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
+      if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
         el.classList.add("is-visible");
+        return true;
       }
+      return false;
     };
 
+    // Never hide above-the-fold content (especially hero) — that caused a white flash on load.
     const targets = document.querySelectorAll(
       ".section-light, .section-dark, .section-block, .footer"
     );
 
     targets.forEach((el, index) => {
-      if (!el.classList.contains("reveal-on-scroll")) {
-        el.classList.add("reveal-on-scroll");
-        if (index % 3 === 1) el.classList.add("reveal-delay-1");
-        if (index % 3 === 2) el.classList.add("reveal-delay-2");
+      if (el.classList.contains("hero") || el.id === "hero") return;
+      if (el.classList.contains("reveal-on-scroll")) {
+        markVisible(el);
+        return;
       }
-      markVisible(el);
+      // Already on screen: leave fully visible; only animate content below the fold.
+      if (markVisible(el)) return;
+      el.classList.add("reveal-on-scroll");
+      if (index % 3 === 1) el.classList.add("reveal-delay-1");
+      if (index % 3 === 2) el.classList.add("reveal-delay-2");
     });
 
     document.querySelectorAll(
       ".featured-experience-card, .premium-service-grid article, .scotland-tile, .related-card, .ps-pillar-card, .ps-stats-grid article, .ps-steps li"
     ).forEach((el, index) => {
-      if (!el.classList.contains("reveal-on-scroll")) {
-        el.classList.add("reveal-on-scroll");
-        if (index % 4 > 0) el.classList.add(`reveal-delay-${index % 4}`);
+      if (el.classList.contains("reveal-on-scroll")) {
+        markVisible(el);
+        return;
       }
-      markVisible(el);
+      if (markVisible(el)) return;
+      el.classList.add("reveal-on-scroll");
+      if (index % 4 > 0) el.classList.add(`reveal-delay-${index % 4}`);
     });
 
     const observer = new IntersectionObserver((entries) => {

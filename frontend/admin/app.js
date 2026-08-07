@@ -144,13 +144,47 @@ function apiHeaders() {
   return headers;
 }
 
+const apiCache = new Map();
+const API_CACHE_TTL_MS = 60000;
+let renderGeneration = 0;
+
+function invalidateApiCache(match = "") {
+  if (!match) {
+    apiCache.clear();
+    return;
+  }
+  for (const key of [...apiCache.keys()]) {
+    if (key.includes(match)) apiCache.delete(key);
+  }
+}
+
 async function api(path, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  const bust = Boolean(options.bust);
+  const canCache = method === "GET" && !bust;
+  delete options.bust;
+
+  if (canCache) {
+    const hit = apiCache.get(path);
+    if (hit && Date.now() - hit.at < API_CACHE_TTL_MS) {
+      return hit.data;
+    }
+  }
+
   const res = await fetch(`${API}${path}`, { headers: apiHeaders(), ...options });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || res.statusText || "Request failed");
   }
-  return res.json();
+  const data = await res.json();
+
+  if (canCache) {
+    apiCache.set(path, { at: Date.now(), data });
+  } else if (method !== "GET") {
+    apiCache.clear();
+  }
+
+  return data;
 }
 
 function showToast(message) {
@@ -240,33 +274,18 @@ async function cmsView(tab) {
     .map((item) => `<button class="tab ${item.id === tab ? "active" : ""}" data-tab="${item.id}" type="button">${item.label}</button>`)
     .join("");
 
-  let sections = {};
-  let settings = {};
-  let packages = [];
-  try {
-    const cmsData = await api(`/cms/${tab}`);
-    sections = cmsData.sections || {};
-  } catch {
-    // use empty defaults from schema
-  }
+  const needsSettings = TAB_USES_SETTINGS.has(tab) || tab === "footer";
+  const needsPackages = tab === "packages-page";
 
-  if (tab === "packages-page") {
-    try {
-      const pkgData = await api("/packages?active=false");
-      packages = pkgData.packages || [];
-    } catch {
-      packages = [];
-    }
-  }
+  const [cmsResult, pkgResult, settingsResult] = await Promise.all([
+    api(`/cms/${tab}`).catch(() => ({ sections: {} })),
+    needsPackages ? api("/packages?active=false").catch(() => ({ packages: [] })) : Promise.resolve({ packages: [] }),
+    needsSettings ? api("/settings").catch(() => ({ settings: {} })) : Promise.resolve({ settings: {} }),
+  ]);
 
-  if (TAB_USES_SETTINGS.has(tab) || tab === "footer") {
-    try {
-      const s = await api("/settings");
-      settings = s.settings || {};
-    } catch {
-      settings = {};
-    }
-  }
+  const sections = cmsResult.sections || {};
+  const packages = pkgResult.packages || [];
+  const settings = settingsResult.settings || {};
 
   const renderer = TAB_RENDERERS[tab];
   let content = renderer ? renderer(sections, settings, packages) : "";
@@ -394,6 +413,23 @@ function wireCmsPackagePreview() {
   }
 }
 
+function prefetchAdminData() {
+  const paths = [
+    "/dashboard/stats",
+    "/contact",
+    "/cms/home",
+    "/cms/about-us",
+    "/packages?active=false",
+    "/gallery",
+    "/faqs",
+    "/settings",
+    "/notifications",
+  ];
+  paths.forEach((path) => {
+    api(path).catch(() => {});
+  });
+}
+
 function setLoggedIn(isLoggedIn) {
   document.body.classList.toggle("login-mode", !isLoggedIn);
   appShell.hidden = !isLoggedIn;
@@ -414,6 +450,7 @@ async function login(email, password) {
   localStorage.setItem(TOKEN_KEY, token);
   updateProfile();
   setLoggedIn(true);
+  prefetchAdminData();
   render();
 }
 
@@ -436,6 +473,7 @@ async function checkAuth() {
     updateProfile();
     setLoggedIn(true);
     connectAdminSocket();
+    prefetchAdminData();
     render();
   } catch {
     logout();
@@ -860,6 +898,7 @@ function connectAdminSocket() {
 async function render() {
   if (!token) return;
 
+  const myGen = ++renderGeneration;
   const routeInfo = getRoute();
   const section = routeInfo.section === "cms-settings" ? "cms-settings/home" : routeInfo.section;
   renderSidebar(section);
@@ -881,7 +920,25 @@ async function render() {
   };
 
   const viewRenderer = views[routeInfo.section] || overviewView;
-  view.innerHTML = await viewRenderer();
+
+  // Keep previous section visible with a light loading state instead of blanking the screen.
+  view.classList.add("is-switching");
+  if (!view.innerHTML.trim()) {
+    view.innerHTML = `<div class="view-loading" role="status">Loading…</div>`;
+  }
+
+  try {
+    const html = await viewRenderer();
+    if (myGen !== renderGeneration) return;
+    view.innerHTML = html;
+  } catch (err) {
+    if (myGen !== renderGeneration) return;
+    view.innerHTML = `<div class="view-loading" role="alert">Could not load this section. ${escapeHtml(err.message || "")}</div>`;
+  } finally {
+    if (myGen === renderGeneration) view.classList.remove("is-switching");
+  }
+
+  if (myGen !== renderGeneration) return;
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -900,6 +957,7 @@ async function render() {
     if (select?.value) {
       api(`/packages/${select.value}`)
         .then(({ package: pkg }) => {
+          if (myGen !== renderGeneration) return;
           window.PackageEditor.loadIntoForm(pkg);
           window.AdminNav?.syncPackagePreviewLink("previewPackageLink", pkg.slug || "");
         })

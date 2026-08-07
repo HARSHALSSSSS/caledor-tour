@@ -1666,21 +1666,30 @@ function wireNavHighlight() {
 }
 
 async function init() {
-  try {
-    bindAccordion();
-    bindChatBubble();
-    bindPackageSearch();
-    bindBlogSearch();
-    bindNewsletterForm();
-    observeSections();
-    connectLiveUpdates();
-    wireMobileNav();
-    wireNavHighlight();
-    wireImageFallbacks();
+  // Paint static HTML immediately — never hide the page while APIs load.
+  document.body.classList.remove("is-loading");
+  document.body.classList.add("cms-ready");
 
-    await loadSettings();
-    await loadPackages();
+  bindAccordion();
+  bindChatBubble();
+  bindPackageSearch();
+  bindBlogSearch();
+  bindNewsletterForm();
+  observeSections();
+  connectLiveUpdates();
+  wireMobileNav();
+  wireNavHighlight();
+  wireImageFallbacks();
+
+  if (window.SiteChrome?.initScrollReveal) {
+    window.SiteChrome.initScrollReveal();
+  }
+
+  // Apply CMS/API data in the background; page stays visible the whole time.
+  try {
     await Promise.all([
+      loadSettings(),
+      loadPackages(),
       loadCmsHome(),
       loadCmsAbout(),
       loadCmsContact(),
@@ -1692,9 +1701,9 @@ async function init() {
       loadFaqs(),
       loadGallery(),
     ]);
+  } catch (err) {
+    console.warn("CMS/API load issue:", err);
   } finally {
-    document.body.classList.remove("is-loading");
-    document.body.classList.add("cms-ready");
     wireImageFallbacks();
     if (window.SiteChrome?.initScrollReveal) {
       window.SiteChrome.initScrollReveal();
