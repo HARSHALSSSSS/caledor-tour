@@ -74,6 +74,100 @@ export function forceSyncCanonicalHeroSection(db) {
   return true;
 }
 
+/** Homepage Travel Insights cards — same posts/images shown on the website blog section. */
+export const WEB_BLOG_DEFAULTS = [
+  {
+    title: "Scotland's Wild Highlands Beckon Travelers",
+    slug: "scotlands-wild-highlands-beckon-travelers",
+    excerpt: "From ancient castles to rugged coastlines, exploring the untamed beauty of the Scottish Highlands.",
+    content: "The Scottish Highlands offer a journey through time, where ancient castles stand guard over misty lochs and rugged coastlines stretch to the horizon.",
+    category: "Destinations",
+    featured: 1,
+    published: 1,
+    image_url: "/assets/scotland/isle-of-skye.png",
+  },
+  {
+    title: "The New Wave of Luxury in London",
+    slug: "new-wave-luxury-london",
+    excerpt: "Discover the latest openings and hidden gems shaping the city's travel scene.",
+    content: "London continues to reinvent itself as a global luxury destination, from exclusive hotels to refined dining in Mayfair.",
+    category: "UK Travel",
+    featured: 1,
+    published: 1,
+    image_url: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Why the French Riviera Remains a Benchmark",
+    slug: "french-riviera-remains-benchmark",
+    excerpt: "From yachts to private villas, a guide to the Côte d'Azur's enduring appeal.",
+    content: "The French Riviera continues to set the standard for Mediterranean luxury with glamorous resorts and a stunning coastline.",
+    category: "Europe Trends",
+    featured: 1,
+    published: 1,
+    image_url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Inside Italy's Hidden Heritage Sites",
+    slug: "inside-italys-hidden-heritage-sites",
+    excerpt: "Expert-led tours that unlock the authentic soul of Italy's iconic cities.",
+    content: "Beyond the well-trodden paths of Rome and Venice lies a treasure trove of hidden heritage sites.",
+    category: "Destination Highlights",
+    featured: 0,
+    published: 1,
+    image_url: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    title: "Essential Travel Tips for Europe 2026",
+    slug: "essential-travel-tips-europe-2026",
+    excerpt: "Everything you need to know before planning your European adventure.",
+    content: "Planning a trip to Europe requires careful consideration of visas, transportation, and cultural nuances.",
+    category: "Travel Tips",
+    featured: 0,
+    published: 1,
+    image_url: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=85",
+  },
+];
+
+/** Fill missing blog images so admin CMS Blog matches the homepage Travel Insights cards. */
+export function syncCanonicalBlogPosts(db) {
+  const existing = db.prepare('SELECT id, slug, image_url FROM blog_posts').all();
+  const bySlug = new Map(existing.map((row) => [row.slug, row]));
+  const insert = db.prepare(
+    `INSERT INTO blog_posts (title, slug, excerpt, content, category, featured, published, image_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  const updateImage = db.prepare(
+    `UPDATE blog_posts SET image_url = ?, updated_at = datetime('now') WHERE id = ?`
+  );
+
+  let changed = false;
+  const run = db.transaction(() => {
+    for (const post of WEB_BLOG_DEFAULTS) {
+      const row = bySlug.get(post.slug);
+      if (!row) {
+        insert.run(
+          post.title,
+          post.slug,
+          post.excerpt,
+          post.content,
+          post.category,
+          post.featured,
+          post.published,
+          post.image_url
+        );
+        changed = true;
+        continue;
+      }
+      if (!String(row.image_url || "").trim()) {
+        updateImage.run(post.image_url, row.id);
+        changed = true;
+      }
+    }
+  });
+  run();
+  return changed;
+}
+
 /** Homepage Photo Gallery images — must match frontend/index.html static gallery. */
 export const WEB_GALLERY_DEFAULTS = [
   { title: 'British Curry Championship Winner', alt_text: 'British Curry Championship Winner', image_url: '/uploads/gallery/gallery-01-winner-certificate.png', album: 'Events', sort_order: 1 },

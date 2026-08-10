@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getDb } from '../db.js';
 import { flattenCmsDefaults } from '../cms-defaults.js';
-import { forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection, syncCanonicalGallerySection, syncAdminDisplayName } from '../cms-repair.js';
+import { forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection, syncCanonicalGallerySection, syncCanonicalBlogPosts, syncAdminDisplayName } from '../cms-repair.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.join(__dirname, '..');
@@ -110,6 +110,9 @@ function main() {
   }
   if (syncCanonicalGallerySection(db)) {
     console.log('✓ Gallery synced with website Photo Gallery images');
+  }
+  if (syncCanonicalBlogPosts(db)) {
+    console.log('✓ Blog posts synced with website Travel Insights images');
   }
   if (syncAdminDisplayName(db)) {
     console.log('✓ Admin display name cleaned');

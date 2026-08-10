@@ -381,7 +381,7 @@ a {
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center 62%;
 }
 
 .ps-cta-overlay {

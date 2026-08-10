@@ -76,6 +76,44 @@ const TEAM_DEFAULTS = [
   },
 ];
 
+const BLOG_POST_DEFAULTS = [
+  {
+    slug: "scotlands-wild-highlands-beckon-travelers",
+    title: "Scotland's Wild Highlands Beckon Travelers",
+    excerpt: "From ancient castles to rugged coastlines, exploring the untamed beauty of the Scottish Highlands.",
+    category: "Destinations",
+    image_url: "/assets/scotland/isle-of-skye.png",
+  },
+  {
+    slug: "new-wave-luxury-london",
+    title: "The New Wave of Luxury in London",
+    excerpt: "Discover the latest openings and hidden gems shaping the city's travel scene.",
+    category: "UK Travel",
+    image_url: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    slug: "french-riviera-remains-benchmark",
+    title: "Why the French Riviera Remains a Benchmark",
+    excerpt: "From yachts to private villas, a guide to the Côte d'Azur's enduring appeal.",
+    category: "Europe Trends",
+    image_url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    slug: "inside-italys-hidden-heritage-sites",
+    title: "Inside Italy's Hidden Heritage Sites",
+    excerpt: "Expert-led tours that unlock the authentic soul of Italy's iconic cities.",
+    category: "Destination Highlights",
+    image_url: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=1200&q=85",
+  },
+  {
+    slug: "essential-travel-tips-europe-2026",
+    title: "Essential Travel Tips for Europe 2026",
+    excerpt: "Everything you need to know before planning your European adventure.",
+    category: "Travel Tips",
+    image_url: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=85",
+  },
+];
+
 const CONTACT_CTA_DEFAULTS = {
   title: "Let's Create Exceptional UK & Europe Experiences Together",
   subtitle: "Partner with a DMC that understands luxury, reliability, and bespoke operations.",
@@ -854,8 +892,21 @@ function renderPackageGrid() {
   grid.innerHTML = packages.slice(0, limit).map((pkg) => featuredExperienceCard(pkg)).join("");
 }
 
+function defaultBlogImage(post = {}) {
+  const match = BLOG_POST_DEFAULTS.find((item) => item.slug === post.slug || item.title === post.title);
+  return match?.image_url || "";
+}
+
+function mergeBlogList(apiPosts = []) {
+  if (!apiPosts.length) return BLOG_POST_DEFAULTS.map((post) => ({ ...post, published: 1 }));
+  return apiPosts.map((api) => {
+    const image_url = api.image_url || defaultBlogImage(api) || "";
+    return { ...api, image_url };
+  });
+}
+
 function blogCard(post, listing = {}) {
-  const image = assetUrl(post.image_url, post.updated_at) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=700&q=85";
+  const image = assetUrl(post.image_url || defaultBlogImage(post), post.updated_at) || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=700&q=85";
   const excerptLen = parseInt(listing.excerpt_length || "150", 10);
   let excerpt = post.excerpt || "";
   if (excerpt.length > excerptLen) excerpt = `${excerpt.slice(0, excerptLen).trim()}…`;
@@ -972,10 +1023,12 @@ async function loadPackages() {
 async function loadBlogPosts() {
   try {
     const data = await fetchJson("/blog?published=true");
-    cmsState.blogPosts = data.posts || [];
+    cmsState.blogPosts = mergeBlogList(data.posts || []);
     renderBlogGrid();
   } catch (err) {
     console.error("loadBlogPosts:", err);
+    cmsState.blogPosts = mergeBlogList([]);
+    renderBlogGrid();
   }
 }
 

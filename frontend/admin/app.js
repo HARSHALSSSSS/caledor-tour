@@ -319,6 +319,30 @@ async function saveCmsTab(tab) {
       await api("/settings", { method: "PUT", body: JSON.stringify({ settings }) });
     }
   }
+
+  if (tab === "blog") {
+    await saveBlogForm();
+  }
+}
+
+async function saveBlogForm() {
+  const form = document.getElementById("blogForm");
+  if (!form) return null;
+  const data = formData(form);
+  if (!String(data.title || "").trim()) return null;
+  const payload = {
+    title: data.title,
+    category: data.category,
+    image_url: data.image_url,
+    excerpt: data.excerpt,
+    content: data.content,
+    published: data.published !== "0",
+    featured: true,
+  };
+  if (data.id) {
+    return api(`/blog/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
+  }
+  return api("/blog", { method: "POST", body: JSON.stringify(payload) });
 }
 
 async function saveFaqSection() {
@@ -516,6 +540,7 @@ async function handleSaveAction() {
       await saveCmsTab(routeInfo.tab);
       showToast("Saved — changes are live on the website");
       markSaved();
+      if (routeInfo.tab === "blog") render();
       return;
     }
     if (routeInfo.section === "package-settings") {
@@ -604,23 +629,13 @@ function wireEntityHandlers() {
     }
     if (form.id === "blogForm") {
       e.preventDefault();
-      const data = formData(e.target);
-      const payload = {
-        title: data.title,
-        category: data.category,
-        image_url: data.image_url,
-        excerpt: data.excerpt,
-        content: data.content,
-        published: data.published === "1",
-      };
       try {
-        if (data.id) {
-          await api(`/blog/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
-          showToast("Post updated");
-        } else {
-          await api("/blog", { method: "POST", body: JSON.stringify(payload) });
-          showToast("Post created");
+        const saved = await saveBlogForm();
+        if (!saved) {
+          showToast("Enter a post title first");
+          return;
         }
+        showToast("Post saved — live on the website");
         render();
       } catch (err) {
         showToast(err.message);
@@ -649,6 +664,25 @@ function wireEntityHandlers() {
       } catch (err) {
         showToast(err.message);
       }
+    }
+  });
+
+  document.addEventListener("change", async (e) => {
+    const fileInput = e.target?.classList?.contains("blog-row-file") ? e.target : null;
+    if (!fileInput) return;
+    const file = fileInput.files?.[0];
+    const id = fileInput.dataset.id;
+    if (!file || !id) return;
+    try {
+      if (!window.CmsUI?.uploadImage) throw new Error("Upload is not available");
+      const url = await window.CmsUI.uploadImage(file);
+      await api(`/blog/${id}`, { method: "PUT", body: JSON.stringify({ image_url: url }) });
+      showToast("Image updated — live on the website");
+      render();
+    } catch (err) {
+      showToast(err.message || "Upload failed");
+    } finally {
+      fileInput.value = "";
     }
   });
 
@@ -769,25 +803,37 @@ function wireEntityHandlers() {
         }
         return;
       }
+      if (action === "change-blog-image") {
+        document.querySelector(`.blog-row-file[data-id="${button.dataset.id}"]`)?.click();
+        return;
+      }
       if (action === "edit-blog") {
         api(`/blog/${button.dataset.id}`).then(({ post }) => {
           const form = document.getElementById("blogForm");
           if (!form) return;
+          const imageUrl = window.AdminEntities?.blogDisplayImage?.(post) || post.image_url || "";
           form.querySelector('[name="id"]').value = post.id;
           form.title.value = post.title || "";
           form.category.value = post.category || "";
-          form.image_url.value = post.image_url || "";
-          const imgInput = document.getElementById("img-blog-post-image");
-          if (imgInput) imgInput.dispatchEvent(new Event("input"));
+          const imageInput = form.querySelector('[name="image_url"]') || document.getElementById("img-blog-post-image");
+          if (imageInput) imageInput.value = imageUrl;
           if (window.CmsUI) window.CmsUI.wire(document.getElementById("view"));
+          imageInput?.dispatchEvent(new Event("input"));
           form.excerpt.value = post.excerpt || "";
           form.content.value = post.content || "";
           form.published.value = post.published ? "1" : "0";
+          form.scrollIntoView({ behavior: "smooth", block: "start" });
         }).catch((err) => showToast(err.message));
         return;
       }
       if (action === "reset-blog-form") {
-        document.getElementById("blogForm")?.reset();
+        const form = document.getElementById("blogForm");
+        form?.reset();
+        const imageInput = form?.querySelector('[name="image_url"]') || document.getElementById("img-blog-post-image");
+        if (imageInput) {
+          imageInput.value = "";
+          imageInput.dispatchEvent(new Event("input"));
+        }
         return;
       }
       if (action === "save-faq-section") {

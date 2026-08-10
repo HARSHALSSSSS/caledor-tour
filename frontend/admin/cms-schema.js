@@ -584,7 +584,7 @@ window.CmsSchema = (() => {
         ${cmsInput("page", "title", "Section Kicker", val(s, "page", "title", "Travel Insights"))}
         ${cmsInput("page", "subtitle", "Section Subtitle", val(s, "page", "subtitle", "Editorial perspectives on destinations, trends, and travel planning."))}
         ${cmsTextarea("page", "description", "Optional Description", val(s, "page", "description"))}
-        <div class="field-full"><span class="settings-copy">Blog posts are managed below. Cards appear on the homepage Travel Insights section.</span></div>
+        <div class="field-full"><span class="settings-copy">Blog posts and images are managed below. They appear on the homepage Travel Insights section.</span></div>
       </div>`, "page", isOn(s, "page")),
 
       section("Homepage Blog Display", `<div class="form-grid">

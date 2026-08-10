@@ -83,6 +83,20 @@ window.AdminEntities = (() => {
     </section>`;
   }
 
+  const WEB_BLOG_IMAGES = {
+    "scotlands-wild-highlands-beckon-travelers": "/assets/scotland/isle-of-skye.png",
+    "new-wave-luxury-london": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=85",
+    "french-riviera-remains-benchmark": "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=85",
+    "inside-italys-hidden-heritage-sites": "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=1200&q=85",
+    "essential-travel-tips-europe-2026": "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1200&q=85",
+  };
+
+  function blogDisplayImage(post = {}) {
+    return post.image_url
+      || WEB_BLOG_IMAGES[post.slug]
+      || "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=700&q=85";
+  }
+
   async function blogView(api, embedded = false) {
     const data = await api("/blog?published=all").catch(() => ({ posts: [] }));
     const posts = data.posts || [];
@@ -92,7 +106,7 @@ window.AdminEntities = (() => {
     const wrap = embedded ? "" : '<section class="content-grid">';
     const wrapEnd = embedded ? "" : "</section>";
     return `${wrap}
-      ${panel("Add / Edit Blog Post", "Published posts appear in Travel Insights on the homepage", `
+      ${panel("Add / Edit Blog Post", "These cards are the Travel Insights section on the homepage. Upload an image, then Save Post or Save Changes — it goes live immediately.", `
         <form id="blogForm" class="form-grid">
           <input type="hidden" name="id" value="" />
           ${field("Title", "", "title")}
@@ -107,16 +121,30 @@ window.AdminEntities = (() => {
           </div>
         </form>`)}
       <div class="table-panel">
-        <div class="table-head"><div><h2 class="panel-title">Blog Posts</h2><p class="panel-subtitle">${posts.length} posts</p></div></div>
-        <table><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>${posts.map((p) => `
-          <tr><td>${esc(p.title)}</td><td>${esc(p.category)}</td>
-          <td>${p.published ? statusBadge("confirmed") : statusBadge("pending")}</td>
-          <td>
-            <button class="btn secondary sm" type="button" data-action="edit-blog" data-id="${p.id}">Edit</button>
-            <button class="btn secondary sm" type="button" data-action="delete-blog" data-id="${p.id}">Delete</button>
-          </td></tr>`).join("") || '<tr><td colspan="4">No posts yet</td></tr>'}
-        </tbody></table>
+        <div class="table-head">
+          <div>
+            <h2 class="panel-title">Homepage Travel Insights</h2>
+            <p class="panel-subtitle">${posts.length} post${posts.length === 1 ? "" : "s"} — same images shown on the website blog section</p>
+          </div>
+        </div>
+        <div class="blog-admin-grid">${posts.length ? posts.map((p) => {
+          const src = esc(window.CALEDOR_CONFIG?.mediaUrl?.(blogDisplayImage(p)) ?? blogDisplayImage(p));
+          return `
+          <div class="blog-admin-item">
+            <div class="blog-admin-thumb" style="background-image:url('${src}');background-size:cover;background-position:center"></div>
+            <div class="blog-admin-meta">
+              <strong>${esc(p.title || "Untitled")}</strong>
+              <span>${esc(p.category || "Travel Insights")} · ${p.published ? "Published" : "Draft"}</span>
+            </div>
+            <div class="actions-row">
+              <button class="btn secondary sm" type="button" data-action="change-blog-image" data-id="${p.id}">Change Image</button>
+              <input class="blog-row-file" type="file" accept="image/*" hidden data-id="${p.id}" />
+              <button class="btn secondary sm" type="button" data-action="edit-blog" data-id="${p.id}">Edit</button>
+              <button class="btn secondary sm" type="button" data-action="delete-blog" data-id="${p.id}">Delete</button>
+            </div>
+          </div>`;
+        }).join("") : '<p class="settings-copy" style="padding:16px">No posts yet</p>'}
+        </div>
       </div>
     ${wrapEnd}`;
   }
@@ -298,5 +326,6 @@ window.AdminEntities = (() => {
 
   return {
     packagesView, galleryView, blogView, bookingsView, faqView, notificationsView, usersView, panel, packagePublicUrl, sitePublicUrl,
+    blogDisplayImage,
   };
 })();

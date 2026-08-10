@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcrypt';
 import { flattenCmsDefaults } from './cms-defaults.js';
-import { syncCanonicalTeamSection, syncCanonicalHeroSection, syncCanonicalGallerySection, syncAdminDisplayName } from './cms-repair.js';
+import { syncCanonicalTeamSection, syncCanonicalHeroSection, syncCanonicalGallerySection, syncCanonicalBlogPosts, syncAdminDisplayName } from './cms-repair.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, 'data', 'caledor.db');
@@ -26,6 +26,7 @@ export function getDb() {
   syncCanonicalHeroSection(db);
   syncCanonicalTeamSection(db);
   syncCanonicalGallerySection(db);
+  syncCanonicalBlogPosts(db);
   syncAdminDisplayName(db);
   return db;
 }

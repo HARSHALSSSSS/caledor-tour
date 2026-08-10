@@ -1352,6 +1352,40 @@ select {
   font-size: 0.74rem;
 }
 
+.blog-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+
+.blog-admin-item {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.blog-admin-thumb {
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+  background-position: center;
+  background-size: cover;
+  background-color: #1a2233;
+}
+
+.blog-admin-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.blog-admin-meta span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
 .destination-row {
   position: relative;
   padding: 16px;
