@@ -1,0 +1,12 @@
+# cPanel static hosting rules for Caledor DMC
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Backend media lives on Render, not in public_html.
+RewriteRule ^uploads/(.*)$ https://caledor-tour.onrender.com/uploads/$1 [R=302,L,NC]
+
+# Pretty URLs (same behavior as local dev-server / Vercel rewrites)
+RewriteRule ^package/([^/]+)/?$ /package-detail.html?slug=$1 [L,QSA,NC]
+RewriteRule ^premium-services/?$ /premium-services.html [L,NC]
+</IfModule>

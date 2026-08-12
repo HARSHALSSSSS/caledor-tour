@@ -2,21 +2,92 @@
  * Frontend runtime config.
  *
  * Local dev (with npm run dev): leave API_ORIGIN empty — dev-server proxies /api, /uploads, /socket.io.
- * Split deploy (Vercel + Render): either keep empty and use vercel.json rewrites, OR set API_ORIGIN to your Render URL.
+ * Split deploy (cPanel + Render): production hostnames point API_ORIGIN at Render.
  */
 (function () {
-  const API_ORIGIN = "";
+  const PROD_API_ORIGIN = "https://caledor-tour.onrender.com";
+  const host = String(window.location?.hostname || "").toLowerCase();
+  const isProdHost = host === "caledordmc.co.uk" || host === "www.caledordmc.co.uk";
+  const API_ORIGIN = isProdHost ? PROD_API_ORIGIN : "";
 
   function trimOrigin(origin) {
     return String(origin || "").replace(/\/+$/, "");
   }
 
+  function isUploadPath(value) {
+    const path = String(value || "").trim();
+    return path.startsWith("/uploads/") || path.startsWith("uploads/");
+  }
+
+  function maybeMediaUrl(url) {
+    if (!url) return "";
+    const value = String(url).trim();
+    if (/^https?:\/\//i.test(value)) return value;
+    const path = value.startsWith("/") ? value : `/${value}`;
+
+    // Backend media only — frontend static files stay on the current domain (cPanel).
+    if (path.startsWith("/uploads/")) {
+      const origin = trimOrigin(API_ORIGIN);
+      return origin ? `${origin}${path}` : path;
+    }
+
+    return path;
+  }
+
+  function applyDeferredMedia(el) {
+    if (!el || !el.getAttribute) return;
+
+    const deferredSrc = el.getAttribute("data-caledor-media");
+    if (deferredSrc) {
+      el.removeAttribute("data-caledor-media");
+      el.src = maybeMediaUrl(deferredSrc);
+    }
+
+    const deferredBg = el.getAttribute("data-caledor-bg");
+    if (deferredBg) {
+      el.removeAttribute("data-caledor-bg");
+      const fixed = maybeMediaUrl(deferredBg);
+      if (fixed) el.style.backgroundImage = `url("${fixed.replace(/"/g, '\\"')}")`;
+    }
+  }
+
+  function rewriteOne(el) {
+    if (!el || !el.getAttribute) return;
+
+    applyDeferredMedia(el);
+
+    if (el.tagName === "IMG") {
+      const src = el.getAttribute("src");
+      if (src && isUploadPath(src)) {
+        el.src = maybeMediaUrl(src);
+      }
+      return;
+    }
+
+    if (el.hasAttribute && el.hasAttribute("style")) {
+      const style = el.getAttribute("style");
+      if (style && style.includes("/uploads/")) {
+        const next = style.replace(/url\((['"]?)(\/uploads\/[^'")]+)\1\)/g, (_m, q, uploadsPath) => {
+          const fixed = maybeMediaUrl(uploadsPath);
+          return `url(${q}${fixed}${q})`;
+        });
+        if (next && next !== style) el.setAttribute("style", next);
+      }
+    }
+  }
+
   window.CALEDOR_CONFIG = {
     API_ORIGIN,
+    isProdHost,
 
     get apiBase() {
       const origin = trimOrigin(API_ORIGIN);
       return origin ? `${origin}/api` : "/api";
+    },
+
+    get uploadsBase() {
+      const origin = trimOrigin(API_ORIGIN);
+      return origin ? `${origin}/uploads` : "/uploads";
     },
 
     get socketOrigin() {
@@ -31,16 +102,103 @@
     },
 
     mediaUrl(url) {
-      if (!url) return "";
-      const value = String(url).trim();
-      if (/^https?:\/\//i.test(value)) return value;
-      const path = value.startsWith("/") ? value : `/${value}`;
-      const origin = trimOrigin(API_ORIGIN);
-      return origin ? `${origin}${path}` : path;
+      return maybeMediaUrl(url);
     },
 
     uploadUrl() {
       return `${this.apiBase}/upload`;
     },
+
+    ensureSocketIoClient() {
+      if (typeof window.io !== "undefined") return Promise.resolve(window.io);
+      if (window.__calediorSocketIoPromise) return window.__calediorSocketIoPromise;
+
+      const socketSrc = this.socketOrigin
+        ? `${this.socketOrigin}/socket.io/socket.io.js`
+        : "/socket.io/socket.io.js";
+
+      window.__calediorSocketIoPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-socket-io="caleriodmc"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve(window.io));
+          existing.addEventListener("error", reject);
+          return;
+        }
+
+        const s = document.createElement("script");
+        s.async = true;
+        s.defer = true;
+        s.dataset.socketIo = "caleriodmc";
+        s.src = socketSrc;
+        s.onload = () => resolve(window.io);
+        s.onerror = () => reject(new Error(`Failed to load socket.io client: ${socketSrc}`));
+        document.head.appendChild(s);
+      });
+
+      return window.__calediorSocketIoPromise;
+    },
+
+    rewriteMediaUrls(root = document) {
+      if (!root) return;
+
+      root.querySelectorAll("img[data-caledor-media], [data-caledor-bg]").forEach((el) => {
+        applyDeferredMedia(el);
+      });
+
+      root.querySelectorAll("img").forEach((img) => {
+        rewriteOne(img);
+      });
+
+      root.querySelectorAll("[style]").forEach((el) => {
+        rewriteOne(el);
+      });
+
+      if (root === document && !window.__calediorMediaObserver) {
+        window.__calediorMediaObserver = new MutationObserver((mutations) => {
+          try {
+            for (const m of mutations) {
+              if (m.type === "childList") {
+                m.addedNodes.forEach((n) => {
+                  if (!(n instanceof Element)) return;
+                  n.querySelectorAll?.("img[data-caledor-media], [data-caledor-bg]").forEach((el) => applyDeferredMedia(el));
+                  n.querySelectorAll?.("img").forEach((img) => rewriteOne(img));
+                  n.querySelectorAll?.("[style]").forEach((el) => rewriteOne(el));
+                  rewriteOne(n);
+                });
+              }
+              if (m.type === "attributes") {
+                const el = m.target instanceof Element ? m.target : null;
+                if (!el) continue;
+                const name = m.attributeName;
+                if (name === "data-caledor-media" || name === "data-caledor-bg") applyDeferredMedia(el);
+                if (name === "src" && el.tagName === "IMG") rewriteOne(el);
+                if (name === "style") rewriteOne(el);
+              }
+            }
+          } catch {
+            // keep page usable if rewrite fails
+          }
+        });
+        window.__calediorMediaObserver.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["src", "style", "data-caledor-media", "data-caledor-bg"],
+        });
+      }
+    },
   };
+
+  const runRewrite = () => {
+    try {
+      window.CALEDOR_CONFIG?.rewriteMediaUrls?.(document);
+    } catch {
+      // keep page functional even if rewrite fails
+    }
+  };
+
+  runRewrite();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runRewrite, { once: true });
+  }
 })();

@@ -79,8 +79,13 @@ window.PackageEditor = (() => {
         </div>
       </article>
 
-      <form id="packageForm" class="settings-panel">
-        <div class="settings-head"><div><h2 class="settings-title">Package Detail Content</h2></div></div>
+      <form id="packageForm" class="settings-panel" data-mode="edit">
+        <div class="settings-head">
+          <div>
+            <h2 class="settings-title">Package Detail Content</h2>
+            <p class="panel-subtitle" id="packageFormModeHint" hidden>You are creating a new package. Fill in the details and click Save Package.</p>
+          </div>
+        </div>
         <div class="settings-body">
           <input type="hidden" name="id" value="" />
           <div class="form-grid">
@@ -164,6 +169,10 @@ window.PackageEditor = (() => {
     const form = document.getElementById("packageForm");
     if (!form || !pkg) return;
 
+    form.dataset.mode = "edit";
+    const hint = document.getElementById("packageFormModeHint");
+    if (hint) hint.hidden = true;
+
     const set = (name, val) => {
       const el = form.querySelector(`[name="${name}"]`);
       if (el) el.value = val ?? "";
@@ -214,6 +223,44 @@ window.PackageEditor = (() => {
       deleteBtn.hidden = !pkg.id;
       deleteBtn.dataset.id = pkg.id ? String(pkg.id) : "";
     }
+  }
+
+  function resetFormForCreate() {
+    const form = document.getElementById("packageForm");
+    if (!form) return;
+
+    form.dataset.mode = "create";
+    const hint = document.getElementById("packageFormModeHint");
+    if (hint) hint.hidden = false;
+
+    form.querySelector('[name="id"]').value = "";
+    form.reset();
+    form.querySelector('[name="id"]').value = "";
+
+    const select = document.getElementById("packageSelect");
+    if (select) select.value = "";
+
+    const deleteBtn = document.getElementById("deletePackageBtn");
+    if (deleteBtn) {
+      deleteBtn.hidden = true;
+      deleteBtn.dataset.id = "";
+    }
+
+    nav()?.syncPackagePreviewLink("previewPackageLink", "");
+
+    fillList(document.getElementById("highlightsList"), [], listItemRow);
+    fillList(document.getElementById("itineraryList"), [], itineraryRow);
+    fillList(document.getElementById("galleryList"), [], galleryRow);
+    fillList(document.getElementById("inclusionsList"), [], listItemRow);
+    fillList(document.getElementById("exclusionsList"), [], listItemRow);
+
+    const activeEl = form.querySelector('[name="active"]');
+    const featuredEl = form.querySelector('[name="featured"]');
+    if (activeEl) activeEl.checked = true;
+    if (featuredEl) featuredEl.checked = false;
+
+    if (window.CmsUI) window.CmsUI.wire(form);
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function fieldValue(form, name) {
@@ -294,18 +341,21 @@ window.PackageEditor = (() => {
     };
   }
 
-  function wire(api, reload) {
+  function wire(api, reload, hooks = {}) {
     const select = document.getElementById("packageSelect");
     if (select && !select._pkgWired) {
       select._pkgWired = true;
       select.addEventListener("change", async () => {
         if (!select.value) {
           nav()?.syncPackagePreviewLink("previewPackageLink", "");
+          resetFormForCreate();
+          hooks.onFormLoaded?.();
           return;
         }
         const { package: pkg } = await api(`/packages/${select.value}`);
         loadIntoForm(pkg);
         if (window.CmsUI) window.CmsUI.wire(document.getElementById("view"));
+        hooks.onFormLoaded?.(pkg);
       });
     }
 
@@ -348,5 +398,5 @@ window.PackageEditor = (() => {
     });
   }
 
-  return { renderForm, loadIntoForm, collectFromForm, wire, itineraryRow, listItemRow, galleryRow };
+  return { renderForm, loadIntoForm, collectFromForm, resetFormForCreate, wire, itineraryRow, listItemRow, galleryRow };
 })();

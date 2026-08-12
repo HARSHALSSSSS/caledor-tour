@@ -158,7 +158,6 @@ function renderPackage(pkg, related = []) {
   setText("pkgSeason", pkg.season || "Year-Round");
   setText("pkgAboutLabel", pkg.about_label || "The Expedition");
   setText("pkgItineraryHeading", pkg.itinerary_heading || "A Curated Day-by-Day Path");
-  setText("pkgGalleryHeading", pkg.gallery_heading || "Gallery");
 
   const desc = document.getElementById("pkgDescription");
   if (desc) {
@@ -186,19 +185,6 @@ function renderPackage(pkg, related = []) {
         </div>
       </article>`).join("")
       : `<p style="color:rgba(255,255,255,0.7)">Itinerary details coming soon.</p>`;
-  }
-
-  const galleryEl = document.getElementById("pkgGallery");
-  if (galleryEl) {
-    const images = gallery.length
-      ? gallery
-      : (pkg.image_url ? [{ url: pkg.image_url, alt: pkg.name }] : []);
-    galleryEl.innerHTML = images.length
-      ? images.map((item) => {
-          const src = assetUrl(item.url || item.image_url || item, pkg.updated_at) || IMAGE_FALLBACK;
-          return `<img ${withImageFallback(src, item.alt || pkg.name)} />`;
-        }).join("")
-      : `<img ${withImageFallback(IMAGE_FALLBACK, pkg.name || "Experience")} />`;
   }
 
   const relatedEl = document.getElementById("pkgRelated");

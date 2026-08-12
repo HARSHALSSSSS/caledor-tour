@@ -17,10 +17,12 @@ window.AdminEntities = (() => {
     </div>`;
   }
 
-  async function packagesView(api) {
+  async function packagesView(api, selectedId = "") {
     const data = await api("/packages?active=false").catch(() => ({ packages: [] }));
     const packages = data.packages || [];
-    return window.PackageEditor.renderForm(packages, packages[0]?.id || "");
+    const hasSelected = selectedId && packages.some((p) => String(p.id) === String(selectedId));
+    const pick = hasSelected ? selectedId : (packages[0]?.id || "");
+    return window.PackageEditor.renderForm(packages, pick);
   }
 
   async function galleryView(api) {

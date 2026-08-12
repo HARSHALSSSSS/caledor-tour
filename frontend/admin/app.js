@@ -14,6 +14,12 @@ const toast = document.getElementById("toast");
 let token = localStorage.getItem(TOKEN_KEY) || "";
 let currentUser = null;
 
+/** Tracks which package is selected in Package Settings after save/load. */
+const packageUiState = { selectedPackageId: "" };
+
+/** Saved HTML snapshots for Discard — restores only the current screen, not the whole admin. */
+const viewSnapshots = new Map();
+
 const routes = [
   { id: "overview", label: "Dashboard", icon: "dashboard", title: "Dashboard Overview", crumbs: ["Admin", "Overview"] },
   { id: "cms-settings/home", label: "CMS Settings", icon: "settings", title: "CMS Settings", crumbs: ["Admin", "CMS Settings"] },
@@ -323,6 +329,8 @@ async function saveCmsTab(tab) {
   if (tab === "blog") {
     await saveBlogForm();
   }
+
+  captureViewSnapshot(getRoute().raw);
 }
 
 async function saveBlogForm() {
@@ -362,7 +370,55 @@ function simpleSection(title, subtitle, cards = [], body = "") {
 }
 
 function packageView() {
-  return window.AdminEntities.packagesView(api);
+  return window.AdminEntities.packagesView(api, packageUiState.selectedPackageId);
+}
+
+function captureViewSnapshot(routeKey) {
+  const viewEl = document.getElementById("view");
+  if (!viewEl || !routeKey) return;
+  viewSnapshots.set(routeKey, viewEl.innerHTML);
+}
+
+function rehydrateView(routeInfo) {
+  document.querySelectorAll(".tab").forEach((tab) => {
+    if (tab._tabWired) return;
+    tab._tabWired = true;
+    tab.addEventListener("click", () => {
+      if (!tab.dataset.tab) return;
+      window.location.hash = `cms-settings/${tab.dataset.tab}`;
+    });
+  });
+
+  wireDynamicHandlers();
+  if (window.CmsUI) window.CmsUI.wire(document.getElementById("view"));
+
+  if (routeInfo.section === "package-settings" && window.PackageEditor) {
+    window.PackageEditor.wire(api, render, {
+      onFormLoaded: () => captureViewSnapshot(routeInfo.raw),
+    });
+  }
+  if (routeInfo.section === "cms-settings" && routeInfo.tab === "packages-page") {
+    wireCmsPackagePreview();
+  }
+}
+
+function discardCurrentViewChanges() {
+  const routeInfo = getRoute();
+  const snap = viewSnapshots.get(routeInfo.raw);
+  const viewEl = document.getElementById("view");
+  if (!snap || !viewEl) {
+    render();
+    showToast("Changes discarded");
+    return;
+  }
+  viewEl.innerHTML = snap;
+  rehydrateView(routeInfo);
+  if (routeInfo.section === "package-settings" && window.PackageEditor) {
+    window.PackageEditor.wire(api, render, {
+      onFormLoaded: () => captureViewSnapshot(routeInfo.raw),
+    });
+  }
+  showToast("Unsaved changes discarded");
 }
 
 function userView() {
@@ -547,6 +603,7 @@ async function handleSaveAction() {
       await savePackageForm();
       showToast("Package saved — live on the website");
       markSaved();
+      await refreshPackageSettingsView();
       return;
     }
     if (routeInfo.section === "faq-management") {
@@ -563,26 +620,39 @@ async function handleSaveAction() {
 
 async function savePackageForm() {
   const form = document.getElementById("packageForm");
-  if (!form || !window.PackageEditor) throw new Error("Open Package Settings and select a package first");
+  if (!form || !window.PackageEditor) throw new Error("Open Package Settings first");
   const payload = window.PackageEditor.collectFromForm(form);
-  let id = form.querySelector('[name="id"]')?.value;
-  if (!id) id = document.getElementById("packageSelect")?.value || "";
+  const hiddenId = String(form.querySelector('[name="id"]')?.value || "").trim();
+  const isCreate = form.dataset.mode === "create" || !hiddenId;
   delete payload.id;
+
   if (!payload.name?.trim()) throw new Error("Package name is required");
   if (!payload.slug?.trim()) payload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   if (!payload.image_url) {
     throw new Error("Please upload or paste a Hero Image before saving");
   }
+
   let saved;
-  if (id) {
-    saved = await api(`/packages/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-  } else {
+  if (isCreate) {
     saved = await api("/packages", { method: "POST", body: JSON.stringify(payload) });
+  } else {
+    saved = await api(`/packages/${hiddenId}`, { method: "PUT", body: JSON.stringify(payload) });
   }
-  if (saved?.package && window.PackageEditor?.loadIntoForm) {
-    window.PackageEditor.loadIntoForm(saved.package);
+
+  if (saved?.package) {
+    packageUiState.selectedPackageId = String(saved.package.id || "");
+    if (window.PackageEditor?.loadIntoForm) {
+      window.PackageEditor.loadIntoForm(saved.package);
+    }
+    captureViewSnapshot(getRoute().raw);
   }
   return saved;
+}
+
+async function refreshPackageSettingsView() {
+  packageUiState.selectedPackageId = packageUiState.selectedPackageId || "";
+  invalidateApiCache("/packages");
+  await render();
 }
 
 function formData(form) {
@@ -603,7 +673,8 @@ function wireEntityHandlers() {
       try {
         await savePackageForm();
         showToast("Package saved — live on the website");
-        render();
+        markSaved();
+        await refreshPackageSettingsView();
       } catch (err) {
         showToast(err.message || "Save failed");
       }
@@ -715,8 +786,8 @@ function wireEntityHandlers() {
         return;
       }
       if (action === "discard-changes") {
-        render();
-        showToast("Changes discarded");
+        e.preventDefault();
+        discardCurrentViewChanges();
         return;
       }
       if (action === "refresh-dashboard") {
@@ -752,7 +823,10 @@ function wireEntityHandlers() {
         try {
           await api(`/packages/${pkgId}`, { method: "DELETE" });
           showToast("Package deleted — removed from website");
-          render();
+          if (String(packageUiState.selectedPackageId) === String(pkgId)) {
+            packageUiState.selectedPackageId = "";
+          }
+          await refreshPackageSettingsView();
         } catch (err) {
           showToast(err.message);
         }
@@ -760,25 +834,16 @@ function wireEntityHandlers() {
       }
       if (action === "edit-package") {
         api(`/packages/${button.dataset.id}`).then(({ package: pkg }) => {
+          packageUiState.selectedPackageId = String(pkg.id || "");
           window.PackageEditor.loadIntoForm(pkg);
           if (window.CmsUI) window.CmsUI.wire(document.getElementById("view"));
+          captureViewSnapshot(getRoute().raw);
           document.getElementById("packageForm")?.scrollIntoView({ behavior: "smooth" });
         }).catch((err) => showToast(err.message));
         return;
       }
       if (action === "reset-package-form") {
-        document.getElementById("packageForm")?.reset();
-        document.getElementById("packageSelect").value = "";
-        const deleteBtn = document.getElementById("deletePackageBtn");
-        if (deleteBtn) {
-          deleteBtn.hidden = true;
-          deleteBtn.dataset.id = "";
-        }
-        window.AdminNav?.syncPackagePreviewLink("previewPackageLink", "");
-        ["highlightsList", "itineraryList", "galleryList", "inclusionsList", "exclusionsList"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.innerHTML = "";
-        });
+        window.PackageEditor?.resetFormForCreate?.();
         return;
       }
       if (action === "delete-gallery") {
@@ -932,8 +997,16 @@ function wireDynamicHandlers() {
   });
 }
 
-function connectAdminSocket() {
+async function connectAdminSocket() {
+  if (typeof io === "undefined") {
+    try {
+      await window.CALEDOR_CONFIG?.ensureSocketIoClient?.();
+    } catch (err) {
+      console.warn("Admin Socket.IO client load failed:", err?.message || err);
+    }
+  }
   if (typeof io === "undefined") return;
+
   const socket = window.CALEDOR_CONFIG?.connectSocket?.() ?? io();
   socket.emit("join:admin");
   socket.on("contact:new", () => {
@@ -998,19 +1071,30 @@ async function render() {
   wireDynamicHandlers();
   if (window.CmsUI) window.CmsUI.wire(view);
   if (routeInfo.section === "package-settings" && window.PackageEditor) {
-    window.PackageEditor.wire(api, render);
+    window.PackageEditor.wire(api, render, {
+      onFormLoaded: () => captureViewSnapshot(routeInfo.raw),
+    });
     const select = document.getElementById("packageSelect");
+    const finishPackageLoad = () => {
+      if (myGen !== renderGeneration) return;
+      captureViewSnapshot(routeInfo.raw);
+    };
     if (select?.value) {
+      packageUiState.selectedPackageId = String(select.value);
       api(`/packages/${select.value}`)
         .then(({ package: pkg }) => {
           if (myGen !== renderGeneration) return;
           window.PackageEditor.loadIntoForm(pkg);
           window.AdminNav?.syncPackagePreviewLink("previewPackageLink", pkg.slug || "");
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(finishPackageLoad);
     } else {
       window.AdminNav?.syncPackagePreviewLink("previewPackageLink", select?.selectedOptions?.[0]?.dataset?.slug || "");
+      finishPackageLoad();
     }
+  } else {
+    captureViewSnapshot(routeInfo.raw);
   }
   if (routeInfo.section === "cms-settings" && routeInfo.tab === "packages-page") {
     wireCmsPackagePreview();

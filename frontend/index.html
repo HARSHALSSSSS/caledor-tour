@@ -3,20 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
     <title>Caledor DMC | UK & Europe</title>
-    <link rel="icon" href="assets/brand-logo.png" type="image/png" />
+    <link rel="icon" href="/assets/brand-logo.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260807-perf" />
+    <link rel="stylesheet" href="styles.css?v=20260811-media" />
+    <link rel="preload" as="image" href="/assets/hero-background.png" />
+    <script src="/js/config.js"></script>
   </head>
   <body class="cms-ready">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="Caledor DMC home">
-        <img class="brand-logo" src="assets/brand-logo.png" alt="Caledor DMC" width="156" height="44" decoding="async" />
+        <img class="brand-logo" src="/assets/brand-logo.png" alt="Caledor DMC" width="156" height="44" decoding="async" />
       </a>
       <nav class="desktop-nav" aria-label="Primary navigation">
         <a href="#services">Experiences</a>
@@ -76,7 +79,7 @@
               <div class="image-frame about-image-frame">
                 <img
                   id="aboutImage"
-                  src="assets/about-castle.png"
+                  src="/assets/about-castle.png"
                   alt="Eilean Donan Castle, Scotland"
                   decoding="async"
                 />
@@ -141,27 +144,27 @@
           </div>
           <div class="scotland-attractions-grid" id="scotlandAttractionsGrid">
             <article class="scotland-tile scotland-tile-loch">
-              <img src="assets/scotland/loch-lomond.png" alt="Loch Lomond Cruise" loading="lazy" />
+              <img src="/assets/scotland/loch-lomond.png" alt="Loch Lomond Cruise" loading="lazy" />
               <span class="scotland-label">Loch Lomond Cruise</span>
             </article>
             <article class="scotland-tile scotland-tile-kelpies">
-              <img src="assets/scotland/the-kelpies.png" alt="The Kelpies" loading="lazy" />
+              <img src="/assets/scotland/the-kelpies.png" alt="The Kelpies" loading="lazy" />
               <span class="scotland-label">The Kelpies</span>
             </article>
             <article class="scotland-tile scotland-tile-tall">
-              <img src="assets/scotland/puffin-highlands.png" alt="Atlantic puffin with wings spread" loading="lazy" />
+              <img src="/assets/scotland/puffin-highlands.png" alt="Atlantic puffin with wings spread" loading="lazy" />
               <span class="scotland-label">Highland Wildlife</span>
             </article>
             <article class="scotland-tile scotland-tile-wide">
-              <img src="assets/scotland/puffins-sea.png" alt="Puffins on Scottish waters" loading="lazy" />
+              <img src="/assets/scotland/puffins-sea.png" alt="Puffins on Scottish waters" loading="lazy" />
               <span class="scotland-label">Coastal Wildlife</span>
             </article>
             <article class="scotland-tile scotland-tile-skye">
-              <img src="assets/scotland/isle-of-skye.png" alt="Isle of Skye" loading="lazy" />
+              <img src="/assets/scotland/isle-of-skye.png" alt="Isle of Skye" loading="lazy" />
               <span class="scotland-label">Isle of Skye</span>
             </article>
             <article class="scotland-tile scotland-tile-whisky">
-              <img src="assets/scotland/whisky-distillery.png" alt="Scottish Whisky Distillery" loading="lazy" />
+              <img src="/assets/scotland/whisky-distillery.png" alt="Scottish Whisky Distillery" loading="lazy" />
               <span class="scotland-label">Whisky Distillery</span>
             </article>
           </div>
@@ -178,7 +181,7 @@
         <div id="teamGrid">
           <div class="leader-row">
             <div class="leader-photo">
-              <img src="assets/team-alok-singh-portrait.jpg" alt="Mr. Alok Singh" loading="lazy" />
+              <img src="/assets/team-alok-singh-portrait.jpg" alt="Mr. Alok Singh" loading="lazy" />
             </div>
             <div class="leader-copy">
               <h3>Mr. Alok Singh</h3>
@@ -188,7 +191,7 @@
           </div>
           <div class="leader-row">
             <div class="leader-photo">
-              <img src="assets/team-neha-sawant-portrait.jpg" alt="Ms. Neha Sawant" loading="lazy" />
+              <img src="/assets/team-neha-sawant-portrait.jpg" alt="Ms. Neha Sawant" loading="lazy" />
             </div>
             <div class="leader-copy">
               <h3>Ms. Neha Sawant</h3>
@@ -238,7 +241,7 @@
         <div class="premium-service-grid" id="premiumServiceGrid">
           <article>
             <img
-              src="/uploads/premium-services/premium-01-hotel.png"
+              data-caledor-media="/uploads/premium-services/premium-01-hotel.png"
               alt="Luxury hotel lobby"
             />
             <div>
@@ -252,7 +255,7 @@
           </article>
           <article>
             <img
-              src="/uploads/premium-services/premium-02-holiday.png"
+              data-caledor-media="/uploads/premium-services/premium-02-holiday.png"
               alt="Luxury chauffeur service in Paris"
             />
             <div>
@@ -266,7 +269,7 @@
           </article>
           <article>
             <img
-              src="/uploads/premium-services/premium-03-sightseeing.png"
+              data-caledor-media="/uploads/premium-services/premium-03-sightseeing.png"
               alt="Fine dining restaurant interior"
             />
             <div>
@@ -280,7 +283,7 @@
           </article>
           <article>
             <img
-              src="/uploads/premium-services/premium-04-vehicle.png"
+              data-caledor-media="/uploads/premium-services/premium-04-vehicle.png"
               alt="Travel itinerary planning on a desk"
             />
             <div>
@@ -294,7 +297,7 @@
           </article>
           <article>
             <img
-              src="/uploads/premium-services/premium-05-airport.png"
+              data-caledor-media="/uploads/premium-services/premium-05-airport.png"
               alt="Airport transfer with luxury car"
             />
             <div>
@@ -308,7 +311,7 @@
           </article>
           <article>
             <img
-              src="/uploads/premium-services/premium-06-restaurant.png"
+              data-caledor-media="/uploads/premium-services/premium-06-restaurant.png"
               alt="Couple sightseeing near historic ruins"
             />
             <div>
@@ -560,7 +563,7 @@
           </div>
           <div class="success-grid" id="successStoriesGrid">
             <article>
-              <img src="/uploads/success-stories/scotland-luxury-tour.png" alt="Scotland luxury group tour at Eilean Donan Castle" loading="lazy" />
+              <img data-caledor-media="/uploads/success-stories/scotland-luxury-tour.png" alt="Scotland luxury group tour at Eilean Donan Castle" loading="lazy" />
               <div class="success-body">
                 <h3>Scotland Luxury Group Tour</h3>
                 <p class="success-label">Challenge</p>
@@ -572,7 +575,7 @@
               </div>
             </article>
             <article>
-              <img src="/uploads/success-stories/corporate-incentive.png" alt="Corporate incentive event in a grand ballroom" loading="lazy" />
+              <img data-caledor-media="/uploads/success-stories/corporate-incentive.png" alt="Corporate incentive event in a grand ballroom" loading="lazy" />
               <div class="success-body">
                 <h3>Corporate Incentive Event</h3>
                 <p class="success-label">Challenge</p>
@@ -584,7 +587,7 @@
               </div>
             </article>
             <article>
-              <img src="/uploads/success-stories/europe-fit-program.png" alt="Europe FIT program network map" loading="lazy" />
+              <img data-caledor-media="/uploads/success-stories/europe-fit-program.png" alt="Europe FIT program network map" loading="lazy" />
               <div class="success-body">
                 <h3>Europe FIT Program</h3>
                 <p class="success-label">Challenge</p>
@@ -623,15 +626,15 @@
           <h2 id="galleryTitle">Photo Gallery</h2>
         </div>
         <div class="gallery-grid" id="galleryGrid">
-          <figure class="gallery-cell gallery-cell-hero"><img class="media-cover" src="/uploads/gallery/gallery-01-winner-certificate.png" alt="British Curry Championship Winner" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-02-team-vehicle.png" alt="On the Road" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-03-scotland-event.png" alt="Scotland Community Event" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-04-award-presentation.png" alt="Award Presentation" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-05-team-portrait.png" alt="Team Portrait" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-06-partners.png" alt="Partners and Team" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-07-certificates.png" alt="Certifications" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-08-group-walk.png" alt="Group Experience" loading="lazy" /></figure>
-          <figure class="gallery-cell"><img class="media-cover" src="/uploads/gallery/gallery-09-outdoor-guest.png" alt="Celebrity Guest Experience" loading="lazy" /></figure>
+          <figure class="gallery-cell gallery-cell-hero"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-01-winner-certificate.png" alt="British Curry Championship Winner" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-02-team-vehicle.png" alt="On the Road" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-03-scotland-event.png" alt="Scotland Community Event" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-04-award-presentation.png" alt="Award Presentation" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-05-team-portrait.png" alt="Team Portrait" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-06-partners.png" alt="Partners and Team" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-07-certificates.png" alt="Certifications" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-08-group-walk.png" alt="Group Experience" loading="lazy" /></figure>
+          <figure class="gallery-cell"><img class="media-cover" data-caledor-media="/uploads/gallery/gallery-09-outdoor-guest.png" alt="Celebrity Guest Experience" loading="lazy" /></figure>
         </div>
       </section>
 
@@ -740,10 +743,8 @@
     </footer>
 
     <div class="chat-bubble" aria-label="Chat shortcut">S</div>
-    <script src="/js/config.js"></script>
     <script src="/js/site-chrome.js?v=20260807-perf"></script>
     <script src="/js/package-defaults.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js?v=20260810-blog"></script>
+    <script src="script.js?v=20260811-media"></script>
   </body>
 </html>

@@ -18,6 +18,7 @@
     />
     <link rel="stylesheet" href="/styles.css?v=20260810-cta" />
     <link rel="stylesheet" href="/premium-services.css?v=20260810-cta" />
+    <script src="/js/config.js"></script>
   </head>
   <body class="subpage">
     <header class="site-header">
@@ -56,7 +57,7 @@
       <section class="ps-hero">
         <div
           class="ps-hero-bg"
-          style="background-image: url('/uploads/premium-services/premium-01-hotel.png')"
+          data-caledor-bg="/uploads/premium-services/premium-01-hotel.png"
           aria-hidden="true"
         ></div>
         <div class="ps-hero-overlay" aria-hidden="true"></div>
@@ -96,7 +97,7 @@
           <div class="ps-pillar-grid">
             <article class="ps-pillar-card" id="hotel-bookings">
               <img
-                src="/uploads/premium-services/premium-01-hotel.png"
+                data-caledor-media="/uploads/premium-services/premium-01-hotel.png"
                 alt="Luxury hotel lobby"
                 loading="lazy"
               />
@@ -111,7 +112,7 @@
             </article>
             <article class="ps-pillar-card" id="holiday-packages">
               <img
-                src="/uploads/premium-services/premium-02-holiday.png"
+                data-caledor-media="/uploads/premium-services/premium-02-holiday.png"
                 alt="Luxury holiday dining experience"
                 loading="lazy"
               />
@@ -126,7 +127,7 @@
             </article>
             <article class="ps-pillar-card" id="sightseeing-tours">
               <img
-                src="/uploads/premium-services/premium-03-sightseeing.png"
+                data-caledor-media="/uploads/premium-services/premium-03-sightseeing.png"
                 alt="Historic castle sightseeing tour"
                 loading="lazy"
               />
@@ -141,7 +142,7 @@
             </article>
             <article class="ps-pillar-card" id="vehicle-at-disposal">
               <img
-                src="/uploads/premium-services/premium-04-vehicle.png"
+                data-caledor-media="/uploads/premium-services/premium-04-vehicle.png"
                 alt="Luxury vehicle with chauffeur"
                 loading="lazy"
               />
@@ -156,7 +157,7 @@
             </article>
             <article class="ps-pillar-card" id="airport-transfers">
               <img
-                src="/uploads/premium-services/premium-05-airport.png"
+                data-caledor-media="/uploads/premium-services/premium-05-airport.png"
                 alt="Airport transfer with luxury car and private jet"
                 loading="lazy"
               />
@@ -171,7 +172,7 @@
             </article>
             <article class="ps-pillar-card" id="restaurant-reservations">
               <img
-                src="/uploads/premium-services/premium-06-restaurant.png"
+                data-caledor-media="/uploads/premium-services/premium-06-restaurant.png"
                 alt="Fine dining restaurant reservation"
                 loading="lazy"
               />
@@ -290,7 +291,6 @@
       </div>
     </footer>
 
-    <script src="/js/config.js"></script>
     <script src="/js/site-chrome.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {

@@ -61,6 +61,33 @@ const SCOTLAND_LAYOUT_CLASSES = {
 
 const SCOTLAND_LAYOUT_ORDER = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
 
+const SCOTLAND_LABEL_TO_LAYOUT = {
+  "Loch Lomond Cruise": "loch",
+  "The Kelpies": "kelpies",
+  "Highland Wildlife": "tall",
+  "Coastal Wildlife": "wide",
+  "Scottish Seabirds": "wide",
+  "Isle of Skye": "skye",
+  "Whisky Distillery": "whisky",
+};
+
+const SCOTLAND_UPLOAD_TO_ASSET = {
+  "/uploads/scotland-attractions/loch-lomond-cruise.png": "assets/scotland/loch-lomond.png",
+  "/uploads/scotland-attractions/the-kelpies.png": "assets/scotland/the-kelpies.png",
+  "/uploads/scotland-attractions/puffin-highlands.png": "assets/scotland/puffin-highlands.png",
+  "/uploads/scotland-attractions/puffin-fishing.png": "assets/scotland/puffins-sea.png",
+  "/uploads/scotland-attractions/puffins-sea.png": "assets/scotland/puffins-sea.png",
+  "/uploads/scotland-attractions/isle-of-skye.png": "assets/scotland/isle-of-skye.png",
+  "/uploads/scotland-attractions/whisky-distillery.png": "assets/scotland/whisky-distillery.png",
+};
+
+function resolveScotlandImage(cmsImage, fallback) {
+  const value = String(cmsImage || "").trim();
+  if (!value || value.includes("unsplash.com")) return fallback;
+  if (SCOTLAND_UPLOAD_TO_ASSET[value]) return SCOTLAND_UPLOAD_TO_ASSET[value];
+  return value;
+}
+
 const TEAM_DEFAULTS = [
   {
     name: "Mr. Alok Singh",
@@ -170,6 +197,10 @@ function premiumServiceLink(item = {}) {
 
 function withImageFallback(src, alt = "") {
   const safe = escapeHtml(src || "");
+  const isSiteMedia = /\/assets\/|^assets\/|\/uploads\/|^uploads\//.test(String(src || ""));
+  if (isSiteMedia) {
+    return `src="${safe}" alt="${escapeHtml(alt)}" loading="lazy"`;
+  }
   const fallback = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80";
   return `src="${safe}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"`;
 }
@@ -440,7 +471,7 @@ function renderTeamGrid(team = {}) {
 
   const useMembers = resolveTeamMembers(team);
   teamGrid.innerHTML = useMembers.map((member) => {
-    const photo = assetUrl(member.photo, cmsState.aboutUpdatedAt) || member.photo || "assets/team-alok-singh-portrait.jpg";
+    const photo = assetUrl(member.photo, cmsState.aboutUpdatedAt) || assetUrl(TEAM_DEFAULTS.find((m) => m.name === member.name)?.photo, cmsState.aboutUpdatedAt) || "/assets/team-alok-singh-portrait.jpg";
     const role = (member.role || "").toUpperCase();
     return `
       <div class="leader-row">
@@ -1135,9 +1166,12 @@ async function loadGallery() {
 function resolveScotlandItems(section = {}) {
   const byLayout = new Map(SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => [item.layout, { ...item }]));
   parseJson(section.items_json).forEach((item) => {
-    if (item?.image && item?.label && SCOTLAND_LAYOUT_CLASSES[item.layout]) {
-      byLayout.set(item.layout, { ...byLayout.get(item.layout), ...item });
-    }
+    if (!item?.label) return;
+    const layout = item.layout || SCOTLAND_LABEL_TO_LAYOUT[item.label];
+    if (!layout || !SCOTLAND_LAYOUT_CLASSES[layout]) return;
+    const defaultItem = byLayout.get(layout) || SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout);
+    const image = resolveScotlandImage(item.image, defaultItem?.image);
+    byLayout.set(layout, { ...defaultItem, ...item, layout, image });
   });
   return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
 }
@@ -1611,8 +1645,17 @@ function observeSections() {
   }
 }
 
-function connectLiveUpdates() {
+async function connectLiveUpdates() {
+  if (typeof io === "undefined") {
+    try {
+      await window.CALEDOR_CONFIG?.ensureSocketIoClient?.();
+    } catch (err) {
+      // Socket.IO is optional; the site still works without it.
+      console.warn("Socket.IO client load failed:", err?.message || err);
+    }
+  }
   if (typeof io === "undefined") return;
+
   const socket = window.CALEDOR_CONFIG?.connectSocket?.() ?? io();
 
   const reloaders = {
