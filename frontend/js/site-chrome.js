@@ -1,5 +1,7 @@
 (function () {
-  const API = window.CALEDOR_CONFIG?.apiBase ?? "/api";
+  function apiBase() {
+    return window.CALEDOR_CONFIG?.apiBase ?? "/api";
+  }
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
@@ -13,7 +15,7 @@
 
   async function fetchJson(path) {
     const sep = path.includes("?") ? "&" : "?";
-    const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, { cache: "no-store" });
+    const res = await fetch(`${apiBase()}${path}${sep}_=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Failed to load ${path}`);
     return res.json();
   }
@@ -56,7 +58,7 @@
     if (brandTitle) brandTitle.textContent = brandName;
     if (footerDesc) footerDesc.textContent = general.site_description || general.site_tagline || "Your trusted partner for luxury destination management across the UK and Europe.";
     if (footerLegal) footerLegal.textContent = general.copyright || `© ${new Date().getFullYear()} ${brandName} Ltd. All rights reserved.`;
-    if (copyright) copyright.textContent = general.copyright_short || `© ${new Date().getFullYear()} ${brandName}`;
+    if (copyright) copyright.textContent = general.copyright_short || general.copyright || `© ${new Date().getFullYear()} ${brandName}`;
 
     // Footer tab saves primary contact to settings; contact page adds phone_2 / email_2.
     const address = contact.address || contactInfo.address || "";
@@ -233,26 +235,24 @@
   }
 
   async function refreshFooter() {
-    try {
-      const [cmsData, settingsData, contactData] = await Promise.all([
-        fetchJson("/cms/footer"),
-        fetchJson("/settings"),
-        fetchJson("/cms/contact").catch(() => ({ sections: {} })),
-      ]);
-      applyFooter(
-        cmsData.sections || {},
-        settingsData.settings || {},
-        contactData.sections?.info || {}
-      );
-      return {
-        sections: cmsData.sections || {},
-        settings: settingsData.settings || {},
-        contactInfo: contactData.sections?.info || {},
-        updatedAt: cmsData.updated_at || null,
-      };
-    } catch {
-      return null;
-    }
+    const [cmsResult, settingsResult, contactResult] = await Promise.allSettled([
+      fetchJson("/cms/footer"),
+      fetchJson("/settings"),
+      fetchJson("/cms/contact"),
+    ]);
+    const cmsData = cmsResult.status === "fulfilled" ? cmsResult.value : { sections: {} };
+    const settingsData = settingsResult.status === "fulfilled" ? settingsResult.value : { settings: {} };
+    const contactData = contactResult.status === "fulfilled" ? contactResult.value : { sections: {} };
+    const sections = cmsData.sections || {};
+    const settings = settingsData.settings || {};
+    const contactInfo = contactData.sections?.info || {};
+    applyFooter(sections, settings, contactInfo);
+    return {
+      sections,
+      settings,
+      contactInfo,
+      updatedAt: cmsData.updated_at || null,
+    };
   }
 
   async function loadFooter() {

@@ -52,7 +52,7 @@ window.AdminEntities = (() => {
   }
 
   async function galleryView(api) {
-    const data = await api("/gallery").catch(() => ({ items: [] }));
+    const data = await api("/gallery", { bust: true }).catch(() => ({ items: [] }));
     const merge = window.CaledorGallery?.mergeGalleryItems;
     const items = merge ? merge(data.items || []) : (data.items || []);
     const isCore = window.CaledorGallery?.isCoreGalleryItem || (() => false);

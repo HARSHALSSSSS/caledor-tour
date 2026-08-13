@@ -1,10 +1,14 @@
 const API = window.CALEDOR_CONFIG?.apiBase ?? "/api";
 
+function apiBase() {
+  return window.CALEDOR_CONFIG?.apiBase ?? "/api";
+}
+
 let cmsRevision = String(Date.now());
 
 async function fetchJson(path) {
   const sep = path.includes("?") ? "&" : "?";
-  const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, {
+  const res = await fetch(`${apiBase()}${path}${sep}_=${Date.now()}`, {
     cache: "no-store",
     headers: { "Cache-Control": "no-cache" },
   });
@@ -1231,29 +1235,26 @@ function renderGalleryCell(item, index) {
 async function loadGallery() {
   const grid = document.getElementById("galleryGrid") || document.querySelector(".gallery-grid");
   if (!grid) return;
+
+  const merge = window.CaledorGallery?.mergeGalleryItems;
+  let apiItems = [];
   try {
     const data = await fetchJson("/gallery");
-    const merge = window.CaledorGallery?.mergeGalleryItems;
-    const items = merge
-      ? merge(data.items || [])
-      : (data.items || []).slice().sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
-
-    grid.classList.add("gallery-grid--flex");
-    grid.dataset.count = String(items.length);
-
-    if (!items.length) return;
-
-    grid.innerHTML = items.map((item, index) => renderGalleryCell(item, index)).join("");
-    window.CALEDOR_CONFIG?.rewriteMediaUrls?.(grid);
-    wireLazyVideos(grid);
+    apiItems = data.items || [];
   } catch (err) {
-    console.warn("loadGallery:", err);
-    const fallback = window.CaledorGallery?.mergeGalleryItems?.([]) || [];
-    if (fallback.length && grid.querySelector(".gallery-cell")) {
-      // Keep static HTML gallery if API is unreachable.
-      return;
-    }
+    console.warn("loadGallery API:", err);
   }
+
+  const items = merge
+    ? merge(apiItems)
+    : apiItems.slice().sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+  if (!items.length) return;
+
+  grid.classList.add("gallery-grid--flex");
+  grid.dataset.count = String(items.length);
+  grid.innerHTML = items.map((item, index) => renderGalleryCell(item, index)).join("");
+  window.CALEDOR_CONFIG?.rewriteMediaUrls?.(grid);
+  wireLazyVideos(grid);
 }
 
 function scotlandVideoSrc(item = {}) {
@@ -1590,28 +1591,16 @@ async function loadCmsPackagesPage() {
 
 async function loadCmsFooter() {
   try {
-    if (window.SiteChrome?.refreshFooter) {
-      const result = await window.SiteChrome.refreshFooter();
-      if (!result) return;
-      cmsState.footer = result.sections;
-      cmsState.settings = result.settings;
-      cmsState.contactInfo = result.contactInfo;
-      if (result.updatedAt) cmsState.footerUpdatedAt = String(result.updatedAt);
-      setSectionVisible(document.getElementById("siteFooter"), result.sections.brand?.enabled !== "0");
-      return;
-    }
-    const [cmsData, settingsData, contactData] = await Promise.all([
-      fetchJson("/cms/footer"),
-      fetchJson("/settings"),
-      fetchJson("/cms/contact").catch(() => ({ sections: {} })),
-    ]);
-    cmsState.footer = cmsData.sections || {};
-    cmsState.settings = settingsData.settings || {};
-    cmsState.contactInfo = contactData.sections?.info || cmsState.contactInfo || {};
-    if (cmsData.updated_at) cmsState.footerUpdatedAt = String(cmsData.updated_at);
-    applyFooterCms(cmsData.sections || {}, settingsData.settings || {});
-  } catch {
-    // keep static
+    const refresh = window.SiteChrome?.refreshFooter;
+    if (!refresh) return;
+    const result = await refresh();
+    cmsState.footer = result.sections || {};
+    cmsState.settings = result.settings || cmsState.settings || {};
+    cmsState.contactInfo = result.contactInfo || cmsState.contactInfo || {};
+    if (result.updatedAt) cmsState.footerUpdatedAt = String(result.updatedAt);
+    setSectionVisible(document.getElementById("siteFooter"), result.sections?.brand?.enabled !== "0");
+  } catch (err) {
+    console.warn("loadCmsFooter:", err);
   }
 }
 

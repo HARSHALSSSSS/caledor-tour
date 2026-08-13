@@ -7,8 +7,9 @@
 (function () {
   const PROD_API_ORIGIN = "https://caledor-tour.onrender.com";
   const host = String(window.location?.hostname || "").toLowerCase();
-  const isProdHost = host === "caledordmc.co.uk" || host === "www.caledordmc.co.uk";
-  const API_ORIGIN = isProdHost ? PROD_API_ORIGIN : "";
+  const isLocalDev = !host || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+  // Any live site (cPanel, custom domain, staging) talks to Render; only local dev uses /api proxy.
+  const API_ORIGIN = isLocalDev ? "" : PROD_API_ORIGIN;
 
   function trimOrigin(origin) {
     return String(origin || "").replace(/\/+$/, "");
@@ -82,7 +83,8 @@
 
   window.CALEDOR_CONFIG = {
     API_ORIGIN,
-    isProdHost,
+    isLocalDev,
+    isProdHost: !isLocalDev && Boolean(host),
 
     get apiBase() {
       const origin = trimOrigin(API_ORIGIN);

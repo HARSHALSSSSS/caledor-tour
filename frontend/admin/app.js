@@ -1,5 +1,8 @@
-const API = window.CALEDOR_CONFIG?.apiBase ?? "/api";
 const TOKEN_KEY = "caledor_token";
+
+function apiBase() {
+  return window.CALEDOR_CONFIG?.apiBase ?? "/api";
+}
 
 const loginScreen = document.getElementById("loginScreen");
 const appShell = document.getElementById("appShell");
@@ -170,7 +173,7 @@ async function api(path, options = {}) {
     }
   }
 
-  const res = await fetch(`${API}${path}`, { headers: apiHeaders(), ...options });
+  const res = await fetch(`${apiBase()}${path}`, { headers: apiHeaders(), ...options });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || res.statusText || "Request failed");
@@ -306,6 +309,7 @@ async function saveCmsTab(tab) {
   const { collectCms, collectSettings, TAB_USES_SETTINGS } = window.CmsSchema;
   const sections = collectCms(viewEl);
   await api(`/cms/${tab}`, { method: "PUT", body: JSON.stringify({ sections }) });
+  invalidateApiCache(`/cms/${tab}`);
 
   if (TAB_USES_SETTINGS.has(tab) || tab === "footer") {
     const settings = collectSettings(viewEl);
@@ -317,6 +321,7 @@ async function saveCmsTab(tab) {
     }
     if (Object.keys(settings).length) {
       await api("/settings", { method: "PUT", body: JSON.stringify({ settings }) });
+      invalidateApiCache("/settings");
     }
   }
 
@@ -793,30 +798,44 @@ function wireEntityHandlers() {
     }
     if (form.id === "galleryForm") {
       e.preventDefault();
+      e.stopPropagation();
       const data = formData(e.target);
       const mediaType = data.media_type === "video" ? "video" : "image";
       const mediaUrl = mediaType === "video"
         ? (data.video_url || data.image_url)
         : data.image_url;
       if (!mediaUrl) {
-        showToast(mediaType === "video" ? "Upload or paste a video URL" : "Upload or paste an image URL");
+        showToast(mediaType === "video" ? "Upload or paste a video URL" : "Upload an image first (Upload Media button)");
+        return;
+      }
+      if (!token) {
+        showToast("Please log in again to add gallery images");
         return;
       }
       try {
         await api("/gallery", { method: "POST", body: JSON.stringify({
-          title: data.title,
+          title: data.title || "Gallery image",
           image_url: mediaUrl,
           video_url: mediaType === "video" ? mediaUrl : "",
           poster_url: data.poster_url || "",
           media_type: mediaType,
-          alt_text: data.alt_text || data.title,
-          album: data.album || "General",
-          sort_order: Number(data.sort_order) || 0,
+          alt_text: data.alt_text || data.title || "Gallery image",
+          album: data.album || "Events",
+          sort_order: Number(data.sort_order) || 10,
         }) });
-        showToast(`${mediaType === "video" ? "Video" : "Image"} added — live on website`);
-        render();
+        invalidateApiCache("/gallery");
+        showToast(`${mediaType === "video" ? "Video" : "Image"} added — refresh the website to see it`);
+        form.reset();
+        const imageInput = form.querySelector('[name="image_url"]');
+        if (imageInput) {
+          imageInput.value = "";
+          imageInput.dispatchEvent(new Event("input"));
+        }
+        if (getRoute().section === "gallery") {
+          await render();
+        }
       } catch (err) {
-        showToast(err.message);
+        showToast(err.message || "Could not add gallery image — check you are logged in");
       }
       return;
     }
@@ -866,6 +885,9 @@ function wireEntityHandlers() {
     const button = e.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
+    if (button.tagName === "BUTTON" && button.type === "submit") {
+      return;
+    }
     if (button.tagName === "BUTTON" || button.tagName === "A") e.preventDefault();
 
     if (action === "save-changes" || action === "publish") {
