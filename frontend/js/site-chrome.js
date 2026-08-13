@@ -238,9 +238,32 @@
     }
   }
 
+  async function applyPackagesNavVisibility() {
+    try {
+      const [home, pkgs] = await Promise.all([
+        fetchJson("/cms/home"),
+        fetchJson("/cms/packages-page"),
+      ]);
+      const visible = home.sections?.packages_heading?.enabled !== "0"
+        && pkgs.sections?.listing?.enabled !== "0";
+      document.body.classList.toggle("packages-section-hidden", !visible);
+      document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
+        if (!visible) link.setAttribute("hidden", "");
+        else link.removeAttribute("hidden");
+      });
+      const section = document.getElementById("packages");
+      if (section) {
+        if (!visible) section.setAttribute("hidden", "");
+        else section.removeAttribute("hidden");
+      }
+    } catch {
+      // keep current nav
+    }
+  }
+
   async function init(options = {}) {
     wireMobileNav();
-    await loadFooter();
+    await Promise.all([loadFooter(), applyPackagesNavVisibility()]);
     if (options.scroll !== false) initScrollReveal();
   }
 

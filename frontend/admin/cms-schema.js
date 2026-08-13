@@ -59,18 +59,20 @@ window.CmsSchema = (() => {
     const bg = value ? `background-image:url('${esc(mediaUrl(value))}')` : "";
     const safeTarget = esc(target);
     const removable = options.removable !== false;
+    const accept = options.accept || "image/*";
+    const uploadLabel = options.uploadLabel || "Upload Image";
 
     return `<div class="${full}"><label>${esc(label)}</label>
       <div class="image-uploader${compact}">
         <div class="thumb cms-thumb${compact ? " sm" : ""}" data-for="${safeTarget}" style="${bg};background-size:cover;background-position:center"></div>
         <div class="image-copy">
           <div class="actions-row">
-            <button class="btn outline sm cms-upload-image" type="button" data-target="${safeTarget}">Upload Image</button>
+            <button class="btn outline sm cms-upload-image" type="button" data-target="${safeTarget}">${esc(uploadLabel)}</button>
             <button class="btn outline sm cms-change-image" type="button" data-target="${safeTarget}">Paste URL</button>
             ${removable ? `<button class="link-danger cms-remove-image" type="button" data-target="${safeTarget}">Remove</button>` : ""}
           </div>
-          <input type="file" accept="image/*" class="cms-file-input" data-target="${safeTarget}" hidden />
-          <input ${inputName} ${cmsAttrs} class="cms-image-url ${extraClass}" id="img-${safeTarget}" value="${esc(value)}" placeholder="Image URL or upload a file" />
+          <input type="file" accept="${esc(accept)}" class="cms-file-input" data-target="${safeTarget}" hidden />
+          <input ${inputName} ${cmsAttrs} class="cms-image-url ${extraClass}" id="img-${safeTarget}" value="${esc(value)}" placeholder="Image / video URL or upload a file" />
           ${compact ? "" : `<span class="settings-copy">${esc(hint)}</span>`}
         </div>
       </div></div>`;
@@ -218,7 +220,13 @@ window.CmsSchema = (() => {
       `<option value="${layout}"${(item.layout || "auto") === layout ? " selected" : ""}>${layout === "auto" ? "Auto (fits grid)" : layout}</option>`).join("");
     return `<div class="destination-row" data-list="scotland-tiles">
       <div class="form-grid">
-        ${imageField(target, "Image", item.image || "", { name: "image", compact: true })}
+        ${imageField(target, "Image or Video", item.image || item.video_url || "", {
+          name: "image",
+          compact: true,
+          accept: "image/*,video/mp4,video/webm,video/ogg,video/quicktime",
+          uploadLabel: "Upload Media",
+          hint: "Upload a photo or MP4/WebM video. Extra tiles auto-fit the grid.",
+        })}
         <div class="field"><label>Label</label><input name="label" value="${esc(item.label || "")}" /></div>
         <div class="field"><label>Alt Text</label><input name="alt" value="${esc(item.alt || "")}" /></div>
         <div class="field"><label>Grid Layout</label><select name="layout">${layoutOptions}</select></div>
@@ -912,7 +920,7 @@ window.CmsSchema = (() => {
         image: row.querySelector('[name="image"]')?.value || "",
         label: row.querySelector('[name="label"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
-        layout: row.querySelector('[name="layout"]')?.value || "loch",
+        layout: row.querySelector('[name="layout"]')?.value || "auto",
       });
     });
     if (scotlandTiles.length || container.querySelector('[data-json-section="scotland_attractions"]')) {

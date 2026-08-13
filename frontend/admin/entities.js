@@ -49,10 +49,20 @@ window.AdminEntities = (() => {
     }
 
     const imageField = window.CmsSchema?.imageField
-      ? window.CmsSchema.imageField("gallery-new-image", "Image / Video Poster", "", { name: "image_url" })
+      ? window.CmsSchema.imageField("gallery-new-image", "Image / Video Poster", "", {
+        name: "image_url",
+        accept: "image/*,video/mp4,video/webm,video/ogg,video/quicktime",
+        uploadLabel: "Upload Media",
+        hint: "Images or MP4/WebM video. Extra items auto-fit the website grid.",
+      })
       : field("Image URL", "https://images.unsplash.com/...", "image_url", true);
     const videoField = window.CmsSchema?.imageField
-      ? window.CmsSchema.imageField("gallery-new-video", "Video File", "", { name: "video_url" })
+      ? window.CmsSchema.imageField("gallery-new-video", "Video File", "", {
+        name: "video_url",
+        accept: "video/mp4,video/webm,video/ogg,video/quicktime,image/*",
+        uploadLabel: "Upload Video",
+        hint: "MP4 or WebM recommended. Keep under 40MB for smooth playback.",
+      })
       : field("Video URL", "https://.../video.mp4", "video_url");
 
     return `<section class="content-grid">

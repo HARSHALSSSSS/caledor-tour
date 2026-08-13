@@ -268,6 +268,23 @@ function setSectionVisible(el, enabled) {
   else el.removeAttribute("hidden");
 }
 
+function isPackagesSectionEnabled() {
+  const homeEnabled = cmsState.home?.packages_heading?.enabled;
+  const listingEnabled = cmsState.packagesPage?.listing?.enabled;
+  return homeEnabled !== "0" && listingEnabled !== "0";
+}
+
+function applyPackagesVisibility() {
+  const visible = isPackagesSectionEnabled();
+  document.body.classList.toggle("packages-section-hidden", !visible);
+  setSectionVisible(document.getElementById("packages"), visible);
+  setSectionVisible(document.getElementById("featuredToursSection"), false);
+  document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
+    if (!visible) link.setAttribute("hidden", "");
+    else link.removeAttribute("hidden");
+  });
+}
+
 function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   const heroSection = document.getElementById("hero") || document.querySelector(".hero");
   setSectionVisible(heroSection, hero.enabled !== "0");
@@ -770,10 +787,7 @@ function applyPackagesPageCms(sections = {}) {
   const categories = sections.categories || {};
   const cta = sections.cta || {};
 
-  const packagesSection = document.getElementById("packages");
-  const homeHeading = cmsState.home?.packages_heading || sections.packages_heading || {};
-  const packagesVisible = listing.enabled !== "0" && homeHeading.enabled !== "0";
-  setSectionVisible(packagesSection, packagesVisible);
+  applyPackagesVisibility();
 
   const heroEl = document.getElementById("packagesHero");
   setSectionVisible(heroEl, false);
@@ -912,8 +926,13 @@ function packageCard(pkg, listing = {}) {
 }
 
 function renderPackageGrid() {
+  applyPackagesVisibility();
   const grid = document.getElementById("packageGrid");
   if (!grid) return;
+  if (!isPackagesSectionEnabled()) {
+    grid.innerHTML = "";
+    return;
+  }
   const listing = cmsState.packagesPage?.listing || {};
   const configuredLimit = parseInt(listing.packages_per_page || "0", 10);
   const limit = configuredLimit > 0 ? configuredLimit : 50;
@@ -1137,9 +1156,13 @@ function isVideoMedia(item = {}) {
   return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
 }
 
-function wireGalleryVideos(grid) {
-  if (!grid || !("IntersectionObserver" in window)) return;
-  const videos = grid.querySelectorAll("video.gallery-video");
+function isVideoUrl(url = "") {
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(String(url));
+}
+
+function wireLazyVideos(root) {
+  if (!root || !("IntersectionObserver" in window)) return;
+  const videos = root.querySelectorAll("video.gallery-video, video.scotland-video");
   if (!videos.length) return;
 
   const observer = new IntersectionObserver((entries) => {
@@ -1187,31 +1210,31 @@ async function loadGallery() {
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
     if (!items.length) return;
 
-    const useFlex = items.length > 10 || items.some(isVideoMedia);
-    grid.classList.toggle("gallery-grid--flex", useFlex);
+    grid.classList.add("gallery-grid--flex");
     grid.dataset.count = String(items.length);
     grid.innerHTML = items.map((item, index) => renderGalleryCell(item, index)).join("");
-    wireGalleryVideos(grid);
+    wireLazyVideos(grid);
   } catch (err) {
     console.warn("loadGallery:", err);
   }
 }
 
 function resolveScotlandItems(section = {}) {
-  const cmsItems = parseJson(section.items_json).filter((item) => item?.image || item?.label);
+  const cmsItems = parseJson(section.items_json).filter((item) => item?.image || item?.video_url || item?.label);
   if (cmsItems.length) {
     return cmsItems.map((item, index) => {
-      const layout = item.layout && item.layout !== "auto"
-        ? item.layout
-        : (SCOTLAND_LAYOUT_ORDER[index] || null);
-      const defaultItem = layout
-        ? (SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout) || {})
+      const requested = item.layout && item.layout !== "auto" ? item.layout : null;
+      const defaultItem = requested
+        ? (SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === requested) || {})
         : (SCOTLAND_ATTRACTIONS_DEFAULTS[index] || {});
+      const media = item.image || item.video_url || "";
+      const video = item.video_url || (isVideoUrl(media) ? media : "");
       return {
         ...defaultItem,
         ...item,
-        layout: layout && SCOTLAND_LAYOUT_CLASSES[layout] ? layout : null,
-        image: resolveScotlandImage(item.image, defaultItem?.image),
+        layout: requested && SCOTLAND_LAYOUT_CLASSES[requested] ? requested : null,
+        image: video ? media : resolveScotlandImage(media, defaultItem?.image),
+        video_url: video,
       };
     });
   }
@@ -1220,8 +1243,18 @@ function resolveScotlandItems(section = {}) {
 
 function scotlandUsesMosaic(items = []) {
   if (items.length !== 6) return false;
-  const layouts = items.map((item) => item.layout).filter(Boolean);
+  if (items.some((item) => item.video_url || isVideoUrl(item.image))) return false;
+  const layouts = items.map((item) => item.layout).filter((layout) => layout && SCOTLAND_LAYOUT_CLASSES[layout]);
   return layouts.length === 6 && new Set(layouts).size === 6;
+}
+
+function scotlandTileMedia(item) {
+  const alt = item.alt || item.label || "Scotland attraction";
+  if (item.video_url || isVideoUrl(item.image)) {
+    const src = assetUrl(item.video_url || item.image, cmsState.homeUpdatedAt);
+    return `<video class="media-cover scotland-video" src="${escapeHtml(src)}" muted loop playsinline preload="metadata" aria-label="${escapeHtml(alt)}"></video>`;
+  }
+  return `<img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), alt)} />`;
 }
 
 function applyScotlandAttractionsSection(section = {}) {
@@ -1244,15 +1277,16 @@ function applyScotlandAttractionsSection(section = {}) {
   grid.dataset.count = String(useItems.length);
 
   grid.innerHTML = useItems.map((item) => {
-    const layoutClass = item.layout && SCOTLAND_LAYOUT_CLASSES[item.layout]
+    const layoutClass = mosaic && item.layout && SCOTLAND_LAYOUT_CLASSES[item.layout]
       ? SCOTLAND_LAYOUT_CLASSES[item.layout]
       : "";
     return `
     <article class="scotland-tile${layoutClass}">
-      <img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), item.alt || item.label || "Scotland attraction")} />
+      ${scotlandTileMedia(item)}
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
     </article>`;
   }).join("");
+  wireLazyVideos(grid);
 }
 
 function applyPremiumServicesSection(section = {}) {
@@ -1428,14 +1462,7 @@ async function loadCmsHome() {
       sections.packages_heading?.title,
       sections.packages_heading?.subtitle
     );
-    const packagesSection = document.getElementById("packages");
-  if (packagesSection && sections.packages_heading) {
-    const listingEnabled = cmsState.packagesPage?.listing?.enabled;
-    setSectionVisible(
-      packagesSection,
-      sections.packages_heading.enabled !== "0" && listingEnabled !== "0"
-    );
-  }
+    applyPackagesVisibility();
     applyDestinationsSection(sections.destinations || {});
     applyGallerySection(sections.gallery_section || {});
     applyHomeSections(sections);
@@ -1858,6 +1885,7 @@ async function init() {
   } catch (err) {
     console.warn("CMS/API load issue:", err);
   } finally {
+    applyPackagesVisibility();
     wireImageFallbacks();
     if (window.SiteChrome?.initScrollReveal) {
       window.SiteChrome.initScrollReveal();

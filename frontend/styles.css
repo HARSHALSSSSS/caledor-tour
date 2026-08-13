@@ -832,20 +832,32 @@ p {
 }
 
 .scotland-attractions-grid.is-flexible {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   grid-template-rows: none;
+  grid-auto-rows: minmax(170px, 22vw);
   grid-template-areas: none;
   max-width: 1120px;
 }
 
 .scotland-attractions-grid.is-flexible .scotland-tile {
-  grid-area: auto;
+  grid-area: auto !important;
   min-height: clamp(160px, 22vw, 240px);
   aspect-ratio: 4 / 3;
 }
 
-.scotland-attractions-grid.is-flexible .scotland-tile img {
+.scotland-attractions-grid.is-flexible .scotland-tile img,
+.scotland-attractions-grid.is-flexible .scotland-tile video {
   object-position: center center;
+}
+
+.scotland-tile video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  border-radius: 16px;
+  background: #071428;
 }
 
 .scotland-tile-loch { grid-area: loch; }
@@ -2498,8 +2510,8 @@ p {
 
 .gallery-grid.gallery-grid--flex {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  grid-template-rows: auto;
-  grid-auto-rows: minmax(140px, 1fr);
+  grid-template-rows: none;
+  grid-auto-rows: minmax(140px, 18vw);
 }
 
 .gallery-grid.gallery-grid--flex .gallery-cell:nth-child(n) {
@@ -2512,6 +2524,13 @@ p {
   grid-column: span 2;
   grid-row: span 2;
   min-height: 292px;
+}
+
+body.packages-section-hidden #packages,
+body.packages-section-hidden #featuredToursSection,
+body.packages-section-hidden a[href="#packages"],
+body.packages-section-hidden a[href="/#packages"] {
+  display: none !important;
 }
 
 .gallery-cell-video video,
