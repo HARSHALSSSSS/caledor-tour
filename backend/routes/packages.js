@@ -19,6 +19,47 @@ function pickPackageFields(body) {
   return out;
 }
 
+function parseRelatedSlugs(raw) {
+  try {
+    const value = JSON.parse(raw || '[]');
+    if (!Array.isArray(value)) return [];
+    return value.map((s) => String(s || '').trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/** Only packages that currently exist and are active. Deleted/old slugs are skipped. */
+function getLiveRelatedPackages(db, pkg, limit = 3) {
+  const related = [];
+  const seen = new Set([String(pkg.id), String(pkg.slug || '')]);
+  const slugs = parseRelatedSlugs(pkg.related_slugs_json);
+
+  if (slugs.length) {
+    const placeholders = slugs.map(() => '?').join(',');
+    const rows = db.prepare(
+      `SELECT * FROM packages WHERE slug IN (${placeholders}) AND active = 1 AND id != ?`
+    ).all(...slugs, pkg.id);
+    for (const row of rows) {
+      if (seen.has(String(row.id)) || seen.has(String(row.slug))) continue;
+      seen.add(String(row.id));
+      seen.add(String(row.slug));
+      related.push(row);
+      if (related.length >= limit) return related;
+    }
+  }
+
+  const fillers = db.prepare(
+    'SELECT * FROM packages WHERE active = 1 AND id != ? ORDER BY featured DESC, created_at DESC'
+  ).all(pkg.id);
+  for (const row of fillers) {
+    if (seen.has(String(row.id)) || seen.has(String(row.slug))) continue;
+    related.push(row);
+    if (related.length >= limit) break;
+  }
+  return related;
+}
+
 // Categories
 router.get('/categories/all', (req, res) => {
   const db = getDb();
@@ -51,19 +92,7 @@ router.get('/:id', (req, res) => {
   const pkg = db.prepare('SELECT * FROM packages WHERE id = ? OR slug = ?').get(req.params.id, req.params.id);
   if (!pkg) return res.status(404).json({ error: 'Package not found' });
 
-  let related = [];
-  if (pkg.related_slugs_json) {
-    try {
-      const slugs = JSON.parse(pkg.related_slugs_json);
-      if (Array.isArray(slugs) && slugs.length) {
-        const placeholders = slugs.map(() => '?').join(',');
-        related = db.prepare(`SELECT * FROM packages WHERE slug IN (${placeholders}) AND active = 1`).all(...slugs);
-      }
-    } catch { /* ignore */ }
-  }
-  if (!related.length) {
-    related = db.prepare('SELECT * FROM packages WHERE active = 1 AND id != ? ORDER BY featured DESC, created_at DESC LIMIT 3').all(pkg.id);
-  }
+  const related = getLiveRelatedPackages(db, pkg);
 
   res.json({ package: pkg, related });
 });

@@ -895,8 +895,9 @@ function renderPackageGrid() {
   const grid = document.getElementById("packageGrid");
   if (!grid) return;
   const listing = cmsState.packagesPage?.listing || {};
-  const limit = Math.min(parseInt(listing.packages_per_page || "5", 10), 5);
-  let packages = cmsState.packages?.length ? cmsState.packages : getDefaultPackages();
+  const configuredLimit = parseInt(listing.packages_per_page || "0", 10);
+  const limit = configuredLimit > 0 ? configuredLimit : 50;
+  let packages = Array.isArray(cmsState.packages) ? [...cmsState.packages] : [];
 
   if (activePackageCategory !== "all") {
     packages = packages.filter((pkg) => {
@@ -915,7 +916,8 @@ function renderPackageGrid() {
   }
 
   if (!packages.length) {
-    packages = getDefaultPackages();
+    grid.innerHTML = `<p class="packages-empty">No packages yet. Add them from the admin Package Settings.</p>`;
+    return;
   }
 
   packages = sortPackagesForDisplay(packages);
@@ -1007,13 +1009,13 @@ function defaultPackageBySlug(slug) {
   return window.CALEDOR_PACKAGE_DEFAULTS?.getBySlug?.(normalized) || null;
 }
 
-/** API/admin packages win. Defaults only fill missing text — never keep hardcoded-only cards. */
+/** Admin/API packages only. Never inject hardcoded demo cards. */
 function mergePackageList(apiPackages = []) {
-  if (!apiPackages.length) return getDefaultPackages();
+  if (!apiPackages.length) return [];
 
   return sortPackagesForDisplay(apiPackages.map((api) => {
     const def = defaultPackageBySlug(api.slug) || {};
-    const merged = { ...def, ...api };
+    const merged = { ...api };
 
     // Always prefer live admin image fields
     if (api.image_url) merged.image_url = api.image_url;
@@ -1045,7 +1047,7 @@ async function loadPackages() {
     cmsState.packages = mergePackageList(data.packages || []);
   } catch (err) {
     console.error("loadPackages:", err);
-    cmsState.packages = getDefaultPackages();
+    cmsState.packages = [];
   }
   renderPackageGrid();
   applyFeaturedToursSection(cmsState.home?.featured_tours || {});

@@ -1,21 +1,15 @@
 import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcrypt';
 import { flattenCmsDefaults } from './cms-defaults.js';
 import { syncCanonicalTeamSection, syncCanonicalHeroSection, syncCanonicalGallerySection, syncCanonicalBlogPosts, syncAdminDisplayName } from './cms-repair.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, 'data', 'caledor.db');
+import { DB_PATH, ensureDataDirs } from './paths.js';
 
 let db;
 
 export function getDb() {
   if (db) return db;
 
-  const dataDir = join(__dirname, 'data');
-  if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
+  ensureDataDirs();
 
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
@@ -195,6 +189,9 @@ function migratePackageColumns() {
 }
 
 function seedPackageDetailDemo() {
+  // Never auto-insert demo packages on Render/production — they overwrite the live admin list.
+  if (process.env.NODE_ENV === 'production' || process.env.SKIP_DEMO_SEED === '1') return;
+
   const demo = db.prepare('SELECT id FROM packages WHERE slug = ?').get('scottish-highlands-journey');
   if (demo) return;
 

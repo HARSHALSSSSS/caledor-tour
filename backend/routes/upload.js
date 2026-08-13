@@ -1,12 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { authMiddleware } from '../middleware/auth.js';
+import { UPLOADS_DIR } from '../paths.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const uploadsDir = join(__dirname, '..', 'uploads');
+const uploadsDir = UPLOADS_DIR;
 
 if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { getDb } from './db.js';
+import { UPLOADS_DIR, ensureDataDirs } from './paths.js';
 import authRoutes from './routes/auth.js';
 import cmsRoutes from './routes/cms.js';
 import packageRoutes from './routes/packages.js';
@@ -57,7 +58,8 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'caledor-api' });
 });
 
-app.use('/uploads', express.static(join(__dirname, 'uploads'), {
+ensureDataDirs();
+app.use('/uploads', express.static(UPLOADS_DIR, {
   setHeaders: (res) => {
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   },

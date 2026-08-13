@@ -280,7 +280,7 @@ window.CALEDOR_PACKAGE_DEFAULTS = (() => {
       "italian-heritage-grand-tour": "italian-heritage-tour",
       "swiss-alps-private-retreat": "swiss-alps-experience",
     }[slug] || slug;
-    return packages.find((p) => p.slug === normalized) || packages[0];
+    return packages.find((p) => p.slug === normalized) || null;
   }
 
   function getRelated(slug) {

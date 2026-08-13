@@ -67,7 +67,7 @@ function getSlug() {
   const pathMatch = window.location.pathname.match(/\/package\/([^/?#]+)/i);
   const fromPath = pathMatch ? decodeURIComponent(pathMatch[1]) : "";
   const raw = (fromQuery || fromPath || "").trim();
-  if (!raw) return "scottish-highlands-journey";
+  if (!raw) return "";
   return SLUG_ALIASES[raw] || raw;
 }
 
@@ -187,10 +187,16 @@ function renderPackage(pkg, related = []) {
       : `<p style="color:rgba(255,255,255,0.7)">Itinerary details coming soon.</p>`;
   }
 
+  const relatedSection = document.getElementById("pkgRelatedSection");
   const relatedEl = document.getElementById("pkgRelated");
+  const liveRelated = (related || []).filter((item) => {
+    const slug = String(item?.slug || "").trim();
+    return slug && slug !== String(pkg.slug || "") && (item.id || item.name);
+  }).slice(0, 3);
+
+  if (relatedSection) relatedSection.hidden = !liveRelated.length;
   if (relatedEl) {
-    const items = related.length ? related : (window.CALEDOR_PACKAGE_DEFAULTS?.getRelated?.(pkg.slug) || []);
-    relatedEl.innerHTML = items.slice(0, 3).map((item) => {
+    relatedEl.innerHTML = liveRelated.map((item) => {
       const img = assetUrl(item.image_url, item.updated_at) || IMAGE_FALLBACK;
       const country = packageCountryLabel(item);
       return `
@@ -206,7 +212,7 @@ function renderPackage(pkg, related = []) {
           </div>
         </a>
       </article>`;
-    }).join("") || `<p>More experiences coming soon.</p>`;
+    }).join("");
   }
 
   const ctaCopy = document.getElementById("pkgCtaCopy");
@@ -215,33 +221,57 @@ function renderPackage(pkg, related = []) {
   }
 }
 
-async function loadPackage() {
-  const slug = getSlug();
-  const defaults = getDefaultPackage(slug);
+function isLivePackage(item, currentSlug = "") {
+  const slug = String(item?.slug || "").trim();
+  return Boolean(slug && slug !== currentSlug && (item.id || item.name));
+}
+
+async function resolveLiveRelated(pkg, apiRelated = []) {
+  const currentSlug = String(pkg.slug || "").trim();
+  const fromApi = (apiRelated || []).filter((item) => isLivePackage(item, currentSlug));
+  if (fromApi.length) return fromApi.slice(0, 3);
 
   try {
-    const data = await fetchJson(`/packages/${encodeURIComponent(slug)}`);
-    const apiPkg = data.package || {};
-    const pkg = mergePackage(apiPkg, defaults || {});
-    const related = (data.related || []).length
-      ? data.related.map((r) => mergePackage(r, getDefaultPackage(r.slug) || {}))
-      : window.CALEDOR_PACKAGE_DEFAULTS?.getRelated?.(slug) || [];
-    renderPackage(pkg, related);
-  } catch (err) {
-    console.warn("Package API load failed, using defaults:", err?.message || err);
-    if (defaults) {
-      renderPackage(defaults, window.CALEDOR_PACKAGE_DEFAULTS?.getRelated?.(slug) || []);
-      return;
-    }
+    const data = await fetchJson("/packages?active=true");
+    return (data.packages || [])
+      .filter((item) => isLivePackage(item, currentSlug))
+      .slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+async function loadPackage() {
+  const slug = getSlug();
+  const showMissing = () => {
     const root = document.getElementById("packageDetailRoot");
-    if (root) {
-      root.innerHTML = `
+    if (!root) return;
+    root.innerHTML = `
       <section class="section-block"><div class="container">
         <h2>Package not found</h2>
         <p style="color:var(--muted)">This experience may have been removed or the link is incorrect.</p>
         <a class="button primary" href="/#packages">View Packages</a>
       </div></section>`;
+  };
+
+  if (!slug) {
+    showMissing();
+    return;
+  }
+
+  try {
+    const data = await fetchJson(`/packages/${encodeURIComponent(slug)}`);
+    const apiPkg = data.package || {};
+    if (!apiPkg.id && !apiPkg.slug && !apiPkg.name) {
+      showMissing();
+      return;
     }
+    const pkg = mergePackage(apiPkg, {});
+    const related = await resolveLiveRelated(pkg, data.related || []);
+    renderPackage(pkg, related);
+  } catch (err) {
+    console.warn("Package API load failed:", err?.message || err);
+    showMissing();
   }
 }
 
