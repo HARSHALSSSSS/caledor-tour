@@ -56,10 +56,14 @@
 
     applyDeferredMedia(el);
 
-    if (el.tagName === "IMG") {
+    if (el.tagName === "IMG" || el.tagName === "VIDEO" || el.tagName === "SOURCE") {
       const src = el.getAttribute("src");
       if (src && isUploadPath(src)) {
         el.src = maybeMediaUrl(src);
+      }
+      if (el.tagName === "VIDEO") {
+        const poster = el.getAttribute("poster");
+        if (poster && isUploadPath(poster)) el.setAttribute("poster", maybeMediaUrl(poster));
       }
       return;
     }
@@ -145,8 +149,8 @@
         applyDeferredMedia(el);
       });
 
-      root.querySelectorAll("img").forEach((img) => {
-        rewriteOne(img);
+      root.querySelectorAll("img, video, source").forEach((el) => {
+        rewriteOne(el);
       });
 
       root.querySelectorAll("[style]").forEach((el) => {
@@ -161,7 +165,7 @@
                 m.addedNodes.forEach((n) => {
                   if (!(n instanceof Element)) return;
                   n.querySelectorAll?.("img[data-caledor-media], [data-caledor-bg]").forEach((el) => applyDeferredMedia(el));
-                  n.querySelectorAll?.("img").forEach((img) => rewriteOne(img));
+                  n.querySelectorAll?.("img, video, source").forEach((el) => rewriteOne(el));
                   n.querySelectorAll?.("[style]").forEach((el) => rewriteOne(el));
                   rewriteOne(n);
                 });
@@ -171,7 +175,7 @@
                 if (!el) continue;
                 const name = m.attributeName;
                 if (name === "data-caledor-media" || name === "data-caledor-bg") applyDeferredMedia(el);
-                if (name === "src" && el.tagName === "IMG") rewriteOne(el);
+                if (name === "src" || name === "poster") rewriteOne(el);
                 if (name === "style") rewriteOne(el);
               }
             }

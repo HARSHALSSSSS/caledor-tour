@@ -214,10 +214,11 @@ window.AdminEntities = (() => {
 
   async function faqView(api) {
     const [faqData, cmsData] = await Promise.all([
-      api("/faqs").catch(() => ({ faqs: [] })),
-      api("/cms/faq").catch(() => ({ sections: {} })),
+      api("/faqs", { bust: true }).catch(() => ({ faqs: [] })),
+      api("/cms/faq", { bust: true }).catch(() => ({ sections: {} })),
     ]);
     const faqs = faqData.faqs || [];
+    window.__adminFaqList = faqs;
     const s = cmsData.sections || {};
     const sec = s.section || {};
     const enabled = sec.enabled !== "0";
@@ -246,7 +247,7 @@ window.AdminEntities = (() => {
         </div>`)}
 
       ${panel("Add / Edit FAQ", "Questions and answers shown in the accordion on the homepage FAQ section", `
-        <form id="faqForm" class="form-grid">
+        <form id="faqForm" class="form-grid" novalidate>
           <input type="hidden" name="id" value="" />
           ${field("Question", "What is your typical response time?", "question", true)}
           ${textarea("Answer", "We typically respond within 24 hours.", "answer")}
@@ -260,7 +261,7 @@ window.AdminEntities = (() => {
             </select>
           </div>
           <div class="field-full actions-row">
-            <button class="btn primary" type="submit">Save FAQ</button>
+            <button class="btn primary" type="button" id="faqSaveBtn" data-action="save-faq">Save FAQ</button>
             <button class="btn secondary" type="button" data-action="reset-faq-form">Clear Form</button>
           </div>
         </form>`)}

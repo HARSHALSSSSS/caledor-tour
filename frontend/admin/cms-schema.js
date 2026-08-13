@@ -438,12 +438,6 @@ window.CmsSchema = (() => {
       <div class="cms-list" data-json-section="testimonials">${testimonials.map(testimonialItemRow).join("")}</div>
       <button class="add-row-btn cms-add-testimonial" type="button">+ Add Testimonial</button>`, "testimonials", isOn(s, "testimonials")),
 
-      section("Featured Experiences Heading", `<div class="form-grid">
-        ${cmsInput("packages_heading", "kicker", "Section Title (script style)", val(s, "packages_heading", "kicker", "Featured Experiences"))}
-        ${cmsTextarea("packages_heading", "subtitle", "Section Subtitle", val(s, "packages_heading", "subtitle", "Curated journeys across the UK and Europe, crafted for unforgettable moments and refined travel."))}
-        <div class="field-full"><span class="settings-copy">Package cards and images are managed under <strong>Package Settings</strong>. Display count and optional filters are under CMS → Featured Experiences.</span></div>
-      </div>`, "packages_heading", isOn(s, "packages_heading")),
-
       section("Destinations", `<div class="form-grid">
         ${cmsInput("destinations", "kicker", "Section Kicker", val(s, "destinations", "kicker", "Explore Our Destinations"))}
         ${cmsInput("destinations", "title", "Section Title", val(s, "destinations", "title", "Europe made easy for every traveler."))}
@@ -461,9 +455,10 @@ window.CmsSchema = (() => {
       section("Scotland Attractions", `<div class="form-grid">
         ${cmsInput("scotland_attractions", "kicker", "Section Kicker", val(s, "scotland_attractions", "kicker", "Top Scotland Attractions"))}
         ${cmsInput("scotland_attractions", "title", "Section Title", val(s, "scotland_attractions", "title"))}
-        <div class="field-full"><span class="settings-copy">Each tile keeps its fixed mosaic slot (<strong>Grid Layout</strong>). Choose <strong>Image</strong> or <strong>Video</strong> per tile — videos play inside the grid on the website.</span></div>
+        <div class="field-full"><span class="settings-copy">Add an <strong>Image</strong> or <strong>Video</strong> for each tile. The website mosaic grid stays the same — pick the matching <strong>Grid Layout</strong> slot (loch, kelpies, tall, wide, skye, whisky).</span></div>
       </div>
-      <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>`, "scotland_attractions", isOn(s, "scotland_attractions")),
+      <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>
+      <button class="add-row-btn cms-add-scotland" type="button">+ Add Image or Video</button>`, "scotland_attractions", isOn(s, "scotland_attractions")),
 
       section("Premium Services", `<div class="form-grid">
         ${cmsInput("premium_services", "kicker", "Section Kicker", val(s, "premium_services", "kicker", "Our Premium Services"))}
@@ -934,20 +929,28 @@ window.CmsSchema = (() => {
     }
 
     const scotlandTiles = [];
-    const scotlandLayouts = new Set();
+    const scotlandByLayout = new Map();
+    const isVideoFile = (url) => /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(String(url || ""));
     container.querySelectorAll('[data-list="scotland-tiles"]').forEach((row) => {
       const layout = row.querySelector('[name="layout"]')?.value || "loch";
-      if (scotlandLayouts.has(layout)) return;
-      scotlandLayouts.add(layout);
-      scotlandTiles.push({
-        media_type: row.querySelector('[name="media_type"]')?.value || "image",
-        image: row.querySelector('[name="image"]')?.value || "",
-        video_url: row.querySelector('[name="video_url"]')?.value || "",
+      let image = row.querySelector('[name="image"]')?.value || "";
+      let videoUrl = row.querySelector('[name="video_url"]')?.value || "";
+      let mediaType = row.querySelector('[name="media_type"]')?.value || "image";
+      if (isVideoFile(image) && !videoUrl) {
+        videoUrl = image;
+        image = "";
+      }
+      if (videoUrl || mediaType === "video") mediaType = "video";
+      scotlandByLayout.set(layout, {
+        media_type: mediaType,
+        image,
+        video_url: videoUrl,
         label: row.querySelector('[name="label"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
         layout,
       });
     });
+    scotlandByLayout.forEach((tile) => scotlandTiles.push(tile));
     if (scotlandTiles.length || container.querySelector('[data-json-section="scotland_attractions"]')) {
       sections.scotland_attractions = sections.scotland_attractions || {};
       sections.scotland_attractions.items_json = JSON.stringify(scotlandTiles);
@@ -1066,7 +1069,6 @@ window.CmsSchema = (() => {
     "about-us": (s) => renderAbout(s),
     contact: (s, st) => renderContact(s, st),
     blog: (s) => renderBlog(s),
-    "packages-page": (s, st, pkgs) => renderPackagesPage(s, pkgs),
     footer: (s, st) => renderFooter(s, st),
   };
 

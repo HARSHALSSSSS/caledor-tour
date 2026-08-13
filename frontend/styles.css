@@ -862,6 +862,7 @@ p {
 .scotland-tile-whisky { grid-area: whisky; }
 
 .scotland-tile img,
+.scotland-tile video,
 .scotland-tile video.scotland-video {
   display: block;
   width: 100%;
@@ -869,6 +870,13 @@ p {
   object-fit: cover;
   object-position: center bottom;
   border-radius: 16px;
+}
+
+.scotland-tile video,
+.scotland-tile video.scotland-video {
+  position: absolute;
+  inset: 0;
+  background: #071428;
 }
 
 .scotland-tile-loch,

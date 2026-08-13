@@ -23,7 +23,6 @@ const viewSnapshots = new Map();
 const routes = [
   { id: "overview", label: "Dashboard", icon: "dashboard", title: "Dashboard Overview", crumbs: ["Admin", "Overview"] },
   { id: "cms-settings/home", label: "CMS Settings", icon: "settings", title: "CMS Settings", crumbs: ["Admin", "CMS Settings"] },
-  { id: "package-settings", label: "Package Settings", icon: "package", title: "Package Settings", crumbs: ["Admin", "Package Settings"] },
   { id: "user-management", label: "User Management", icon: "users", title: "User Management", crumbs: ["Admin", "User Management"] },
   { id: "gallery", label: "Gallery", icon: "gallery", title: "Gallery", crumbs: ["Admin", "Gallery"] },
   { id: "faq-management", label: "FAQ Management", icon: "faq", title: "FAQ Management", crumbs: ["Admin", "FAQ Management"] },
@@ -35,7 +34,6 @@ const cmsTabs = [
   { id: "about-us", label: "About Us" },
   { id: "contact", label: "Contact" },
   { id: "blog", label: "Blog" },
-  { id: "packages-page", label: "Featured Experiences" },
   { id: "footer", label: "Footer" },
 ];
 
@@ -74,7 +72,6 @@ async function overviewView() {
 
   const quickLinks = [
     ["CMS Settings", "#cms-settings/home", "Edit homepage hero, about, footer, and more"],
-    ["Package Settings", "#package-settings", "Manage featured experiences and detail pages"],
     ["Gallery", "#gallery", "Upload photos for the homepage gallery"],
     ["FAQ Management", "#faq-management", "Update questions shown on the website"],
   ];
@@ -82,10 +79,6 @@ async function overviewView() {
   return `
     <section class="content-grid">
       <div class="stats-grid">
-        <article class="stat-card">
-          <div class="stat-label">Active Packages</div>
-          <div class="stat-value">${Number(stats.activePackages || 0).toLocaleString()}</div>
-        </article>
         <article class="stat-card">
           <div class="stat-label">Admin Users</div>
           <div class="stat-value">${Number(stats.totalUsers || 0).toLocaleString()}</div>
@@ -453,7 +446,7 @@ function getRoute() {
     window.location.replace("#cms-settings/home");
     return { section: "cms-settings", tab: "home", raw: "cms-settings/home" };
   }
-  if (raw === "booking-management") {
+  if (raw === "booking-management" || raw === "package-settings" || raw.startsWith("cms-settings/packages-page")) {
     window.location.replace("#overview");
     return { section: "overview", tab: "home", raw: "overview" };
   }
@@ -659,6 +652,93 @@ function formData(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
 
+function resetFaqForm(form = document.getElementById("faqForm")) {
+  if (!form) return;
+  form.reset();
+  const idInput = form.querySelector('[name="id"]');
+  if (idInput) idInput.value = "";
+  const activeSelect = form.querySelector('[name="active"]');
+  if (activeSelect) activeSelect.value = "1";
+}
+
+function fillFaqForm(faq) {
+  const form = document.getElementById("faqForm");
+  if (!form || !faq) return;
+  form.querySelector('[name="id"]').value = faq.id || "";
+  form.querySelector('[name="question"]').value = faq.question || "";
+  form.querySelector('[name="answer"]').value = faq.answer || "";
+  form.querySelector('[name="category"]').value = faq.category || "General";
+  form.querySelector('[name="sort_order"]').value = String(faq.sort_order ?? 0);
+  const activeSelect = form.querySelector('[name="active"]');
+  if (activeSelect) activeSelect.value = faq.active === 0 || faq.active === "0" || faq.active === false ? "0" : "1";
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+let faqSaving = false;
+
+async function saveFaqFromForm() {
+  const form = document.getElementById("faqForm");
+  if (!form || faqSaving) return;
+  if (!token) {
+    showToast("Please log in again to save FAQs");
+    return;
+  }
+  const data = formData(form);
+  const question = String(data.question || "").trim();
+  const answer = String(data.answer || "").trim();
+  if (!question || !answer) {
+    showToast("Question and answer are required");
+    return;
+  }
+
+  const payload = {
+    question,
+    answer,
+    category: String(data.category || "General").trim() || "General",
+    sort_order: Number(data.sort_order) || 0,
+    active: data.active !== "0",
+  };
+
+  faqSaving = true;
+  const saveBtn = document.getElementById("faqSaveBtn");
+  const original = saveBtn?.textContent || "Save FAQ";
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+  }
+  try {
+    if (data.id) {
+      await api(`/faqs/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
+      showToast("FAQ updated — live on website");
+    } else {
+      await api("/faqs", { method: "POST", body: JSON.stringify(payload) });
+      showToast("FAQ created — live on website");
+    }
+    invalidateApiCache("/faqs");
+    markSaved();
+    await render();
+  } catch (err) {
+    showToast(err.message || "Could not save FAQ");
+  } finally {
+    faqSaving = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = original;
+    }
+  }
+}
+
+function wireFaqPage() {
+  const form = document.getElementById("faqForm");
+  if (!form || form._faqWired) return;
+  form._faqWired = true;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    saveFaqFromForm();
+  });
+}
+
 let entityHandlersWired = false;
 
 function wireEntityHandlers() {
@@ -726,39 +806,8 @@ function wireEntityHandlers() {
     }
     if (form.id === "faqForm") {
       e.preventDefault();
-      if (!token) {
-        showToast("Please log in again to save FAQs");
-        return;
-      }
-      const data = formData(e.target);
-      const question = String(data.question || "").trim();
-      const answer = String(data.answer || "").trim();
-      if (!question || !answer) {
-        showToast("Question and answer are required");
-        return;
-      }
-      const payload = {
-        question,
-        answer,
-        category: String(data.category || "General").trim() || "General",
-        sort_order: Number(data.sort_order) || 0,
-        active: data.active === "1",
-      };
-      try {
-        if (data.id) {
-          await api(`/faqs/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
-          showToast("FAQ updated — live on website");
-        } else {
-          await api("/faqs", { method: "POST", body: JSON.stringify(payload) });
-          showToast("FAQ created — live on website");
-        }
-        invalidateApiCache("/faqs");
-        markSaved();
-        render();
-      } catch (err) {
-        showToast(err.message || "Could not save FAQ");
-      }
-      return;
+      e.stopPropagation();
+      saveFaqFromForm();
     }
   });
 
@@ -786,6 +835,7 @@ function wireEntityHandlers() {
     const button = e.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
+    if (button.tagName === "BUTTON" || button.tagName === "A") e.preventDefault();
 
     if (action === "save-changes" || action === "publish") {
       e.preventDefault();
@@ -946,6 +996,10 @@ function wireEntityHandlers() {
         }
         return;
       }
+      if (action === "save-faq") {
+        await saveFaqFromForm();
+        return;
+      }
       if (action === "delete-faq") {
         if (!confirm("Delete this FAQ?")) return;
         try {
@@ -953,33 +1007,29 @@ function wireEntityHandlers() {
           invalidateApiCache("/faqs");
           showToast("FAQ deleted — removed from website");
           markSaved();
-          render();
+          await render();
         } catch (err) {
           showToast(err.message || "Delete failed");
         }
         return;
       }
       if (action === "edit-faq") {
-        api(`/faqs/${button.dataset.id}`).then(({ faq }) => {
-          const form = document.getElementById("faqForm");
-          if (!form) return;
-          form.querySelector('[name="id"]').value = faq.id;
-          form.querySelector('[name="question"]').value = faq.question || "";
-          form.querySelector('[name="answer"]').value = faq.answer || "";
-          form.querySelector('[name="category"]').value = faq.category || "General";
-          form.querySelector('[name="sort_order"]').value = String(faq.sort_order ?? 0);
-          const activeSelect = form.querySelector('[name="active"]');
-          if (activeSelect) activeSelect.value = faq.active ? "1" : "0";
-          form.scrollIntoView({ behavior: "smooth", block: "start" });
-        }).catch((err) => showToast(err.message));
+        const id = String(button.dataset.id || "");
+        const local = (window.__adminFaqList || []).find((item) => String(item.id) === id);
+        if (local) {
+          fillFaqForm(local);
+          return;
+        }
+        try {
+          const { faq } = await api(`/faqs/${id}`, { bust: true });
+          fillFaqForm(faq);
+        } catch (err) {
+          showToast(err.message || "Could not load FAQ");
+        }
         return;
       }
       if (action === "reset-faq-form") {
-        const form = document.getElementById("faqForm");
-        if (!form) return;
-        form.reset();
-        form.querySelector('[name="id"]').value = "";
-        form.querySelector('[name="active"]').value = "1";
+        resetFaqForm();
         return;
       }
       if (action === "mark-read") {
@@ -1048,7 +1098,10 @@ function wireDynamicHandlers() {
   }
 }
 
+let adminSocketConnected = false;
+
 async function connectAdminSocket() {
+  if (adminSocketConnected) return;
   if (typeof io === "undefined") {
     try {
       await window.CALEDOR_CONFIG?.ensureSocketIoClient?.();
@@ -1059,15 +1112,11 @@ async function connectAdminSocket() {
   if (typeof io === "undefined") return;
 
   const socket = window.CALEDOR_CONFIG?.connectSocket?.() ?? io();
+  if (!socket) return;
+  adminSocketConnected = true;
   socket.emit("join:admin");
   socket.on("contact:new", () => {
     if (getRoute().section === "notifications" || getRoute().section === "overview") render();
-  });
-  socket.on("faq:updated", () => {
-    if (getRoute().section === "faq-management") {
-      invalidateApiCache("/faqs");
-      render();
-    }
   });
 }
 
@@ -1126,6 +1175,7 @@ async function render() {
   renderActionHooks();
   wireEntityHandlers();
   wireDynamicHandlers();
+  wireFaqPage();
   if (window.CmsUI) window.CmsUI.wire(view);
   if (routeInfo.section === "package-settings" && window.PackageEditor) {
     window.PackageEditor.wire(api, render, {

@@ -269,10 +269,7 @@ function setSectionVisible(el, enabled) {
 }
 
 function isPackagesSectionEnabled() {
-  const homeEnabled = cmsState.home?.packages_heading?.enabled;
-  const listingEnabled = cmsState.packagesPage?.listing?.enabled;
-  if (homeEnabled === "0" || listingEnabled === "0") return false;
-  return true;
+  return false;
 }
 
 function applyPackagesVisibility() {
@@ -287,8 +284,8 @@ function applyPackagesVisibility() {
   }
 
   document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
-    if (!visible) link.setAttribute("hidden", "");
-    else link.removeAttribute("hidden");
+    link.setAttribute("href", link.getAttribute("href").includes("/") ? "/#destinations" : "#destinations");
+    if (link.textContent.trim() === "Packages") link.textContent = "Featured Experience";
   });
 
   const grid = document.getElementById("packageGrid");
@@ -1082,10 +1079,9 @@ async function loadBlogPosts() {
 async function loadFaqs() {
   const accordion = document.getElementById("faqAccordion");
   if (!accordion) return;
-  accordion.innerHTML = `<p class="faq-loading">Loading FAQs…</p>`;
   try {
     const data = await fetchJson("/faqs?active=true");
-    const faqs = (data.faqs || [])
+    const faqs = (Array.isArray(data) ? data : (data.faqs || []))
       .slice()
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0) || Number(a.id ?? 0) - Number(b.id ?? 0));
     if (!faqs.length) {
@@ -1251,31 +1247,39 @@ async function loadGallery() {
   }
 }
 
+function scotlandVideoSrc(item = {}) {
+  const candidates = [item.video_url, item.video, item.image];
+  for (const url of candidates) {
+    if (isVideoUrl(url)) return url;
+  }
+  return "";
+}
+
 function isScotlandVideo(item = {}) {
-  const type = String(item.media_type || "").toLowerCase();
-  if (type === "video") return true;
-  if (type === "image") return false;
-  return Boolean(item.video_url) && isVideoUrl(item.video_url);
+  if (scotlandVideoSrc(item)) return true;
+  return String(item.media_type || "").toLowerCase() === "video";
 }
 
 function resolveScotlandItems(section = {}) {
   const byLayout = new Map(SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => [item.layout, { ...item }]));
   parseJson(section.items_json).forEach((item) => {
-    if (!item?.label && !item?.image && !item?.video_url) return;
+    if (!item?.label && !item?.image && !item?.video_url && !item?.video) return;
     const layout = item.layout && item.layout !== "auto"
       ? item.layout
       : (SCOTLAND_LABEL_TO_LAYOUT[item.label] || item.layout);
     if (!layout || !SCOTLAND_LAYOUT_CLASSES[layout]) return;
     const defaultItem = byLayout.get(layout) || SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout);
-    const mediaType = isScotlandVideo(item) ? "video" : "image";
-    const image = resolveScotlandImage(item.image, defaultItem?.image);
+    const videoUrl = scotlandVideoSrc(item);
+    const mediaType = videoUrl || String(item.media_type || "").toLowerCase() === "video" ? "video" : "image";
+    const poster = item.image && !isVideoUrl(item.image) ? item.image : "";
+    const image = resolveScotlandImage(poster, mediaType === "video" ? "" : defaultItem?.image);
     byLayout.set(layout, {
       ...defaultItem,
       ...item,
       layout,
       image,
       media_type: mediaType,
-      video_url: item.video_url || "",
+      video_url: videoUrl || item.video_url || "",
     });
   });
   return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
@@ -1284,11 +1288,13 @@ function resolveScotlandItems(section = {}) {
 function renderScotlandTileMedia(item) {
   const revision = cmsState.homeUpdatedAt;
   const alt = escapeHtml(item.alt || item.label || "Scotland attraction");
-  if (isScotlandVideo(item)) {
-    const videoUrl = assetUrl(item.video_url, revision);
-    if (!videoUrl) return `<img ${withImageFallback(assetUrl(item.image, revision), alt)} />`;
-    const poster = item.image ? assetUrl(item.image, revision) : "";
-    return `<video class="scotland-video" src="${escapeHtml(videoUrl)}"${poster ? ` poster="${escapeHtml(poster)}"` : ""} muted loop playsinline preload="metadata" aria-label="${alt}"></video>`;
+  const videoSrc = scotlandVideoSrc(item);
+  if (videoSrc || String(item.media_type || "").toLowerCase() === "video") {
+    const videoUrl = assetUrl(videoSrc || item.video_url, revision);
+    if (videoUrl) {
+      const poster = item.image && !isVideoUrl(item.image) ? assetUrl(item.image, revision) : "";
+      return `<video class="scotland-video" src="${escapeHtml(videoUrl)}"${poster ? ` poster="${escapeHtml(poster)}"` : ""} muted loop autoplay playsinline preload="auto" aria-label="${alt}"></video>`;
+    }
   }
   return `<img ${withImageFallback(assetUrl(item.image, revision), alt)} />`;
 }
@@ -1296,13 +1302,18 @@ function renderScotlandTileMedia(item) {
 function updateScotlandTileMedia(tile, item) {
   if (!tile) return;
   const mediaHtml = renderScotlandTileMedia(item);
-  const mediaWrap = tile.querySelector("img, video.scotland-video");
-  if (mediaWrap) {
-    const temp = document.createElement("div");
-    temp.innerHTML = mediaHtml.trim();
-    mediaWrap.replaceWith(temp.firstElementChild);
-  } else {
-    tile.insertAdjacentHTML("afterbegin", mediaHtml);
+  const mediaWrap = tile.querySelector("img, video");
+  const temp = document.createElement("div");
+  temp.innerHTML = mediaHtml.trim();
+  const next = temp.firstElementChild;
+  if (!next) return;
+  if (mediaWrap) mediaWrap.replaceWith(next);
+  else tile.insertAdjacentHTML("afterbegin", mediaHtml);
+  window.CALEDOR_CONFIG?.rewriteMediaUrls?.(tile);
+  if (next.tagName === "VIDEO") {
+    next.muted = true;
+    next.playsInline = true;
+    next.play?.().catch(() => {});
   }
   const label = tile.querySelector(".scotland-label");
   if (label && item.label) label.textContent = item.label;
@@ -1916,6 +1927,10 @@ function wireNavHighlight() {
 }
 
 async function init() {
+  if (window.location.hash === "#packages") {
+    window.location.hash = "#destinations";
+  }
+
   // Paint static HTML immediately — never hide the page while APIs load.
   document.body.classList.remove("is-loading");
   document.body.classList.add("cms-ready");
@@ -1930,6 +1945,12 @@ async function init() {
   wireMobileNav();
   wireNavHighlight();
   wireImageFallbacks();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      loadFaqs();
+      loadCmsFaq();
+    }
+  });
 
   if (window.SiteChrome?.initScrollReveal) {
     window.SiteChrome.initScrollReveal();

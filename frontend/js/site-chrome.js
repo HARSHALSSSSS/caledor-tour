@@ -116,7 +116,11 @@
       navCols.innerHTML = useColumns.map((col) => `
         <div class="footer-col">
           <h3>${escapeHtml((col.title || "").toUpperCase())}</h3>
-          ${(col.links || []).map((link) => {
+          ${(col.links || []).filter((link) => {
+            const label = String(link.label || "").toLowerCase();
+            const url = String(link.url || "").toLowerCase();
+            return label !== "packages" && !url.includes("#packages");
+          }).map((link) => {
             const raw = String(link.url || "#");
             const href = raw.startsWith("#") ? `/${raw}` : raw;
             return `<a href="${escapeHtml(href)}">${escapeHtml(link.label || "")}</a>`;
@@ -238,35 +242,23 @@
     }
   }
 
-  async function applyPackagesNavVisibility() {
-    try {
-      const [home, pkgs] = await Promise.all([
-        fetchJson("/cms/home"),
-        fetchJson("/cms/packages-page"),
-      ]);
-      const visible = home.sections?.packages_heading?.enabled !== "0"
-        && pkgs.sections?.listing?.enabled !== "0";
-      document.body.classList.toggle("packages-section-hidden", !visible);
-      document.body.classList.remove("packages-pending");
-      document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
-        if (!visible) link.setAttribute("hidden", "");
-        else link.removeAttribute("hidden");
-      });
-      const section = document.getElementById("packages");
-      if (section) {
-        if (!visible) section.setAttribute("hidden", "");
-        else section.removeAttribute("hidden");
-      }
-      const grid = document.getElementById("packageGrid");
-      if (grid && !visible) grid.innerHTML = "";
-    } catch {
-      // keep section hidden until main script confirms visibility
-    }
+  function hidePackagesSection() {
+    document.body.classList.add("packages-section-hidden");
+    document.body.classList.remove("packages-pending");
+    document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
+      link.setAttribute("href", link.getAttribute("href").includes("/") ? "/#destinations" : "#destinations");
+      if (link.textContent.trim() === "Packages") link.textContent = "Featured Experience";
+    });
+    const section = document.getElementById("packages");
+    if (section) section.setAttribute("hidden", "");
+    const featured = document.getElementById("featuredToursSection");
+    if (featured) featured.setAttribute("hidden", "");
   }
 
   async function init(options = {}) {
     wireMobileNav();
-    await Promise.all([loadFooter(), applyPackagesNavVisibility()]);
+    hidePackagesSection();
+    await Promise.all([loadFooter()]);
     if (options.scroll !== false) initScrollReveal();
   }
 

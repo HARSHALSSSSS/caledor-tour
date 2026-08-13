@@ -188,6 +188,19 @@ window.CmsUI = (() => {
             input.value = url;
             input.dispatchEvent(new Event("input"));
           }
+          const row = fileInput.closest(".scotland-tile-row");
+          if (row && (file.type.startsWith("video/") || /\.(mp4|webm|ogg|mov|m4v)$/i.test(file.name || ""))) {
+            const typeSelect = row.querySelector('[name="media_type"]');
+            const videoInput = row.querySelector('[name="video_url"]');
+            if (typeSelect) {
+              typeSelect.value = "video";
+              typeSelect.dispatchEvent(new Event("change"));
+            }
+            if (videoInput) {
+              videoInput.value = url;
+              videoInput.dispatchEvent(new Event("input"));
+            }
+          }
         } catch (err) {
           alert(err.message || "Upload failed");
           if (input) syncThumb(input);
@@ -268,7 +281,22 @@ window.CmsUI = (() => {
       sync();
     });
 
-    wireAddButton(container, ".cms-add-scotland", '[data-json-section="scotland_attractions"]', window.CmsSchema.scotlandTileRow);
+    const scotlandAdd = container.querySelector(".cms-add-scotland");
+    if (scotlandAdd && !scotlandAdd._wired) {
+      scotlandAdd._wired = true;
+      scotlandAdd.addEventListener("click", () => {
+        const list = container.querySelector('[data-json-section="scotland_attractions"]');
+        if (!list || !window.CmsSchema?.scotlandTileRow) return;
+        const used = [...list.querySelectorAll('[name="layout"]')].map((el) => el.value);
+        const layouts = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
+        const nextLayout = layouts.find((layout) => !used.includes(layout)) || "loch";
+        list.insertAdjacentHTML("beforeend", window.CmsSchema.scotlandTileRow({
+          layout: nextLayout,
+          media_type: "image",
+        }));
+        wire(list);
+      });
+    }
     wireAddButton(container, ".cms-add-premium", '[data-json-section="premium_services"]', window.CmsSchema.premiumServiceRow);
     wireAddButton(container, ".cms-add-mice", '[data-json-section="mice"]', window.CmsSchema.miceItemRow);
     wireAddButton(container, ".cms-add-mice-stat", '[data-json-section="mice_stats"]', () => window.CmsSchema.statRow({}, "mice-stats"));
