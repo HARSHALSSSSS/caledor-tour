@@ -727,7 +727,7 @@ function applyContactContent(sections = {}, settings = {}) {
   }
 
   if (window.SiteChrome?.applyFooter) {
-    SiteChrome.applyFooter(cmsState.footer || {}, settings, info);
+    SiteChrome.applyFooter(cmsState.footer || {}, cmsState.settings || settings, info);
   }
 }
 
@@ -1233,17 +1233,26 @@ async function loadGallery() {
   if (!grid) return;
   try {
     const data = await fetchJson("/gallery");
-    const items = (data.items || [])
-      .slice()
-      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
-    if (!items.length) return;
+    const merge = window.CaledorGallery?.mergeGalleryItems;
+    const items = merge
+      ? merge(data.items || [])
+      : (data.items || []).slice().sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
 
     grid.classList.add("gallery-grid--flex");
     grid.dataset.count = String(items.length);
+
+    if (!items.length) return;
+
     grid.innerHTML = items.map((item, index) => renderGalleryCell(item, index)).join("");
+    window.CALEDOR_CONFIG?.rewriteMediaUrls?.(grid);
     wireLazyVideos(grid);
   } catch (err) {
     console.warn("loadGallery:", err);
+    const fallback = window.CaledorGallery?.mergeGalleryItems?.([]) || [];
+    if (fallback.length && grid.querySelector(".gallery-cell")) {
+      // Keep static HTML gallery if API is unreachable.
+      return;
+    }
   }
 }
 
@@ -1581,10 +1590,25 @@ async function loadCmsPackagesPage() {
 
 async function loadCmsFooter() {
   try {
-    const [cmsData, settingsData] = await Promise.all([
+    if (window.SiteChrome?.refreshFooter) {
+      const result = await window.SiteChrome.refreshFooter();
+      if (!result) return;
+      cmsState.footer = result.sections;
+      cmsState.settings = result.settings;
+      cmsState.contactInfo = result.contactInfo;
+      if (result.updatedAt) cmsState.footerUpdatedAt = String(result.updatedAt);
+      setSectionVisible(document.getElementById("siteFooter"), result.sections.brand?.enabled !== "0");
+      return;
+    }
+    const [cmsData, settingsData, contactData] = await Promise.all([
       fetchJson("/cms/footer"),
       fetchJson("/settings"),
+      fetchJson("/cms/contact").catch(() => ({ sections: {} })),
     ]);
+    cmsState.footer = cmsData.sections || {};
+    cmsState.settings = settingsData.settings || {};
+    cmsState.contactInfo = contactData.sections?.info || cmsState.contactInfo || {};
+    if (cmsData.updated_at) cmsState.footerUpdatedAt = String(cmsData.updated_at);
     applyFooterCms(cmsData.sections || {}, settingsData.settings || {});
   } catch {
     // keep static
@@ -1594,7 +1618,11 @@ async function loadCmsFooter() {
 async function loadSettings() {
   try {
     const data = await fetchJson("/settings");
-    applyBrandSettings(data.settings || {});
+    cmsState.settings = data.settings || {};
+    applyBrandSettings(cmsState.settings);
+    if (window.SiteChrome?.applyFooter && Object.keys(cmsState.footer || {}).length) {
+      SiteChrome.applyFooter(cmsState.footer, cmsState.settings, cmsState.contactInfo || {});
+    }
   } catch {
     // keep defaults
   }
@@ -1921,6 +1949,8 @@ async function init() {
     if (document.visibilityState === "visible") {
       loadFaqs();
       loadCmsFaq();
+      loadGallery();
+      loadCmsFooter();
     }
   });
 

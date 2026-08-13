@@ -53,22 +53,9 @@ window.AdminEntities = (() => {
 
   async function galleryView(api) {
     const data = await api("/gallery").catch(() => ({ items: [] }));
-    let items = data.items || [];
-
-    // Fallback mirror of website Photo Gallery if API is empty (same paths as index.html)
-    if (!items.length) {
-      items = [
-        { id: "web-1", title: "British Curry Championship Winner", image_url: "/uploads/gallery/gallery-01-winner-certificate.png", sort_order: 1, album: "Events" },
-        { id: "web-2", title: "On the Road", image_url: "/uploads/gallery/gallery-02-team-vehicle.png", sort_order: 2, album: "Events" },
-        { id: "web-3", title: "Scotland Community Event", image_url: "/uploads/gallery/gallery-03-scotland-event.png", sort_order: 3, album: "Events" },
-        { id: "web-4", title: "Award Presentation", image_url: "/uploads/gallery/gallery-04-award-presentation.png", sort_order: 4, album: "Events" },
-        { id: "web-5", title: "Team Portrait", image_url: "/uploads/gallery/gallery-05-team-portrait.png", sort_order: 5, album: "Events" },
-        { id: "web-6", title: "Partners and Team", image_url: "/uploads/gallery/gallery-06-partners.png", sort_order: 6, album: "Events" },
-        { id: "web-7", title: "Certifications", image_url: "/uploads/gallery/gallery-07-certificates.png", sort_order: 7, album: "Events" },
-        { id: "web-8", title: "Group Experience", image_url: "/uploads/gallery/gallery-08-group-walk.png", sort_order: 8, album: "Events" },
-        { id: "web-9", title: "Celebrity Guest Experience", image_url: "/uploads/gallery/gallery-09-outdoor-guest.png", sort_order: 9, album: "Events" },
-      ];
-    }
+    const merge = window.CaledorGallery?.mergeGalleryItems;
+    const items = merge ? merge(data.items || []) : (data.items || []);
+    const isCore = window.CaledorGallery?.isCoreGalleryItem || (() => false);
 
     const imageField = window.CmsSchema?.imageField
       ? window.CmsSchema.imageField("gallery-new-image", "Image / Video Poster", "", {
@@ -119,17 +106,17 @@ window.AdminEntities = (() => {
           const src = esc(window.CALEDOR_CONFIG?.mediaUrl?.(item.image_url) ?? item.image_url);
           const isVideo = String(item.media_type || "").toLowerCase() === "video"
             || /\.(mp4|webm|ogg|mov)(\?|$)/i.test(String(item.image_url || item.video_url || ""));
-          const canDelete = item.id && !String(item.id).startsWith("web-");
+          const canDelete = item.id && !isCore(item);
           return `
           <div class="gallery-admin-item">
             <div class="gallery-admin-thumb" style="background-image:url('${src}');background-size:cover;background-position:center">${isVideo ? '<span class="gallery-admin-video-badge">Video</span>' : ""}</div>
             <div class="gallery-admin-meta">
               <strong>${esc(item.title || "Untitled")}</strong>
-              <span>Order ${esc(String(item.sort_order ?? 0))}</span>
+              <span>Order ${esc(String(item.sort_order ?? 0))}${isCore(item) ? " · core" : ""}</span>
             </div>
             ${canDelete
               ? `<button class="btn secondary sm" type="button" data-action="delete-gallery" data-id="${item.id}">Delete</button>`
-              : `<span class="settings-copy">Syncing…</span>`}
+              : `<span class="settings-copy">${isCore(item) ? "Core gallery image" : "Built-in"}</span>`}
           </div>`;
         }).join("")}
         </div>

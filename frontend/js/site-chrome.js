@@ -58,10 +58,11 @@
     if (footerLegal) footerLegal.textContent = general.copyright || `© ${new Date().getFullYear()} ${brandName} Ltd. All rights reserved.`;
     if (copyright) copyright.textContent = general.copyright_short || `© ${new Date().getFullYear()} ${brandName}`;
 
-    const address = contactInfo.address || contact.address || "";
-    const phone1 = contactInfo.phone_1 || contact.contact_phone || "";
+    // Footer tab saves primary contact to settings; contact page adds phone_2 / email_2.
+    const address = contact.address || contactInfo.address || "";
+    const phone1 = contact.contact_phone || contactInfo.phone_1 || "";
     const phone2 = contactInfo.phone_2 || "";
-    const email1 = contactInfo.email_1 || contact.contact_email || "";
+    const email1 = contact.contact_email || contactInfo.email_1 || "";
     const email2 = contactInfo.email_2 || "";
 
     const setText = (id, val, hideIfEmpty = true) => {
@@ -82,7 +83,12 @@
     setText("footerEmailSecondary", email2);
 
     const navCols = document.getElementById("footerNavCols");
-    if (navCols && sections.navigation?.enabled !== "0") {
+    if (navCols) {
+      if (sections.navigation?.enabled === "0") {
+        navCols.innerHTML = "";
+        navCols.hidden = true;
+      } else {
+      navCols.hidden = false;
       const columns = parseJson(sections.navigation?.columns_json);
       const fallbackColumns = [
         {
@@ -126,12 +132,13 @@
             return `<a href="${escapeHtml(href)}">${escapeHtml(link.label || "")}</a>`;
           }).join("")}
         </div>`).join("");
+      }
     }
 
     const newsletter = sections.newsletter || {};
     const newsletterEl = document.getElementById("footerNewsletter");
     if (newsletterEl) {
-      const show = newsletter.enabled === "1";
+      const show = newsletter.enabled !== "0";
       newsletterEl.hidden = !show;
       if (show) {
         const title = document.getElementById("footerNewsletterTitle");
@@ -225,7 +232,7 @@
     document.querySelectorAll(".reveal-on-scroll:not(.is-visible)").forEach((el) => observer.observe(el));
   }
 
-  async function loadFooter() {
+  async function refreshFooter() {
     try {
       const [cmsData, settingsData, contactData] = await Promise.all([
         fetchJson("/cms/footer"),
@@ -237,9 +244,19 @@
         settingsData.settings || {},
         contactData.sections?.info || {}
       );
+      return {
+        sections: cmsData.sections || {},
+        settings: settingsData.settings || {},
+        contactInfo: contactData.sections?.info || {},
+        updatedAt: cmsData.updated_at || null,
+      };
     } catch {
-      // static footer fallback
+      return null;
     }
+  }
+
+  async function loadFooter() {
+    await refreshFooter();
   }
 
   function hidePackagesSection() {
@@ -262,5 +279,5 @@
     if (options.scroll !== false) initScrollReveal();
   }
 
-  window.SiteChrome = { init, applyFooter, initScrollReveal, wireMobileNav };
+  window.SiteChrome = { init, applyFooter, refreshFooter, initScrollReveal, wireMobileNav };
 })();
