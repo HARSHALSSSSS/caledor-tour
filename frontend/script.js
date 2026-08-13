@@ -1185,7 +1185,7 @@ function isVideoMedia(item = {}) {
 }
 
 function isVideoUrl(url = "") {
-  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(String(url));
+  return /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(String(url));
 }
 
 function wireLazyVideos(root) {
@@ -1269,17 +1269,23 @@ function resolveScotlandItems(section = {}) {
       : (SCOTLAND_LABEL_TO_LAYOUT[item.label] || item.layout);
     if (!layout || !SCOTLAND_LAYOUT_CLASSES[layout]) return;
     const defaultItem = byLayout.get(layout) || SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout);
+    const rawImage = String(item.image || item.image_url || "").trim();
     const videoUrl = scotlandVideoSrc(item);
     const mediaType = videoUrl || String(item.media_type || "").toLowerCase() === "video" ? "video" : "image";
-    const poster = item.image && !isVideoUrl(item.image) ? item.image : "";
-    const image = resolveScotlandImage(poster, mediaType === "video" ? "" : defaultItem?.image);
+    let image;
+    if (mediaType === "video") {
+      const poster = rawImage && !isVideoUrl(rawImage) ? rawImage : "";
+      image = poster ? resolveScotlandImage(poster, defaultItem?.image) : (defaultItem?.image || "");
+    } else {
+      image = resolveScotlandImage(rawImage, defaultItem?.image);
+    }
     byLayout.set(layout, {
       ...defaultItem,
       ...item,
       layout,
       image,
       media_type: mediaType,
-      video_url: videoUrl || item.video_url || "",
+      video_url: mediaType === "video" ? (videoUrl || item.video_url || "") : "",
     });
   });
   return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
@@ -1297,26 +1303,6 @@ function renderScotlandTileMedia(item) {
     }
   }
   return `<img ${withImageFallback(assetUrl(item.image, revision), alt)} />`;
-}
-
-function updateScotlandTileMedia(tile, item) {
-  if (!tile) return;
-  const mediaHtml = renderScotlandTileMedia(item);
-  const mediaWrap = tile.querySelector("img, video");
-  const temp = document.createElement("div");
-  temp.innerHTML = mediaHtml.trim();
-  const next = temp.firstElementChild;
-  if (!next) return;
-  if (mediaWrap) mediaWrap.replaceWith(next);
-  else tile.insertAdjacentHTML("afterbegin", mediaHtml);
-  window.CALEDOR_CONFIG?.rewriteMediaUrls?.(tile);
-  if (next.tagName === "VIDEO") {
-    next.muted = true;
-    next.playsInline = true;
-    next.play?.().catch(() => {});
-  }
-  const label = tile.querySelector(".scotland-label");
-  if (label && item.label) label.textContent = item.label;
 }
 
 function applyScotlandAttractionsSection(section = {}) {
@@ -1337,27 +1323,6 @@ function applyScotlandAttractionsSection(section = {}) {
   grid.classList.remove("is-flexible");
   grid.dataset.count = "6";
 
-  const layoutToClass = {
-    loch: "scotland-tile-loch",
-    kelpies: "scotland-tile-kelpies",
-    tall: "scotland-tile-tall",
-    wide: "scotland-tile-wide",
-    skye: "scotland-tile-skye",
-    whisky: "scotland-tile-whisky",
-  };
-
-  const existingTiles = grid.querySelector(".scotland-tile");
-  if (existingTiles) {
-    useItems.forEach((item) => {
-      const tileClass = layoutToClass[item.layout];
-      if (!tileClass) return;
-      const tile = grid.querySelector(`.${tileClass}`);
-      updateScotlandTileMedia(tile, item);
-    });
-    wireLazyVideos(grid);
-    return;
-  }
-
   grid.innerHTML = useItems.map((item) => {
     const layoutClass = SCOTLAND_LAYOUT_CLASSES[item.layout] || "";
     return `
@@ -1366,6 +1331,13 @@ function applyScotlandAttractionsSection(section = {}) {
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
     </article>`;
   }).join("");
+
+  window.CALEDOR_CONFIG?.rewriteMediaUrls?.(grid);
+  grid.querySelectorAll("video.scotland-video").forEach((video) => {
+    video.muted = true;
+    video.playsInline = true;
+    video.play?.().catch(() => {});
+  });
   wireLazyVideos(grid);
 }
 

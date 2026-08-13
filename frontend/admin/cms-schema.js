@@ -20,6 +20,29 @@ window.CmsSchema = (() => {
     }
   }
 
+  const SCOTLAND_LAYOUT_ORDER = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
+
+  const SCOTLAND_ADMIN_DEFAULTS = [
+    { label: "Loch Lomond Cruise", layout: "loch", image: "assets/scotland/loch-lomond.png", alt: "Loch Lomond Cruise", media_type: "image" },
+    { label: "The Kelpies", layout: "kelpies", image: "assets/scotland/the-kelpies.png", alt: "The Kelpies", media_type: "image" },
+    { label: "Highland Wildlife", layout: "tall", image: "assets/scotland/puffin-highlands.png", alt: "Atlantic puffin with wings spread", media_type: "image" },
+    { label: "Coastal Wildlife", layout: "wide", image: "assets/scotland/puffins-sea.png", alt: "Puffins on Scottish waters", media_type: "image" },
+    { label: "Isle of Skye", layout: "skye", image: "assets/scotland/isle-of-skye.png", alt: "Isle of Skye", media_type: "image" },
+    { label: "Whisky Distillery", layout: "whisky", image: "assets/scotland/whisky-distillery.png", alt: "Scottish Whisky Distillery", media_type: "image" },
+  ];
+
+  function mergeScotlandAdminTiles(raw = []) {
+    const byLayout = new Map(SCOTLAND_ADMIN_DEFAULTS.map((item) => [item.layout, { ...item }]));
+    (Array.isArray(raw) ? raw : []).forEach((item) => {
+      const layout = item?.layout && item.layout !== "auto"
+        ? item.layout
+        : null;
+      if (!layout || !byLayout.has(layout)) return;
+      byLayout.set(layout, { ...byLayout.get(layout), ...item, layout });
+    });
+    return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
+  }
+
   function cmsInput(sec, key, label, value, full = false) {
     const cls = full ? "field-full" : "field";
     return `<div class="${cls}"><label>${esc(label)}</label>
@@ -219,9 +242,11 @@ window.CmsSchema = (() => {
     const layouts = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
     const layoutOptions = layouts.map((layout) =>
       `<option value="${layout}"${item.layout === layout ? " selected" : ""}>${layout}</option>`).join("");
-    const mediaType = String(item.media_type || "").toLowerCase() === "video" || (item.video_url && !item.image)
-      ? "video"
-      : "image";
+    const isVideoFile = (url) => /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(String(url || ""));
+    const hasVideo = String(item.media_type || "").toLowerCase() === "video"
+      || isVideoFile(item.video_url)
+      || isVideoFile(item.image);
+    const mediaType = hasVideo ? "video" : "image";
     return `<div class="destination-row scotland-tile-row" data-list="scotland-tiles">
       <div class="form-grid">
         <div class="field">
@@ -389,7 +414,7 @@ window.CmsSchema = (() => {
   function renderHome(s) {
     const features = parseJson(val(s, "why_choose", "features_json"));
     const destinations = parseJson(val(s, "destinations", "items_json"));
-    const scotlandTiles = parseJson(val(s, "scotland_attractions", "items_json"));
+    const scotlandTiles = mergeScotlandAdminTiles(parseJson(val(s, "scotland_attractions", "items_json")));
     const premiumServices = parseJson(val(s, "premium_services", "items_json"));
     const miceItems = parseJson(val(s, "mice", "items_json"));
     const miceStats = parseJson(val(s, "mice", "stats_json"));
@@ -940,7 +965,12 @@ window.CmsSchema = (() => {
         videoUrl = image;
         image = "";
       }
-      if (videoUrl || mediaType === "video") mediaType = "video";
+      if (videoUrl || mediaType === "video") {
+        mediaType = "video";
+      } else {
+        videoUrl = "";
+        mediaType = "image";
+      }
       scotlandByLayout.set(layout, {
         media_type: mediaType,
         image,
@@ -950,7 +980,10 @@ window.CmsSchema = (() => {
         layout,
       });
     });
-    scotlandByLayout.forEach((tile) => scotlandTiles.push(tile));
+    SCOTLAND_LAYOUT_ORDER.forEach((layout) => {
+      const tile = scotlandByLayout.get(layout);
+      if (tile) scotlandTiles.push(tile);
+    });
     if (scotlandTiles.length || container.querySelector('[data-json-section="scotland_attractions"]')) {
       sections.scotland_attractions = sections.scotland_attractions || {};
       sections.scotland_attractions.items_json = JSON.stringify(scotlandTiles);

@@ -180,7 +180,8 @@ async function api(path, options = {}) {
   if (canCache) {
     apiCache.set(path, { at: Date.now(), data });
   } else if (method !== "GET") {
-    apiCache.clear();
+    const pathOnly = path.split("?")[0].replace(/\/\d+$/, "");
+    invalidateApiCache(pathOnly);
   }
 
   return data;
@@ -676,6 +677,26 @@ function fillFaqForm(faq) {
 
 let faqSaving = false;
 
+async function refreshFaqList(resetForm = true) {
+  invalidateApiCache("/faqs");
+  const { faqs } = await api("/faqs", { bust: true });
+  window.__adminFaqList = faqs || [];
+  updateFaqTableDom(faqs, resetForm);
+}
+
+function updateFaqTableDom(faqs = [], resetForm = false) {
+  const tbody = document.getElementById("faqTableBody");
+  if (!tbody || !window.AdminEntities?.renderFaqTableRows) return false;
+  tbody.innerHTML = window.AdminEntities.renderFaqTableRows(faqs);
+  const subtitle = tbody.closest(".table-panel")?.querySelector(".panel-subtitle");
+  if (subtitle) {
+    const count = faqs.length;
+    subtitle.textContent = `${count} question${count === 1 ? "" : "s"} · sorted by order`;
+  }
+  if (resetForm) resetFaqForm();
+  return true;
+}
+
 async function saveFaqFromForm() {
   const form = document.getElementById("faqForm");
   if (!form || faqSaving) return;
@@ -707,16 +728,26 @@ async function saveFaqFromForm() {
     saveBtn.textContent = "Saving…";
   }
   try {
+    let saved;
     if (data.id) {
-      await api(`/faqs/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
+      ({ faq: saved } = await api(`/faqs/${data.id}`, { method: "PUT", body: JSON.stringify(payload) }));
       showToast("FAQ updated — live on website");
     } else {
-      await api("/faqs", { method: "POST", body: JSON.stringify(payload) });
+      ({ faq: saved } = await api("/faqs", { method: "POST", body: JSON.stringify(payload) }));
       showToast("FAQ created — live on website");
     }
     invalidateApiCache("/faqs");
     markSaved();
-    await render();
+    if (saved) {
+      const list = [...(window.__adminFaqList || [])];
+      const idx = list.findIndex((item) => String(item.id) === String(saved.id));
+      if (idx >= 0) list[idx] = saved;
+      else list.push(saved);
+      window.__adminFaqList = list;
+      if (!updateFaqTableDom(list, true)) await render();
+    } else {
+      await refreshFaqList(true);
+    }
   } catch (err) {
     showToast(err.message || "Could not save FAQ");
   } finally {
@@ -1005,9 +1036,11 @@ function wireEntityHandlers() {
         try {
           await api(`/faqs/${button.dataset.id}`, { method: "DELETE" });
           invalidateApiCache("/faqs");
+          const next = (window.__adminFaqList || []).filter((item) => String(item.id) !== String(button.dataset.id));
+          window.__adminFaqList = next;
           showToast("FAQ deleted — removed from website");
           markSaved();
-          await render();
+          if (!updateFaqTableDom(next, false)) await render();
         } catch (err) {
           showToast(err.message || "Delete failed");
         }

@@ -7,6 +7,26 @@ window.AdminEntities = (() => {
     return `<span class="status ${esc(s)}">${esc(status)}</span>`;
   }
 
+  function renderFaqTableRows(faqs = []) {
+    const rows = (faqs || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+    if (!rows.length) {
+      return '<tr><td colspan="5">No FAQs yet. Add your first question above.</td></tr>';
+    }
+    return rows.map((f) => `
+      <tr>
+        <td>${esc(String(f.sort_order ?? 0))}</td>
+        <td>${esc(f.question)}</td>
+        <td>${esc(f.category || "General")}</td>
+        <td>${f.active ? statusBadge("confirmed") : statusBadge("pending")}</td>
+        <td>
+          <button class="btn secondary sm" type="button" data-action="edit-faq" data-id="${f.id}">Edit</button>
+          <button class="btn secondary sm" type="button" data-action="delete-faq" data-id="${f.id}">Delete</button>
+        </td>
+      </tr>`).join("");
+  }
+
   function panel(title, subtitle, body, actions = "") {
     return `<div class="panel">
       <div class="settings-head">
@@ -214,8 +234,8 @@ window.AdminEntities = (() => {
 
   async function faqView(api) {
     const [faqData, cmsData] = await Promise.all([
-      api("/faqs", { bust: true }).catch(() => ({ faqs: [] })),
-      api("/cms/faq", { bust: true }).catch(() => ({ sections: {} })),
+      api("/faqs").catch(() => ({ faqs: [] })),
+      api("/cms/faq").catch(() => ({ sections: {} })),
     ]);
     const faqs = faqData.faqs || [];
     window.__adminFaqList = faqs;
@@ -277,18 +297,7 @@ window.AdminEntities = (() => {
           <thead>
             <tr><th>Order</th><th>Question</th><th>Category</th><th>Status</th><th>Actions</th></tr>
           </thead>
-          <tbody>${faqs.map((f) => `
-            <tr>
-              <td>${esc(String(f.sort_order ?? 0))}</td>
-              <td>${esc(f.question)}</td>
-              <td>${esc(f.category || "General")}</td>
-              <td>${f.active ? statusBadge("confirmed") : statusBadge("pending")}</td>
-              <td>
-                <button class="btn secondary sm" type="button" data-action="edit-faq" data-id="${f.id}">Edit</button>
-                <button class="btn secondary sm" type="button" data-action="delete-faq" data-id="${f.id}">Delete</button>
-              </td>
-            </tr>`).join("") || '<tr><td colspan="5">No FAQs yet. Add your first question above.</td></tr>'}
-          </tbody>
+          <tbody id="faqTableBody">${renderFaqTableRows(faqs)}</tbody>
         </table>
       </div>
     </section>`;
@@ -360,7 +369,7 @@ window.AdminEntities = (() => {
   }
 
   return {
-    packagesView, galleryView, blogView, bookingsView, faqView, notificationsView, usersView, panel, packagePublicUrl, sitePublicUrl,
+    packagesView, galleryView, blogView, bookingsView, faqView, notificationsView, usersView, panel, packagePublicUrl, sitePublicUrl, renderFaqTableRows,
     blogDisplayImage,
   };
 })();
