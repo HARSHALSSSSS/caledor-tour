@@ -69,6 +69,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
   db.prepare('DELETE FROM faqs WHERE id = ?').run(req.params.id);
   const io = req.app.get('io');
   if (io) io.emit('faq:updated', { action: 'deleted' });
+  if (io) io.emit('faq:deleted', { id: Number(req.params.id) });
   res.json({ success: true });
 });
 

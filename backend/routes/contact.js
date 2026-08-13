@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { getDb } from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { sendProposalEmail } from '../mail.js';
 
 const router = Router();
 
 // Submit contact form (public)
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const db = getDb();
   const { name, company, email, phone, message } = req.body;
 
@@ -25,6 +26,12 @@ router.post('/', (req, res) => {
       'contact', 'New Contact Submission',
       `${name} (${email}) sent a message`
     );
+  }
+
+  try {
+    await sendProposalEmail({ name, company, email, phone, message });
+  } catch (err) {
+    console.error('Proposal email failed:', err?.message || err);
   }
 
   res.json({ success: true, message: 'Thank you for contacting us! We will get back to you within 24 hours.' });

@@ -47,7 +47,6 @@ export const CMS_DEFAULTS = {
         { icon: "📍", title: "Ground Operations Support", description: "Transfers, logistics, and on-the-ground coordination for seamless execution." },
         { icon: "💼", title: "Corporate Travel Expertise", description: "Tailored solutions for corporate groups, meetings, and executive travel." },
         { icon: "🖥", title: "MICE Solutions", description: "End-to-end management for incentives, meetings, and events." },
-        { icon: "🌐", title: "Multilingual Assistance", description: "Professional support in multiple languages for travelers and partners alike." },
       ]),
     },
     testimonials: {
@@ -116,12 +115,12 @@ export const CMS_DEFAULTS = {
       title: "Curated luxury operations across the UK and Europe.",
       subtitle: "Bespoke travel services shaped around comfort, consistency, and a high-touch guest experience from arrival to departure.",
       items_json: JSON.stringify([
-        { title: "Hotel Bookings", description: "Exclusive access to prestigious properties and boutique hotels with preferred partner benefits.", image: "/uploads/premium-services/premium-01-hotel.png", alt: "Luxury hotel lobby", link: "/premium-services#hotel-bookings" },
-        { title: "Holiday Packages", description: "Carefully curated itineraries that blend iconic landmarks with hidden gems for a smoother journey.", image: "/uploads/premium-services/premium-02-holiday.png", alt: "Luxury chauffeur service in Paris", link: "/premium-services#holiday-packages" },
-        { title: "Sightseeing Tours", description: "Private, expert-led excursions with deep local context and access to cultural heritage sites.", image: "/uploads/premium-services/premium-03-sightseeing.png", alt: "Fine dining restaurant interior", link: "/premium-services#sightseeing-tours" },
-        { title: "Vehicle At Disposal", description: "A fleet of premium vehicles with professional chauffeurs for flexible, private travel.", image: "/uploads/premium-services/premium-04-vehicle.png", alt: "Travel itinerary planning on a desk", link: "/premium-services#vehicle-at-disposal" },
-        { title: "Airport Transfers", description: "Seamless, punctual, and comfortable transfers for a stress-free arrival and departure experience.", image: "/uploads/premium-services/premium-05-airport.png", alt: "Airport transfer with luxury car", link: "/premium-services#airport-transfers" },
-        { title: "Restaurant Reservations", description: "Priority booking at Michelin-starred establishments and sought-after dining destinations.", image: "/uploads/premium-services/premium-06-restaurant.png", alt: "Couple sightseeing near historic ruins", link: "/premium-services#restaurant-reservations" },
+        { title: "Hotel Bookings", description: "Exclusive access to prestigious properties and boutique hotels with preferred partner benefits.", image: "/uploads/premium-services/premium-01-hotel.png", alt: "Luxury hotel lobby", link: "#proposal" },
+        { title: "Holiday Packages", description: "Carefully curated itineraries that blend iconic landmarks with hidden gems for a smoother journey.", image: "/uploads/premium-services/premium-02-holiday.png", alt: "Luxury chauffeur service in Paris", link: "#proposal" },
+        { title: "Sightseeing Tours", description: "Private, expert-led excursions with deep local context and access to cultural heritage sites.", image: "/uploads/premium-services/premium-03-sightseeing.png", alt: "Fine dining restaurant interior", link: "#proposal" },
+        { title: "Vehicle At Disposal", description: "A fleet of premium vehicles with professional chauffeurs for flexible, private travel.", image: "/uploads/premium-services/premium-04-vehicle.png", alt: "Travel itinerary planning on a desk", link: "#proposal" },
+        { title: "Airport Transfers", description: "Seamless, punctual, and comfortable transfers for a stress-free arrival and departure experience.", image: "/uploads/premium-services/premium-05-airport.png", alt: "Airport transfer with luxury car", link: "#proposal" },
+        { title: "Restaurant Reservations", description: "Priority booking at Michelin-starred establishments and sought-after dining destinations.", image: "/uploads/premium-services/premium-06-restaurant.png", alt: "Couple sightseeing near historic ruins", link: "#proposal" },
       ]),
     },
     mice: {
@@ -260,9 +259,23 @@ export const CMS_DEFAULTS = {
       kicker: "Owned Assets",
       title: "Our Properties & Experiences",
       description: "We do not just book experiences. We shape them through owned assets, controlled quality, and dependable service standards.",
+      cards_json: JSON.stringify([
+        {
+          property_name: "Firangi",
+          property_location: "Glasgow, Scotland",
+          property_text: "A modern take on global flavors. Firangi reflects our passion for hospitality and our commitment to giving travellers a memorable dining experience with complete service control.",
+          card_image: "",
+          badges_json: JSON.stringify([
+            { text: "Best Indian Restaurant in Scotland" },
+            { text: "3 Consecutive Years" },
+            { text: "British Curry Award 2026" },
+          ]),
+        },
+      ]),
       property_name: "Firangi",
       property_location: "Glasgow, Scotland",
       property_text: "A modern take on global flavors. Firangi reflects our passion for hospitality and our commitment to giving travellers a memorable dining experience with complete service control.",
+      card_image: "",
       badges_json: JSON.stringify([
         { text: "Best Indian Restaurant in Scotland" },
         { text: "3 Consecutive Years" },

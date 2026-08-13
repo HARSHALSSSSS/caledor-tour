@@ -257,7 +257,7 @@ window.CmsUI = (() => {
     wireAddButton(container, ".cms-add-testimonial", '[data-json-section="testimonials"]', window.CmsSchema.testimonialItemRow);
     wireAddButton(container, ".cms-add-success", '[data-json-section="success_stories"]', window.CmsSchema.successStoryRow);
     wireAddButton(container, ".cms-add-number", '[data-json-section="numbers"]', () => window.CmsSchema.statRow({}, "numbers-stats"));
-    wireAddButton(container, ".cms-add-badge", '[data-json-section="owned_assets"]', window.CmsSchema.badgeRow);
+    wireAddButton(container, ".cms-add-owned-card", '[data-json-section="owned_assets"]', window.CmsSchema.ownedPropertyCardRow);
 
     const addPostTag = container.querySelector(".cms-add-post-tag");
     if (addPostTag && !addPostTag._wired) {

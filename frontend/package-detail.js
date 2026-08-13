@@ -71,11 +71,10 @@ function getSlug() {
   return SLUG_ALIASES[raw] || raw;
 }
 
-function getDefaultPackage(slug) {
-  return window.CALEDOR_PACKAGE_DEFAULTS?.getBySlug?.(slug) || null;
+function getDefaultPackage() {
+  return null;
 }
 
-/** Prefer live admin/API values; fill gaps from local defaults only. */
 function mergePackage(apiPkg = {}, defaults = {}) {
   const hasApi = Boolean(apiPkg && (apiPkg.id || apiPkg.slug || apiPkg.name));
   if (!hasApi) return { ...defaults };

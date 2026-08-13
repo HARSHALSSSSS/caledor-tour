@@ -10,3 +10,10 @@ RewriteRule ^uploads/(.*)$ https://caledor-tour.onrender.com/uploads/$1 [R=302,L
 RewriteRule ^package/([^/]+)/?$ /package-detail.html?slug=$1 [L,QSA,NC]
 RewriteRule ^premium-services/?$ /premium-services.html [L,NC]
 </IfModule>
+
+# Stop browsers keeping old JS/CSS that still shows demo packages
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>

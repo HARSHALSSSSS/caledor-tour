@@ -38,7 +38,6 @@ const WHY_CHOOSE_DEFAULTS = [
   { icon: "📍", title: "Ground Operations Support", description: "Transfers, logistics, and on-the-ground coordination for seamless execution." },
   { icon: "💼", title: "Corporate Travel Expertise", description: "Tailored solutions for corporate groups, meetings, and executive travel." },
   { icon: "🖥", title: "MICE Solutions", description: "End-to-end management for incentives, meetings, and events." },
-  { icon: "🌐", title: "Multilingual Assistance", description: "Professional support in multiple languages for travelers and partners alike." },
 ];
 
 const SCOTLAND_ATTRACTIONS_DEFAULTS = [
@@ -186,13 +185,8 @@ const PREMIUM_SERVICE_SLUGS = {
   "Restaurant Reservations": "restaurant-reservations",
 };
 
-function premiumServiceLink(item = {}) {
-  const link = String(item.link || "").trim();
-  if (link && link !== "#contact" && link !== "#" && !link.endsWith("#contact")) return link;
-  const title = String(item.title || "").trim();
-  const slug = PREMIUM_SERVICE_SLUGS[title]
-    || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return slug ? `/premium-services#${slug}` : "/premium-services";
+function premiumServiceLink() {
+  return "#proposal";
 }
 
 function withImageFallback(src, alt = "") {
@@ -395,7 +389,8 @@ function applyWhyChooseSection(section = {}) {
   const grid = document.getElementById("whyChooseGrid");
   if (!grid) return;
   const features = parseJson(section.features_json);
-  const items = features.length >= 8 ? features : WHY_CHOOSE_DEFAULTS;
+  const items = (features.length ? features : WHY_CHOOSE_DEFAULTS)
+    .filter((item) => String(item.title || "").trim() !== "Multilingual Assistance");
   grid.innerHTML = items.map((item) => `
     <article>
       <span class="fit-icon" aria-hidden="true">${escapeHtml(item.icon || "★")}</span>
@@ -487,6 +482,44 @@ function renderTeamGrid(team = {}) {
   }).join("");
 }
 
+function resolveOwnedCards(ownedAssets = {}) {
+  let cards = parseJson(ownedAssets.cards_json);
+  if (!cards.length && (ownedAssets.property_name || ownedAssets.property_text)) {
+    cards = [{
+      property_name: ownedAssets.property_name,
+      property_location: ownedAssets.property_location,
+      property_text: ownedAssets.property_text,
+      card_image: ownedAssets.card_image || "",
+      badges_json: ownedAssets.badges_json || "[]",
+    }];
+  }
+  return cards.filter((card) => (card.property_name || card.property_text || "").trim());
+}
+
+function renderOwnedAssetsCards(ownedAssets = {}) {
+  const cardsEl = document.getElementById("ownedAssetsCards");
+  if (!cardsEl) return;
+
+  const cards = resolveOwnedCards(ownedAssets);
+  if (!cards.length) return;
+
+  cardsEl.innerHTML = cards.map((card) => {
+    const badges = parseJson(card.badges_json);
+    const bgUrl = card.card_image ? assetUrl(card.card_image, cmsState.aboutUpdatedAt) : "";
+    const bgStyle = bgUrl
+      ? ` style="background-image: linear-gradient(135deg, rgba(7,22,53,0.9) 0%, rgba(6,32,65,0.84) 55%, rgba(8,27,57,0.9) 100%), url('${escapeHtml(bgUrl)}'); background-size: cover; background-position: center;"`
+      : "";
+    return `<article class="owned-assets-card"${bgStyle}>
+      <div class="owned-assets-copy">
+        <h3>${escapeHtml(card.property_name || "")}</h3>
+        ${card.property_location ? `<p class="mini-label">${escapeHtml(card.property_location)}</p>` : ""}
+        ${card.property_text ? `<p>${escapeHtml(card.property_text)}</p>` : ""}
+        ${badges.length ? `<div class="badge-row">${badges.map((item) => `<span>${escapeHtml(item.text || "")}</span>`).join("")}</div>` : ""}
+      </div>
+    </article>`;
+  }).join("");
+}
+
 function applyAboutContent(sections = {}) {
   const pageHero = sections.page_hero || {};
   const story = sections.story || {};
@@ -548,24 +581,11 @@ function applyAboutContent(sections = {}) {
   const ownedKicker = document.getElementById("ownedAssetsKicker");
   const ownedTitle = document.getElementById("ownedAssetsTitle");
   const ownedDesc = document.getElementById("ownedAssetsDescription");
-  const propertyName = document.getElementById("ownedPropertyName");
-  const propertyLocation = document.getElementById("ownedPropertyLocation");
-  const propertyText = document.getElementById("ownedPropertyText");
-  const badgesGrid = document.getElementById("ownedAssetsBadges");
 
   if (ownedKicker && ownedAssets.kicker) ownedKicker.textContent = ownedAssets.kicker;
   if (ownedTitle && ownedAssets.title) ownedTitle.textContent = ownedAssets.title;
   if (ownedDesc && ownedAssets.description) ownedDesc.textContent = ownedAssets.description;
-  if (propertyName && ownedAssets.property_name) propertyName.textContent = ownedAssets.property_name;
-  if (propertyLocation && ownedAssets.property_location) propertyLocation.textContent = ownedAssets.property_location;
-  if (propertyText && ownedAssets.property_text) propertyText.textContent = ownedAssets.property_text;
-
-  if (badgesGrid) {
-    const badges = parseJson(ownedAssets.badges_json);
-    if (badges.length) {
-      badgesGrid.innerHTML = badges.map((item) => `<span>${escapeHtml(item.text || "")}</span>`).join("");
-    }
-  }
+  renderOwnedAssetsCards(ownedAssets);
 
   const aboutFeatures = sections.about_features || {};
   const featuresGrid = document.getElementById("aboutFeatures");
@@ -993,52 +1013,9 @@ function renderBlogGrid() {
   }
 }
 
-function getDefaultPackages() {
-  return window.CALEDOR_PACKAGE_DEFAULTS?.getFeatured?.() || [];
-}
-
-const PACKAGE_SLUG_ALIASES = {
-  "scottish-highlands-luxury-tour": "scottish-highlands-journey",
-  "french-riviera-villa-escape": "french-riviera-retreat",
-  "italian-heritage-grand-tour": "italian-heritage-tour",
-  "swiss-alps-private-retreat": "swiss-alps-experience",
-};
-
-function defaultPackageBySlug(slug) {
-  const normalized = PACKAGE_SLUG_ALIASES[slug] || slug;
-  return window.CALEDOR_PACKAGE_DEFAULTS?.getBySlug?.(normalized) || null;
-}
-
-/** Admin/API packages only. Never inject hardcoded demo cards. */
 function mergePackageList(apiPackages = []) {
-  if (!apiPackages.length) return [];
-
-  return sortPackagesForDisplay(apiPackages.map((api) => {
-    const def = defaultPackageBySlug(api.slug) || {};
-    const merged = { ...api };
-
-    // Always prefer live admin image fields
-    if (api.image_url) merged.image_url = api.image_url;
-    else {
-      const gallery = parseJson(api.gallery_json);
-      const fromGallery = gallery[0]?.url || gallery[0]?.image_url;
-      if (fromGallery) merged.image_url = fromGallery;
-      else if (!merged.image_url) merged.image_url = def.image_url || "";
-    }
-
-    if (api.gallery_json != null && String(api.gallery_json).trim() !== "" && String(api.gallery_json).trim() !== "[]") {
-      merged.gallery_json = api.gallery_json;
-    } else if (!merged.gallery_json) {
-      merged.gallery_json = def.gallery_json || "[]";
-    }
-
-    ["highlights", "inclusions", "exclusions", "itinerary"].forEach((key) => {
-      const apiVal = parseJson(api[key]);
-      if (apiVal.length) merged[key] = typeof api[key] === "string" ? api[key] : JSON.stringify(apiVal);
-    });
-
-    return merged;
-  }));
+  if (!Array.isArray(apiPackages) || !apiPackages.length) return [];
+  return sortPackagesForDisplay(apiPackages.map((api) => ({ ...api })));
 }
 
 async function loadPackages() {
@@ -1070,8 +1047,13 @@ async function loadFaqs() {
   if (!accordion) return;
   try {
     const data = await fetchJson("/faqs?active=true");
-    const faqs = data.faqs || [];
-    if (!faqs.length) return;
+    const faqs = (data.faqs || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0) || Number(a.id ?? 0) - Number(b.id ?? 0));
+    if (!faqs.length) {
+      accordion.innerHTML = `<p class="faq-empty">No FAQs published yet. Add questions in Admin → FAQ Management.</p>`;
+      return;
+    }
     accordion.innerHTML = faqs
       .map((faq, index) => `
         <details${index === 0 ? " open" : ""}>
@@ -1080,8 +1062,8 @@ async function loadFaqs() {
         </details>`)
       .join("");
     bindAccordion();
-  } catch {
-    // keep fallback content
+  } catch (err) {
+    console.warn("loadFaqs:", err);
   }
 }
 
@@ -1148,34 +1130,98 @@ function applyGallerySection(section = {}) {
   if (title && section.title) title.textContent = section.title;
 }
 
+function isVideoMedia(item = {}) {
+  const type = String(item.media_type || "").toLowerCase();
+  if (type === "video") return true;
+  const url = String(item.video_url || item.image_url || "");
+  return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+}
+
+function wireGalleryVideos(grid) {
+  if (!grid || !("IntersectionObserver" in window)) return;
+  const videos = grid.querySelectorAll("video.gallery-video");
+  if (!videos.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const video = entry.target;
+      if (entry.isIntersecting) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    });
+  }, { threshold: 0.35, rootMargin: "80px 0px" });
+
+  videos.forEach((video) => {
+    video.addEventListener("mouseenter", () => video.play().catch(() => {}));
+    observer.observe(video);
+  });
+}
+
+function renderGalleryCell(item, index) {
+  const revision = item.updated_at || cmsRevision;
+  const isVideo = isVideoMedia(item);
+  const mediaUrl = assetUrl(item.video_url || item.image_url, revision);
+  const heroClass = index === 0 ? " gallery-cell-hero" : "";
+
+  if (isVideo && mediaUrl) {
+    const poster = item.poster_url ? assetUrl(item.poster_url, revision) : "";
+    return `<figure class="gallery-cell gallery-cell-video${heroClass}">
+      <video class="media-cover gallery-video" src="${escapeHtml(mediaUrl)}"${poster ? ` poster="${escapeHtml(poster)}"` : ""} muted loop playsinline preload="metadata" aria-label="${escapeHtml(item.alt_text || item.title || "Gallery video")}"></video>
+    </figure>`;
+  }
+
+  return `<figure class="gallery-cell${heroClass}">
+    <img class="media-cover" ${withImageFallback(mediaUrl, item.alt_text || item.title || "Gallery image")} />
+  </figure>`;
+}
+
 async function loadGallery() {
   const grid = document.getElementById("galleryGrid") || document.querySelector(".gallery-grid");
   if (!grid) return;
   try {
     const data = await fetchJson("/gallery");
-    const items = data.items || [];
+    const items = (data.items || [])
+      .slice()
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
     if (!items.length) return;
-  grid.innerHTML = items.map((item, index) => `
-      <figure class="gallery-cell${index === 0 ? " gallery-cell-hero" : ""}">
-        <img class="media-cover" ${withImageFallback(assetUrl(item.image_url, item.updated_at || cmsRevision), item.alt_text || item.title || "Gallery image")} />
-      </figure>
-    `).join("");
-  } catch {
-    // keep static fallback images in HTML
+
+    const useFlex = items.length > 10 || items.some(isVideoMedia);
+    grid.classList.toggle("gallery-grid--flex", useFlex);
+    grid.dataset.count = String(items.length);
+    grid.innerHTML = items.map((item, index) => renderGalleryCell(item, index)).join("");
+    wireGalleryVideos(grid);
+  } catch (err) {
+    console.warn("loadGallery:", err);
   }
 }
 
 function resolveScotlandItems(section = {}) {
-  const byLayout = new Map(SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => [item.layout, { ...item }]));
-  parseJson(section.items_json).forEach((item) => {
-    if (!item?.label) return;
-    const layout = item.layout || SCOTLAND_LABEL_TO_LAYOUT[item.label];
-    if (!layout || !SCOTLAND_LAYOUT_CLASSES[layout]) return;
-    const defaultItem = byLayout.get(layout) || SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout);
-    const image = resolveScotlandImage(item.image, defaultItem?.image);
-    byLayout.set(layout, { ...defaultItem, ...item, layout, image });
-  });
-  return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
+  const cmsItems = parseJson(section.items_json).filter((item) => item?.image || item?.label);
+  if (cmsItems.length) {
+    return cmsItems.map((item, index) => {
+      const layout = item.layout && item.layout !== "auto"
+        ? item.layout
+        : (SCOTLAND_LAYOUT_ORDER[index] || null);
+      const defaultItem = layout
+        ? (SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout) || {})
+        : (SCOTLAND_ATTRACTIONS_DEFAULTS[index] || {});
+      return {
+        ...defaultItem,
+        ...item,
+        layout: layout && SCOTLAND_LAYOUT_CLASSES[layout] ? layout : null,
+        image: resolveScotlandImage(item.image, defaultItem?.image),
+      };
+    });
+  }
+  return SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => ({ ...item }));
+}
+
+function scotlandUsesMosaic(items = []) {
+  if (items.length !== 6) return false;
+  const layouts = items.map((item) => item.layout).filter(Boolean);
+  return layouts.length === 6 && new Set(layouts).size === 6;
 }
 
 function applyScotlandAttractionsSection(section = {}) {
@@ -1193,8 +1239,14 @@ function applyScotlandAttractionsSection(section = {}) {
   const useItems = resolveScotlandItems(section);
   if (!useItems.length) return;
 
+  const mosaic = scotlandUsesMosaic(useItems);
+  grid.classList.toggle("is-flexible", !mosaic);
+  grid.dataset.count = String(useItems.length);
+
   grid.innerHTML = useItems.map((item) => {
-    const layoutClass = SCOTLAND_LAYOUT_CLASSES[item.layout] || "";
+    const layoutClass = item.layout && SCOTLAND_LAYOUT_CLASSES[item.layout]
+      ? SCOTLAND_LAYOUT_CLASSES[item.layout]
+      : "";
     return `
     <article class="scotland-tile${layoutClass}">
       <img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), item.alt || item.label || "Scotland attraction")} />
@@ -1226,25 +1278,26 @@ function applyPremiumServicesSection(section = {}) {
       <div>
         <h3>${escapeHtml(item.title || "")}</h3>
         <p>${escapeHtml(item.description || "")}</p>
-        <a class="learn-more-link" href="${escapeHtml(premiumServiceLink(item))}">Learn more</a>
+        <a class="learn-more-link" href="${escapeHtml(premiumServiceLink())}">Learn more</a>
       </div>
     </article>`).join("");
   if (window.SiteChrome?.initScrollReveal) window.SiteChrome.initScrollReveal();
 }
 
-function applyMiceSection(section = {}) {
+function applyMiceSection(section = {}, extra = {}) {
+  const merged = { ...extra, ...section };
   const root = document.getElementById("mice");
-  setSectionVisible(root, section.enabled !== "0");
+  setSectionVisible(root, merged.enabled !== "0");
   if (!root) return;
 
   const kicker = root.querySelector("#miceKicker");
   const subtitle = root.querySelector("#miceSubtitle");
-  if (kicker && section.kicker) kicker.textContent = section.kicker;
-  if (subtitle && section.subtitle) subtitle.textContent = section.subtitle;
+  if (kicker && merged.kicker) kicker.textContent = merged.kicker;
+  if (subtitle && merged.subtitle) subtitle.textContent = merged.subtitle;
 
   const list = document.getElementById("miceList");
   if (list) {
-    const items = parseJson(section.items_json);
+    const items = parseJson(merged.items_json);
     if (items.length) {
       list.innerHTML = items.map((item) => `
         <article>
@@ -1258,18 +1311,18 @@ function applyMiceSection(section = {}) {
   }
 
   const image = document.getElementById("miceImage");
-  if (image && section.image_url) {
-    setImgSrc(image, section.image_url, cmsState.homeUpdatedAt);
-    image.alt = section.kicker || "Corporate event venue";
+  if (image && merged.image_url) {
+    setImgSrc(image, merged.image_url, cmsState.homeUpdatedAt);
+    image.alt = merged.kicker || "Corporate event venue";
   }
 
   const statsGrid = document.getElementById("miceStats");
-  if (statsGrid) {
-    const stats = parseJson(section.stats_json);
-    if (stats.length) {
-      statsGrid.innerHTML = stats.map((item) => `
-        <article><strong>${escapeHtml(item.value || "")}</strong><span>${escapeHtml(item.label || "")}</span></article>`).join("");
-    }
+  if (statsGrid && merged.stats_json != null) {
+    const stats = parseJson(merged.stats_json);
+    statsGrid.innerHTML = stats.length
+      ? stats.map((item) => `
+        <article><strong>${escapeHtml(item.value || "")}</strong><span>${escapeHtml(item.label || "")}</span></article>`).join("")
+      : "";
   }
 }
 
@@ -1350,7 +1403,9 @@ function applyNumbersSection(section = {}) {
 function applyHomeSections(sections = {}) {
   applyScotlandAttractionsSection(sections.scotland_attractions || {});
   applyPremiumServicesSection(sections.premium_services || {});
-  applyMiceSection(sections.mice || {});
+  const miceSection = sections.mice || {};
+  const miceStatsFallback = sections.mice_stats?.stats_json;
+  applyMiceSection(miceSection, miceStatsFallback ? { stats_json: miceStatsFallback } : {});
   applyProcessSection(sections.process || {});
   applySuccessStoriesSection(sections.success_stories || {});
   applyNumbersSection(sections.numbers || {});
@@ -1688,6 +1743,7 @@ async function connectLiveUpdates() {
     "gallery:deleted": loadGallery,
     "faq:updated": loadFaqs,
     "faq:created": loadFaqs,
+    "faq:deleted": loadFaqs,
   };
 
   Object.entries(reloaders).forEach(([event, fn]) => {

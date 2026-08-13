@@ -18,11 +18,15 @@ window.AdminEntities = (() => {
   }
 
   async function packagesView(api, selectedId = "") {
-    const data = await api("/packages?active=false").catch(() => ({ packages: [] }));
-    const packages = data.packages || [];
+    const [pkgData, cmsData] = await Promise.all([
+      api("/packages?active=false").catch(() => ({ packages: [] })),
+      api("/cms/packages-page").catch(() => ({ sections: {} })),
+    ]);
+    const packages = pkgData.packages || [];
     const hasSelected = selectedId && packages.some((p) => String(p.id) === String(selectedId));
     const pick = hasSelected ? selectedId : (packages[0]?.id || "");
-    return window.PackageEditor.renderForm(packages, pick);
+    const listingEnabled = cmsData.sections?.listing?.enabled !== "0";
+    return window.PackageEditor.renderForm(packages, pick, { listingEnabled });
   }
 
   async function galleryView(api) {
@@ -45,18 +49,32 @@ window.AdminEntities = (() => {
     }
 
     const imageField = window.CmsSchema?.imageField
-      ? window.CmsSchema.imageField("gallery-new-image", "Image", "", { name: "image_url" })
+      ? window.CmsSchema.imageField("gallery-new-image", "Image / Video Poster", "", { name: "image_url" })
       : field("Image URL", "https://images.unsplash.com/...", "image_url", true);
+    const videoField = window.CmsSchema?.imageField
+      ? window.CmsSchema.imageField("gallery-new-video", "Video File", "", { name: "video_url" })
+      : field("Video URL", "https://.../video.mp4", "video_url");
 
     return `<section class="content-grid">
-      ${panel("Add Gallery Image", "Upload photos for the homepage Photo Gallery. New images appear on the website after you add them.", `
+      ${panel("Add Gallery Media", "Upload photos or videos for the homepage Photo Gallery. Videos play in the grid when visible.", `
         <form id="galleryForm" class="form-grid">
           ${field("Title", "Event or photo title", "title")}
-          ${imageField}
-          ${field("Alt Text", "Describe the image for accessibility", "alt_text")}
+          <div class="field">
+            <label>Media Type</label>
+            <select name="media_type" id="galleryMediaType">
+              <option value="image" selected>Image</option>
+              <option value="video">Video</option>
+            </select>
+          </div>
+          <div id="galleryImageFields">${imageField}</div>
+          <div id="galleryVideoFields" hidden>${videoField}
+            <div class="field-full"><span class="settings-copy">Optional poster/thumbnail image shown before the video loads.</span></div>
+            ${window.CmsSchema?.imageField("gallery-new-poster", "Poster Image (optional)", "", { name: "poster_url" }) || field("Poster URL", "", "poster_url")}
+          </div>
+          ${field("Alt Text", "Describe the media for accessibility", "alt_text")}
           ${field("Sort Order", "10", "sort_order")}
           <div class="field"><label>Album</label><input name="album" value="Events" placeholder="Events" /></div>
-          <div class="field-full"><button class="btn primary" type="submit" data-action="save-gallery">Add Image</button></div>
+          <div class="field-full"><button class="btn primary" type="submit" data-action="save-gallery">Add to Gallery</button></div>
         </form>`)}
       <div class="table-panel">
         <div class="table-head">
@@ -67,10 +85,12 @@ window.AdminEntities = (() => {
         </div>
         <div class="gallery-admin-grid">${items.map((item) => {
           const src = esc(window.CALEDOR_CONFIG?.mediaUrl?.(item.image_url) ?? item.image_url);
+          const isVideo = String(item.media_type || "").toLowerCase() === "video"
+            || /\.(mp4|webm|ogg|mov)(\?|$)/i.test(String(item.image_url || item.video_url || ""));
           const canDelete = item.id && !String(item.id).startsWith("web-");
           return `
           <div class="gallery-admin-item">
-            <div class="gallery-admin-thumb" style="background-image:url('${src}');background-size:cover;background-position:center"></div>
+            <div class="gallery-admin-thumb" style="background-image:url('${src}');background-size:cover;background-position:center">${isVideo ? '<span class="gallery-admin-video-badge">Video</span>' : ""}</div>
             <div class="gallery-admin-meta">
               <strong>${esc(item.title || "Untitled")}</strong>
               <span>Order ${esc(String(item.sort_order ?? 0))}</span>

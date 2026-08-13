@@ -51,13 +51,32 @@ window.PackageEditor = (() => {
     </div>`;
   }
 
-  function renderForm(packages = [], selectedId = "") {
+  function renderForm(packages = [], selectedId = "", options = {}) {
     const selected = packages.find((p) => String(p.id) === String(selectedId)) || packages[0];
-    const options = packages.map((p) =>
+    const optionsHtml = packages.map((p) =>
       `<option value="${p.id}" data-slug="${esc(p.slug)}"${String(p.id) === String(selectedId || selected?.id) ? " selected" : ""}>${esc(p.name)}</option>`).join("");
     const previewHref = selected?.slug ? packagePublicUrl(selected.slug) : "#";
+    const showPackages = options.listingEnabled !== false;
 
     return `<section class="content-grid">
+      <article class="settings-panel">
+        <div class="settings-head">
+          <div>
+            <h2 class="settings-title">Featured Experiences on Website</h2>
+            <p class="panel-subtitle">Turn off to hide the entire packages section on the homepage. Other sections below it stay visible.</p>
+          </div>
+        </div>
+        <div class="settings-body">
+          <div class="display-toggle">
+            <span class="settings-copy">Show Featured Experiences section on website</span>
+            <span class="switch section-switch ${showPackages ? "on" : ""}" id="packagesSectionToggle" data-packages-visible="${showPackages ? "1" : "0"}"></span>
+          </div>
+          <div class="field-full actions-row" style="margin-top:12px">
+            <button class="btn primary sm" type="button" data-action="save-packages-visibility">Save Section Visibility</button>
+          </div>
+        </div>
+      </article>
+
       <article class="settings-panel">
         <div class="settings-head">
           <div>
@@ -69,7 +88,7 @@ window.PackageEditor = (() => {
           <div class="form-grid">
             <div class="field-full">
               <label>Select package to edit</label>
-              <select id="packageSelect">${options || '<option value="">No packages yet — create one below</option>'}</select>
+              <select id="packageSelect">${optionsHtml || '<option value="">No packages yet — create one below</option>'}</select>
             </div>
             <div class="field-full actions-row">
               <a class="btn outline sm" id="previewPackageLink" href="${esc(previewHref)}" target="_blank" rel="noopener" data-action="preview-package-detail"${selected?.slug ? "" : ' aria-disabled="true"'}>Preview Detail Page</a>
@@ -396,7 +415,33 @@ window.PackageEditor = (() => {
     wireBtn(".cms-add-exclusion", () => {
       document.getElementById("exclusionsList")?.insertAdjacentHTML("beforeend", listItemRow());
     });
+
+    const visibilityToggle = document.getElementById("packagesSectionToggle");
+    if (visibilityToggle && !visibilityToggle._pkgWired) {
+      visibilityToggle._pkgWired = true;
+      visibilityToggle.addEventListener("click", () => {
+        visibilityToggle.classList.toggle("on");
+        visibilityToggle.dataset.packagesVisible = visibilityToggle.classList.contains("on") ? "1" : "0";
+      });
+    }
   }
 
-  return { renderForm, loadIntoForm, collectFromForm, resetFormForCreate, wire, itineraryRow, listItemRow, galleryRow };
+  async function savePackagesSectionVisibility(api) {
+    const toggle = document.getElementById("packagesSectionToggle");
+    const enabled = toggle?.classList.contains("on") ? "1" : "0";
+    await Promise.all([
+      api("/cms/packages-page", {
+        method: "PUT",
+        body: JSON.stringify({ sections: { listing: { enabled } } }),
+      }),
+      api("/cms/home", {
+        method: "PUT",
+        body: JSON.stringify({ sections: { packages_heading: { enabled } } }),
+      }),
+    ]);
+    if (toggle) toggle.dataset.packagesVisible = enabled;
+    return enabled === "1";
+  }
+
+  return { renderForm, loadIntoForm, collectFromForm, resetFormForCreate, wire, savePackagesSectionVisibility, itineraryRow, listItemRow, galleryRow };
 })();

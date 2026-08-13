@@ -213,9 +213,9 @@ window.CmsSchema = (() => {
 
   function scotlandTileRow(item = {}) {
     const target = `scotland-img-${Math.random().toString(36).slice(2, 9)}`;
-    const layouts = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
+    const layouts = ["auto", "loch", "kelpies", "tall", "wide", "skye", "whisky"];
     const layoutOptions = layouts.map((layout) =>
-      `<option value="${layout}"${item.layout === layout ? " selected" : ""}>${layout}</option>`).join("");
+      `<option value="${layout}"${(item.layout || "auto") === layout ? " selected" : ""}>${layout === "auto" ? "Auto (fits grid)" : layout}</option>`).join("");
     return `<div class="destination-row" data-list="scotland-tiles">
       <div class="form-grid">
         ${imageField(target, "Image", item.image || "", { name: "image", compact: true })}
@@ -235,7 +235,7 @@ window.CmsSchema = (() => {
         <div class="field"><label>Title</label><input name="title" value="${esc(item.title || "")}" /></div>
         <div class="field"><label>Alt Text</label><input name="alt" value="${esc(item.alt || "")}" /></div>
         <div class="field-full"><label>Description</label><textarea name="description">${esc(item.description || "")}</textarea></div>
-        <div class="field"><label>Link URL</label><input name="link" value="${esc(item.link || "/premium-services")}" /></div>
+        <div class="field"><label>Link URL</label><input name="link" value="${esc(item.link || "#proposal")}" /></div>
       </div>
       <button class="action-icon danger cms-remove-row" type="button">✕</button>
     </div>`;
@@ -299,6 +299,27 @@ window.CmsSchema = (() => {
   function badgeRow(item = {}) {
     return `<div class="feature-row" data-list="owned-badges">
       <div class="field-full"><label>Badge Text</label><input name="text" value="${esc(item.text || "")}" /></div>
+      <button class="action-icon danger cms-remove-row" type="button">✕</button>
+    </div>`;
+  }
+
+  function ownedPropertyCardRow(item = {}) {
+    const target = `owned-card-${Math.random().toString(36).slice(2, 9)}`;
+    let badges = [];
+    try {
+      badges = typeof item.badges_json === "string" ? JSON.parse(item.badges_json || "[]") : (item.badges || []);
+    } catch {
+      badges = [];
+    }
+    const badgeLines = badges.map((b) => b.text || "").filter(Boolean).join("\n");
+    return `<div class="destination-row" data-list="owned-cards">
+      <div class="form-grid">
+        ${imageField(target, "Card Background Image", item.card_image || "", { name: "card_image", compact: true })}
+        <div class="field"><label>Property Name</label><input name="property_name" value="${esc(item.property_name || "")}" /></div>
+        <div class="field"><label>Property Location</label><input name="property_location" value="${esc(item.property_location || "")}" /></div>
+        <div class="field-full"><label>Property Description</label><textarea name="property_text">${esc(item.property_text || "")}</textarea></div>
+        <div class="field-full"><label>Badges (one per line)</label><textarea name="badges_lines" rows="3" placeholder="Best Indian Restaurant in Scotland">${esc(badgeLines)}</textarea></div>
+      </div>
       <button class="action-icon danger cms-remove-row" type="button">✕</button>
     </div>`;
   }
@@ -412,7 +433,7 @@ window.CmsSchema = (() => {
       section("Scotland Attractions", `<div class="form-grid">
         ${cmsInput("scotland_attractions", "kicker", "Section Kicker", val(s, "scotland_attractions", "kicker", "Top Scotland Attractions"))}
         ${cmsInput("scotland_attractions", "title", "Section Title", val(s, "scotland_attractions", "title"))}
-        <div class="field-full"><span class="settings-copy">Each tile must keep its <strong>Grid Layout</strong> value (loch, kelpies, tall, wide, skye, whisky) so the mosaic grid on the website stays correct.</span></div>
+        <div class="field-full"><span class="settings-copy">Use <strong>Auto</strong> layout for new images — they fill the grid cleanly. The classic 6-tile mosaic is used when exactly six tiles use named layouts.</span></div>
       </div>
       <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>
       <button class="add-row-btn cms-add-scotland" type="button">+ Add Attraction</button>`, "scotland_attractions", isOn(s, "scotland_attractions")),
@@ -465,7 +486,21 @@ window.CmsSchema = (() => {
   function renderAbout(s) {
     const team = parseJson(val(s, "team", "members_json"));
     const aboutFeatures = parseJson(val(s, "about_features", "features_json"));
-    const ownedBadges = parseJson(val(s, "owned_assets", "badges_json"));
+    const ownedCards = (() => {
+      const fromCards = parseJson(val(s, "owned_assets", "cards_json"));
+      if (fromCards.length) return fromCards;
+      const badges = parseJson(val(s, "owned_assets", "badges_json"));
+      if (val(s, "owned_assets", "property_name") || val(s, "owned_assets", "property_text")) {
+        return [{
+          property_name: val(s, "owned_assets", "property_name", "Firangi"),
+          property_location: val(s, "owned_assets", "property_location", "Glasgow, Scotland"),
+          property_text: val(s, "owned_assets", "property_text", ""),
+          card_image: val(s, "owned_assets", "card_image", ""),
+          badges_json: JSON.stringify(badges),
+        }];
+      }
+      return [];
+    })();
 
     return [
       section("About Section (Homepage)", `<div class="form-grid">
@@ -509,12 +544,10 @@ window.CmsSchema = (() => {
         ${cmsInput("owned_assets", "kicker", "Section Kicker", val(s, "owned_assets", "kicker", "Owned Assets"))}
         ${cmsInput("owned_assets", "title", "Section Title", val(s, "owned_assets", "title"))}
         ${cmsTextarea("owned_assets", "description", "Section Description", val(s, "owned_assets", "description"))}
-        ${cmsInput("owned_assets", "property_name", "Property Name", val(s, "owned_assets", "property_name", "Firangi"))}
-        ${cmsInput("owned_assets", "property_location", "Property Location", val(s, "owned_assets", "property_location"))}
-        ${cmsTextarea("owned_assets", "property_text", "Property Description", val(s, "owned_assets", "property_text"))}
+        <div class="field-full"><span class="settings-copy">Add property cards (e.g. Firangi) with optional background image, description, and badges.</span></div>
       </div>
-      <div class="cms-list" data-json-section="owned_assets">${ownedBadges.map(badgeRow).join("")}</div>
-      <button class="add-row-btn cms-add-badge" type="button">+ Add Badge</button>`, "owned_assets", isOn(s, "owned_assets")),
+      <div class="cms-list" data-json-section="owned_assets">${ownedCards.map(ownedPropertyCardRow).join("")}</div>
+      <button class="add-row-btn cms-add-owned-card" type="button">+ Add Property Card</button>`, "owned_assets", isOn(s, "owned_assets")),
     ].join("");
   }
 
@@ -849,13 +882,28 @@ window.CmsSchema = (() => {
       sections.about_features.features_json = JSON.stringify(aboutFeatures);
     }
 
-    const ownedBadges = [];
-    container.querySelectorAll('[data-list="owned-badges"]').forEach((row) => {
-      ownedBadges.push({ text: row.querySelector('[name="text"]')?.value || "" });
+    const ownedCards = [];
+    container.querySelectorAll('[data-list="owned-cards"]').forEach((row) => {
+      const badgesLines = (row.querySelector('[name="badges_lines"]')?.value || "")
+        .split("\n").map((line) => line.trim()).filter(Boolean);
+      ownedCards.push({
+        card_image: row.querySelector('[name="card_image"]')?.value || "",
+        property_name: row.querySelector('[name="property_name"]')?.value || "",
+        property_location: row.querySelector('[name="property_location"]')?.value || "",
+        property_text: row.querySelector('[name="property_text"]')?.value || "",
+        badges_json: JSON.stringify(badgesLines.map((text) => ({ text }))),
+      });
     });
-    if (ownedBadges.length || container.querySelector('[data-json-section="owned_assets"]')) {
+    if (ownedCards.length || container.querySelector('[data-json-section="owned_assets"]')) {
       sections.owned_assets = sections.owned_assets || {};
-      sections.owned_assets.badges_json = JSON.stringify(ownedBadges);
+      sections.owned_assets.cards_json = JSON.stringify(ownedCards);
+      if (ownedCards[0]) {
+        sections.owned_assets.property_name = ownedCards[0].property_name || "";
+        sections.owned_assets.property_location = ownedCards[0].property_location || "";
+        sections.owned_assets.property_text = ownedCards[0].property_text || "";
+        sections.owned_assets.card_image = ownedCards[0].card_image || "";
+        sections.owned_assets.badges_json = ownedCards[0].badges_json || "[]";
+      }
     }
 
     const scotlandTiles = [];
@@ -879,18 +927,7 @@ window.CmsSchema = (() => {
         title: row.querySelector('[name="title"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
         description: row.querySelector('[name="description"]')?.value || "",
-        link: row.querySelector('[name="link"]')?.value || (() => {
-          const title = row.querySelector('[name="title"]')?.value || "";
-          const map = {
-            "Hotel Bookings": "/premium-services#hotel-bookings",
-            "Holiday Packages": "/premium-services#holiday-packages",
-            "Sightseeing Tours": "/premium-services#sightseeing-tours",
-            "Vehicle At Disposal": "/premium-services#vehicle-at-disposal",
-            "Airport Transfers": "/premium-services#airport-transfers",
-            "Restaurant Reservations": "/premium-services#restaurant-reservations",
-          };
-          return map[title] || "/premium-services";
-        })(),
+        link: row.querySelector('[name="link"]')?.value || "#proposal",
       });
     });
     if (premiumServices.length || container.querySelector('[data-json-section="premium_services"]')) {
@@ -1007,6 +1044,6 @@ window.CmsSchema = (() => {
     featureRow, teamRow, destinationRow, formFieldRow, parseJson,
     footerColumnRow, postTagRow, cmsImage, imageField,
     aboutFeatureRow, scotlandTileRow, premiumServiceRow, miceItemRow, statRow,
-    processStepRow, testimonialItemRow, successStoryRow, badgeRow,
+    processStepRow, testimonialItemRow, successStoryRow, badgeRow, ownedPropertyCardRow,
   };
 })();

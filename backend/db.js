@@ -168,6 +168,17 @@ function initSchema() {
     );
   `);
   migratePackageColumns();
+  migrateGalleryColumns();
+}
+
+function migrateGalleryColumns() {
+  const cols = db.prepare('PRAGMA table_info(gallery_items)').all().map((c) => c.name);
+  const addCol = (name, type) => {
+    if (!cols.includes(name)) db.exec(`ALTER TABLE gallery_items ADD COLUMN ${name} ${type}`);
+  };
+  addCol('media_type', "TEXT DEFAULT 'image'");
+  addCol('video_url', 'TEXT');
+  addCol('poster_url', 'TEXT');
 }
 
 function migratePackageColumns() {

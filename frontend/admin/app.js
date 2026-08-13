@@ -683,15 +683,26 @@ function wireEntityHandlers() {
     if (form.id === "galleryForm") {
       e.preventDefault();
       const data = formData(e.target);
+      const mediaType = data.media_type === "video" ? "video" : "image";
+      const mediaUrl = mediaType === "video"
+        ? (data.video_url || data.image_url)
+        : data.image_url;
+      if (!mediaUrl) {
+        showToast(mediaType === "video" ? "Upload or paste a video URL" : "Upload or paste an image URL");
+        return;
+      }
       try {
         await api("/gallery", { method: "POST", body: JSON.stringify({
           title: data.title,
-          image_url: data.image_url,
+          image_url: mediaUrl,
+          video_url: mediaType === "video" ? mediaUrl : "",
+          poster_url: data.poster_url || "",
+          media_type: mediaType,
           alt_text: data.alt_text || data.title,
           album: data.album || "General",
           sort_order: Number(data.sort_order) || 0,
         }) });
-        showToast("Image added — live on website");
+        showToast(`${mediaType === "video" ? "Video" : "Image"} added — live on website`);
         render();
       } catch (err) {
         showToast(err.message);
@@ -901,6 +912,17 @@ function wireEntityHandlers() {
         }
         return;
       }
+      if (action === "save-packages-visibility") {
+        try {
+          if (!window.PackageEditor?.savePackagesSectionVisibility) throw new Error("Package Settings not loaded");
+          const visible = await window.PackageEditor.savePackagesSectionVisibility(api);
+          showToast(visible ? "Packages section is visible on the website" : "Packages section hidden on the website");
+          markSaved();
+        } catch (err) {
+          showToast(err.message);
+        }
+        return;
+      }
       if (action === "save-faq-section") {
         try {
           await saveFaqSection();
@@ -995,6 +1017,20 @@ function wireDynamicHandlers() {
       }
     });
   });
+
+  const galleryMediaType = document.getElementById("galleryMediaType");
+  if (galleryMediaType && !galleryMediaType._wired) {
+    galleryMediaType._wired = true;
+    const syncGalleryFields = () => {
+      const isVideo = galleryMediaType.value === "video";
+      const imageFields = document.getElementById("galleryImageFields");
+      const videoFields = document.getElementById("galleryVideoFields");
+      if (imageFields) imageFields.hidden = isVideo;
+      if (videoFields) videoFields.hidden = !isVideo;
+    };
+    galleryMediaType.addEventListener("change", syncGalleryFields);
+    syncGalleryFields();
+  }
 }
 
 async function connectAdminSocket() {

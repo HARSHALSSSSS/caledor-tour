@@ -25,12 +25,23 @@ router.get('/albums/list', (req, res) => {
 // Create gallery item (protected)
 router.post('/', authMiddleware, (req, res) => {
   const db = getDb();
-  const { title, alt_text, image_url, album, sort_order } = req.body;
-  if (!image_url) return res.status(400).json({ error: 'Image URL is required' });
+  const { title, alt_text, image_url, video_url, poster_url, album, sort_order, media_type } = req.body;
+  const type = String(media_type || 'image').toLowerCase() === 'video' ? 'video' : 'image';
+  const mediaUrl = (type === 'video' ? (video_url || image_url) : image_url)?.trim();
+  if (!mediaUrl) return res.status(400).json({ error: 'Media URL is required' });
 
   const result = db.prepare(
-    'INSERT INTO gallery_items (title, alt_text, image_url, album, sort_order) VALUES (?, ?, ?, ?, ?)'
-  ).run(title, alt_text, image_url, album || 'General', sort_order ?? 0);
+    'INSERT INTO gallery_items (title, alt_text, image_url, video_url, poster_url, media_type, album, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(
+    title,
+    alt_text,
+    mediaUrl,
+    type === 'video' ? mediaUrl : (video_url || null),
+    poster_url || null,
+    type,
+    album || 'General',
+    sort_order ?? 0
+  );
 
   const item = db.prepare('SELECT * FROM gallery_items WHERE id = ?').get(result.lastInsertRowid);
 
