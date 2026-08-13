@@ -271,18 +271,28 @@ function setSectionVisible(el, enabled) {
 function isPackagesSectionEnabled() {
   const homeEnabled = cmsState.home?.packages_heading?.enabled;
   const listingEnabled = cmsState.packagesPage?.listing?.enabled;
-  return homeEnabled !== "0" && listingEnabled !== "0";
+  if (homeEnabled === "0" || listingEnabled === "0") return false;
+  return true;
 }
 
 function applyPackagesVisibility() {
   const visible = isPackagesSectionEnabled();
+  const section = document.getElementById("packages");
   document.body.classList.toggle("packages-section-hidden", !visible);
-  setSectionVisible(document.getElementById("packages"), visible);
-  setSectionVisible(document.getElementById("featuredToursSection"), false);
+  document.body.classList.remove("packages-pending");
+
+  if (section) {
+    if (visible) section.removeAttribute("hidden");
+    else section.setAttribute("hidden", "");
+  }
+
   document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
     if (!visible) link.setAttribute("hidden", "");
     else link.removeAttribute("hidden");
   });
+
+  const grid = document.getElementById("packageGrid");
+  if (grid && !visible) grid.innerHTML = "";
 }
 
 function applyHeroContent(hero = {}, trust = {}, stats = {}) {
@@ -789,11 +799,15 @@ function applyPackagesPageCms(sections = {}) {
 
   applyPackagesVisibility();
 
+  if (!isPackagesSectionEnabled()) {
+    return;
+  }
+
   const heroEl = document.getElementById("packagesHero");
   setSectionVisible(heroEl, false);
 
   const headingEl = document.getElementById("packagesHeading");
-  headingEl?.removeAttribute("hidden");
+  if (headingEl) headingEl.removeAttribute("hidden");
 
   const tabsEl = document.getElementById("packageCategoryTabs");
   if (tabsEl && categories.show_tabs !== "0") {
@@ -1038,6 +1052,10 @@ function mergePackageList(apiPackages = []) {
 }
 
 async function loadPackages() {
+  if (!isPackagesSectionEnabled()) {
+    applyPackagesVisibility();
+    return;
+  }
   try {
     const data = await fetchJson("/packages?active=true");
     cmsState.packages = mergePackageList(data.packages || []);
@@ -1064,6 +1082,7 @@ async function loadBlogPosts() {
 async function loadFaqs() {
   const accordion = document.getElementById("faqAccordion");
   if (!accordion) return;
+  accordion.innerHTML = `<p class="faq-loading">Loading FAQs…</p>`;
   try {
     const data = await fetchJson("/faqs?active=true");
     const faqs = (data.faqs || [])
@@ -1077,12 +1096,13 @@ async function loadFaqs() {
       .map((faq, index) => `
         <details${index === 0 ? " open" : ""}>
           <summary>${escapeHtml(faq.question)}</summary>
-          <p>${escapeHtml(faq.answer)}</p>
+          <p>${escapeHtml(faq.answer).replace(/\n/g, "<br />")}</p>
         </details>`)
       .join("");
     bindAccordion();
   } catch (err) {
     console.warn("loadFaqs:", err);
+    accordion.innerHTML = `<p class="faq-empty">Could not load FAQs. Check that the website is connected to the API, then refresh.</p>`;
   }
 }
 
@@ -1112,9 +1132,21 @@ function applyDestinationsSection(section = {}) {
 
   const kicker = document.getElementById("destinationsKicker");
   const title = document.getElementById("destinationsTitle");
+  const mapPanel = document.querySelector("#destinations .map-panel");
   const grid = document.getElementById("destinationGrid");
   if (kicker && section.kicker) kicker.textContent = section.kicker;
   if (title && section.title) title.textContent = section.title;
+
+  if (mapPanel) {
+    const mapImage = section.map_image || "/assets/destinations/europe-coverage-map.png";
+    const mapUrl = assetUrl(mapImage, cmsState.homeUpdatedAt);
+    if (mapUrl) {
+      mapPanel.style.backgroundImage = `linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), url("${mapUrl.replace(/"/g, '\\"')}")`;
+      mapPanel.style.backgroundSize = "cover";
+      mapPanel.style.backgroundPosition = "center";
+    }
+  }
+
   if (!grid) return;
 
   let items = [];
@@ -1219,42 +1251,61 @@ async function loadGallery() {
   }
 }
 
+function isScotlandVideo(item = {}) {
+  const type = String(item.media_type || "").toLowerCase();
+  if (type === "video") return true;
+  if (type === "image") return false;
+  return Boolean(item.video_url) && isVideoUrl(item.video_url);
+}
+
 function resolveScotlandItems(section = {}) {
-  const cmsItems = parseJson(section.items_json).filter((item) => item?.image || item?.video_url || item?.label);
-  if (cmsItems.length) {
-    return cmsItems.map((item, index) => {
-      const requested = item.layout && item.layout !== "auto" ? item.layout : null;
-      const defaultItem = requested
-        ? (SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === requested) || {})
-        : (SCOTLAND_ATTRACTIONS_DEFAULTS[index] || {});
-      const media = item.image || item.video_url || "";
-      const video = item.video_url || (isVideoUrl(media) ? media : "");
-      return {
-        ...defaultItem,
-        ...item,
-        layout: requested && SCOTLAND_LAYOUT_CLASSES[requested] ? requested : null,
-        image: video ? media : resolveScotlandImage(media, defaultItem?.image),
-        video_url: video,
-      };
+  const byLayout = new Map(SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => [item.layout, { ...item }]));
+  parseJson(section.items_json).forEach((item) => {
+    if (!item?.label && !item?.image && !item?.video_url) return;
+    const layout = item.layout && item.layout !== "auto"
+      ? item.layout
+      : (SCOTLAND_LABEL_TO_LAYOUT[item.label] || item.layout);
+    if (!layout || !SCOTLAND_LAYOUT_CLASSES[layout]) return;
+    const defaultItem = byLayout.get(layout) || SCOTLAND_ATTRACTIONS_DEFAULTS.find((d) => d.layout === layout);
+    const mediaType = isScotlandVideo(item) ? "video" : "image";
+    const image = resolveScotlandImage(item.image, defaultItem?.image);
+    byLayout.set(layout, {
+      ...defaultItem,
+      ...item,
+      layout,
+      image,
+      media_type: mediaType,
+      video_url: item.video_url || "",
     });
-  }
-  return SCOTLAND_ATTRACTIONS_DEFAULTS.map((item) => ({ ...item }));
+  });
+  return SCOTLAND_LAYOUT_ORDER.map((layout) => byLayout.get(layout)).filter(Boolean);
 }
 
-function scotlandUsesMosaic(items = []) {
-  if (items.length !== 6) return false;
-  if (items.some((item) => item.video_url || isVideoUrl(item.image))) return false;
-  const layouts = items.map((item) => item.layout).filter((layout) => layout && SCOTLAND_LAYOUT_CLASSES[layout]);
-  return layouts.length === 6 && new Set(layouts).size === 6;
+function renderScotlandTileMedia(item) {
+  const revision = cmsState.homeUpdatedAt;
+  const alt = escapeHtml(item.alt || item.label || "Scotland attraction");
+  if (isScotlandVideo(item)) {
+    const videoUrl = assetUrl(item.video_url, revision);
+    if (!videoUrl) return `<img ${withImageFallback(assetUrl(item.image, revision), alt)} />`;
+    const poster = item.image ? assetUrl(item.image, revision) : "";
+    return `<video class="scotland-video" src="${escapeHtml(videoUrl)}"${poster ? ` poster="${escapeHtml(poster)}"` : ""} muted loop playsinline preload="metadata" aria-label="${alt}"></video>`;
+  }
+  return `<img ${withImageFallback(assetUrl(item.image, revision), alt)} />`;
 }
 
-function scotlandTileMedia(item) {
-  const alt = item.alt || item.label || "Scotland attraction";
-  if (item.video_url || isVideoUrl(item.image)) {
-    const src = assetUrl(item.video_url || item.image, cmsState.homeUpdatedAt);
-    return `<video class="media-cover scotland-video" src="${escapeHtml(src)}" muted loop playsinline preload="metadata" aria-label="${escapeHtml(alt)}"></video>`;
+function updateScotlandTileMedia(tile, item) {
+  if (!tile) return;
+  const mediaHtml = renderScotlandTileMedia(item);
+  const mediaWrap = tile.querySelector("img, video.scotland-video");
+  if (mediaWrap) {
+    const temp = document.createElement("div");
+    temp.innerHTML = mediaHtml.trim();
+    mediaWrap.replaceWith(temp.firstElementChild);
+  } else {
+    tile.insertAdjacentHTML("afterbegin", mediaHtml);
   }
-  return `<img ${withImageFallback(assetUrl(item.image, cmsState.homeUpdatedAt), alt)} />`;
+  const label = tile.querySelector(".scotland-label");
+  if (label && item.label) label.textContent = item.label;
 }
 
 function applyScotlandAttractionsSection(section = {}) {
@@ -1272,17 +1323,35 @@ function applyScotlandAttractionsSection(section = {}) {
   const useItems = resolveScotlandItems(section);
   if (!useItems.length) return;
 
-  const mosaic = scotlandUsesMosaic(useItems);
-  grid.classList.toggle("is-flexible", !mosaic);
-  grid.dataset.count = String(useItems.length);
+  grid.classList.remove("is-flexible");
+  grid.dataset.count = "6";
+
+  const layoutToClass = {
+    loch: "scotland-tile-loch",
+    kelpies: "scotland-tile-kelpies",
+    tall: "scotland-tile-tall",
+    wide: "scotland-tile-wide",
+    skye: "scotland-tile-skye",
+    whisky: "scotland-tile-whisky",
+  };
+
+  const existingTiles = grid.querySelector(".scotland-tile");
+  if (existingTiles) {
+    useItems.forEach((item) => {
+      const tileClass = layoutToClass[item.layout];
+      if (!tileClass) return;
+      const tile = grid.querySelector(`.${tileClass}`);
+      updateScotlandTileMedia(tile, item);
+    });
+    wireLazyVideos(grid);
+    return;
+  }
 
   grid.innerHTML = useItems.map((item) => {
-    const layoutClass = mosaic && item.layout && SCOTLAND_LAYOUT_CLASSES[item.layout]
-      ? SCOTLAND_LAYOUT_CLASSES[item.layout]
-      : "";
+    const layoutClass = SCOTLAND_LAYOUT_CLASSES[item.layout] || "";
     return `
     <article class="scotland-tile${layoutClass}">
-      ${scotlandTileMedia(item)}
+      ${renderScotlandTileMedia(item)}
       <span class="scotland-label">${escapeHtml(item.label || "")}</span>
     </article>`;
   }).join("");
@@ -1867,17 +1936,21 @@ async function init() {
   }
 
   // Apply CMS/API data in the background; page stays visible the whole time.
+  // Load CMS visibility flags before packages so hidden section never flashes old cards.
   try {
     await Promise.all([
       loadSettings(),
-      loadPackages(),
       loadCmsHome(),
+      loadCmsPackagesPage(),
       loadCmsAbout(),
       loadCmsContact(),
       loadCmsBlog(),
-      loadCmsPackagesPage(),
       loadCmsFooter(),
       loadCmsFaq(),
+    ]);
+    applyPackagesVisibility();
+    await Promise.all([
+      loadPackages(),
       loadBlogPosts(),
       loadFaqs(),
       loadGallery(),

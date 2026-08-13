@@ -247,6 +247,7 @@
       const visible = home.sections?.packages_heading?.enabled !== "0"
         && pkgs.sections?.listing?.enabled !== "0";
       document.body.classList.toggle("packages-section-hidden", !visible);
+      document.body.classList.remove("packages-pending");
       document.querySelectorAll('a[href="#packages"], a[href="/#packages"]').forEach((link) => {
         if (!visible) link.setAttribute("hidden", "");
         else link.removeAttribute("hidden");
@@ -256,8 +257,10 @@
         if (!visible) section.setAttribute("hidden", "");
         else section.removeAttribute("hidden");
       }
+      const grid = document.getElementById("packageGrid");
+      if (grid && !visible) grid.innerHTML = "";
     } catch {
-      // keep current nav
+      // keep section hidden until main script confirms visibility
     }
   }
 

@@ -215,18 +215,37 @@ window.CmsSchema = (() => {
 
   function scotlandTileRow(item = {}) {
     const target = `scotland-img-${Math.random().toString(36).slice(2, 9)}`;
-    const layouts = ["auto", "loch", "kelpies", "tall", "wide", "skye", "whisky"];
+    const videoTarget = `scotland-vid-${Math.random().toString(36).slice(2, 9)}`;
+    const layouts = ["loch", "kelpies", "tall", "wide", "skye", "whisky"];
     const layoutOptions = layouts.map((layout) =>
-      `<option value="${layout}"${(item.layout || "auto") === layout ? " selected" : ""}>${layout === "auto" ? "Auto (fits grid)" : layout}</option>`).join("");
-    return `<div class="destination-row" data-list="scotland-tiles">
+      `<option value="${layout}"${item.layout === layout ? " selected" : ""}>${layout}</option>`).join("");
+    const mediaType = String(item.media_type || "").toLowerCase() === "video" || (item.video_url && !item.image)
+      ? "video"
+      : "image";
+    return `<div class="destination-row scotland-tile-row" data-list="scotland-tiles">
       <div class="form-grid">
-        ${imageField(target, "Image or Video", item.image || item.video_url || "", {
+        <div class="field">
+          <label>Media Type</label>
+          <select name="media_type" class="scotland-media-type">
+            <option value="image"${mediaType === "image" ? " selected" : ""}>Image</option>
+            <option value="video"${mediaType === "video" ? " selected" : ""}>Video</option>
+          </select>
+        </div>
+        ${imageField(target, mediaType === "video" ? "Poster / Thumbnail (optional)" : "Image", item.image || "", {
           name: "image",
           compact: true,
-          accept: "image/*,video/mp4,video/webm,video/ogg,video/quicktime",
-          uploadLabel: "Upload Media",
-          hint: "Upload a photo or MP4/WebM video. Extra tiles auto-fit the grid.",
+          accept: "image/*",
+          uploadLabel: "Upload Image",
         })}
+        <div class="scotland-video-field field-full"${mediaType === "video" ? "" : " hidden"}>
+          ${imageField(videoTarget, "Video File", item.video_url || "", {
+            name: "video_url",
+            compact: true,
+            accept: "video/mp4,video/webm,video/ogg,video/quicktime",
+            uploadLabel: "Upload Video",
+            hint: "MP4 or WebM. Plays inside the tile on the website.",
+          })}
+        </div>
         <div class="field"><label>Label</label><input name="label" value="${esc(item.label || "")}" /></div>
         <div class="field"><label>Alt Text</label><input name="alt" value="${esc(item.alt || "")}" /></div>
         <div class="field"><label>Grid Layout</label><select name="layout">${layoutOptions}</select></div>
@@ -428,6 +447,7 @@ window.CmsSchema = (() => {
       section("Destinations", `<div class="form-grid">
         ${cmsInput("destinations", "kicker", "Section Kicker", val(s, "destinations", "kicker", "Explore Our Destinations"))}
         ${cmsInput("destinations", "title", "Section Title", val(s, "destinations", "title", "Europe made easy for every traveler."))}
+        ${cmsImage("destinations", "map_image", "Coverage Map Image", val(s, "destinations", "map_image", "/assets/destinations/europe-coverage-map.png"))}
       </div>
       <div class="cms-list" data-json-section="destinations" data-json-key="items_json">${destinations.map(destinationRow).join("")}</div>
       <button class="add-row-btn cms-add-destination" type="button">+ Add Destination</button>`, "destinations", isOn(s, "destinations")),
@@ -441,10 +461,9 @@ window.CmsSchema = (() => {
       section("Scotland Attractions", `<div class="form-grid">
         ${cmsInput("scotland_attractions", "kicker", "Section Kicker", val(s, "scotland_attractions", "kicker", "Top Scotland Attractions"))}
         ${cmsInput("scotland_attractions", "title", "Section Title", val(s, "scotland_attractions", "title"))}
-        <div class="field-full"><span class="settings-copy">Use <strong>Auto</strong> layout for new images — they fill the grid cleanly. The classic 6-tile mosaic is used when exactly six tiles use named layouts.</span></div>
+        <div class="field-full"><span class="settings-copy">Each tile keeps its fixed mosaic slot (<strong>Grid Layout</strong>). Choose <strong>Image</strong> or <strong>Video</strong> per tile — videos play inside the grid on the website.</span></div>
       </div>
-      <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>
-      <button class="add-row-btn cms-add-scotland" type="button">+ Add Attraction</button>`, "scotland_attractions", isOn(s, "scotland_attractions")),
+      <div class="cms-list" data-json-section="scotland_attractions">${scotlandTiles.map(scotlandTileRow).join("")}</div>`, "scotland_attractions", isOn(s, "scotland_attractions")),
 
       section("Premium Services", `<div class="form-grid">
         ${cmsInput("premium_services", "kicker", "Section Kicker", val(s, "premium_services", "kicker", "Our Premium Services"))}
@@ -915,12 +934,18 @@ window.CmsSchema = (() => {
     }
 
     const scotlandTiles = [];
+    const scotlandLayouts = new Set();
     container.querySelectorAll('[data-list="scotland-tiles"]').forEach((row) => {
+      const layout = row.querySelector('[name="layout"]')?.value || "loch";
+      if (scotlandLayouts.has(layout)) return;
+      scotlandLayouts.add(layout);
       scotlandTiles.push({
+        media_type: row.querySelector('[name="media_type"]')?.value || "image",
         image: row.querySelector('[name="image"]')?.value || "",
+        video_url: row.querySelector('[name="video_url"]')?.value || "",
         label: row.querySelector('[name="label"]')?.value || "",
         alt: row.querySelector('[name="alt"]')?.value || "",
-        layout: row.querySelector('[name="layout"]')?.value || "auto",
+        layout,
       });
     });
     if (scotlandTiles.length || container.querySelector('[data-json-section="scotland_attractions"]')) {

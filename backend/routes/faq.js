@@ -40,7 +40,10 @@ router.post('/', authMiddleware, (req, res) => {
 
   const faq = db.prepare('SELECT * FROM faqs WHERE id = ?').get(result.lastInsertRowid);
   const io = req.app.get('io');
-  if (io) io.emit('faq:updated', { action: 'created' });
+  if (io) {
+    io.emit('faq:updated', { action: 'created' });
+    io.emit('faq:created', { id: faq.id });
+  }
   res.status(201).json({ faq });
 });
 
@@ -57,7 +60,7 @@ router.put('/:id', authMiddleware, (req, res) => {
 
   const faq = db.prepare('SELECT * FROM faqs WHERE id = ?').get(req.params.id);
   const io = req.app.get('io');
-  if (io) io.emit('faq:updated', { action: 'updated' });
+  if (io) io.emit('faq:updated', { action: 'updated', id: faq.id });
   res.json({ faq });
 });
 

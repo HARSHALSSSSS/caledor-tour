@@ -78,10 +78,10 @@ window.CmsUI = (() => {
   }
 
   async function uploadImage(file) {
-    const optimized = await compressImage(file);
     const token = localStorage.getItem("caledor_token");
+    const uploadFile = file.type.startsWith("video/") ? file : await compressImage(file);
     const form = new FormData();
-    form.append("image", optimized);
+    form.append("image", uploadFile);
     const res = await fetch(window.CALEDOR_CONFIG?.uploadUrl?.() ?? "/api/upload", {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -249,6 +249,25 @@ window.CmsUI = (() => {
     wireAddButton(container, ".cms-add-team", '[data-json-section="team"]', window.CmsSchema.teamRow);
     wireAddButton(container, ".cms-add-footer-column", '[data-json-section="navigation"]', window.CmsSchema.footerColumnRow);
     wireAddButton(container, ".cms-add-about-feature", '[data-json-section="about_features"]', window.CmsSchema.aboutFeatureRow);
+    container.querySelectorAll(".scotland-media-type").forEach((select) => {
+      if (select._wired) return;
+      select._wired = true;
+      const sync = () => {
+        const row = select.closest(".scotland-tile-row");
+        const videoField = row?.querySelector(".scotland-video-field");
+        const imageLabel = row?.querySelector('label[for], .field label');
+        if (videoField) videoField.hidden = select.value !== "video";
+        const imageUploader = row?.querySelector('.image-uploader:not(.scotland-video-field .image-uploader)');
+        const imageFieldLabel = imageUploader?.closest(".field-full, .field")?.querySelector("label")
+          || row?.querySelector('.field-full label, .field label');
+        if (imageFieldLabel) {
+          imageFieldLabel.textContent = select.value === "video" ? "Poster / Thumbnail (optional)" : "Image";
+        }
+      };
+      select.addEventListener("change", sync);
+      sync();
+    });
+
     wireAddButton(container, ".cms-add-scotland", '[data-json-section="scotland_attractions"]', window.CmsSchema.scotlandTileRow);
     wireAddButton(container, ".cms-add-premium", '[data-json-section="premium_services"]', window.CmsSchema.premiumServiceRow);
     wireAddButton(container, ".cms-add-mice", '[data-json-section="mice"]', window.CmsSchema.miceItemRow);

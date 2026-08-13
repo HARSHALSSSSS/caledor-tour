@@ -419,9 +419,16 @@ window.PackageEditor = (() => {
     const visibilityToggle = document.getElementById("packagesSectionToggle");
     if (visibilityToggle && !visibilityToggle._pkgWired) {
       visibilityToggle._pkgWired = true;
-      visibilityToggle.addEventListener("click", () => {
+      visibilityToggle.addEventListener("click", async () => {
         visibilityToggle.classList.toggle("on");
         visibilityToggle.dataset.packagesVisible = visibilityToggle.classList.contains("on") ? "1" : "0";
+        if (typeof api === "function" && window.PackageEditor?.savePackagesSectionVisibility) {
+          try {
+            await window.PackageEditor.savePackagesSectionVisibility(api);
+          } catch (err) {
+            console.warn("Packages visibility save:", err);
+          }
+        }
       });
     }
   }

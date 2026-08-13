@@ -76,6 +76,7 @@ export const CMS_DEFAULTS = {
       enabled: "1",
       kicker: "Explore Our Destinations",
       title: "Europe made easy for every traveler.",
+      map_image: "/assets/destinations/europe-coverage-map.png",
       items_json: JSON.stringify([
         { name: "England", places: "London, Oxford, Cotswolds", image: "/uploads/destinations/england.png", slug: "england", sort_order: "1", visible: true },
         { name: "Scotland", places: "Edinburgh, Glasgow, Isle of Skye", image: "/uploads/destinations/scotland.png", slug: "scotland", sort_order: "2", visible: true },

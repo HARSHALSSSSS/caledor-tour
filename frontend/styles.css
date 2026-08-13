@@ -850,13 +850,7 @@ p {
   object-position: center center;
 }
 
-.scotland-tile video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  border-radius: 16px;
+.scotland-tile video.scotland-video {
   background: #071428;
 }
 
@@ -867,7 +861,8 @@ p {
 .scotland-tile-skye { grid-area: skye; }
 .scotland-tile-whisky { grid-area: whisky; }
 
-.scotland-tile img {
+.scotland-tile img,
+.scotland-tile video.scotland-video {
   display: block;
   width: 100%;
   height: 100%;
@@ -1427,13 +1422,22 @@ p {
   place-items: center;
   margin: 0 auto 28px;
   border-radius: var(--radius);
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
-    url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1300&q=80");
+  background-color: #eef2f8;
   background-position: center;
   background-size: cover;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
+}
+
+body.packages-pending #packages {
+  display: none !important;
+}
+
+body.packages-section-hidden #packages,
+body.packages-section-hidden #featuredToursSection,
+body.packages-section-hidden a[href="#packages"],
+body.packages-section-hidden a[href="/#packages"] {
+  display: none !important;
 }
 
 .map-shape {
@@ -2524,13 +2528,6 @@ p {
   grid-column: span 2;
   grid-row: span 2;
   min-height: 292px;
-}
-
-body.packages-section-hidden #packages,
-body.packages-section-hidden #featuredToursSection,
-body.packages-section-hidden a[href="#packages"],
-body.packages-section-hidden a[href="/#packages"] {
-  display: none !important;
 }
 
 .gallery-cell-video video,

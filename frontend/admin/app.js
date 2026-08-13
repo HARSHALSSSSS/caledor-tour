@@ -726,26 +726,39 @@ function wireEntityHandlers() {
     }
     if (form.id === "faqForm") {
       e.preventDefault();
+      if (!token) {
+        showToast("Please log in again to save FAQs");
+        return;
+      }
       const data = formData(e.target);
+      const question = String(data.question || "").trim();
+      const answer = String(data.answer || "").trim();
+      if (!question || !answer) {
+        showToast("Question and answer are required");
+        return;
+      }
       const payload = {
-        question: data.question,
-        answer: data.answer,
-        category: data.category || "General",
+        question,
+        answer,
+        category: String(data.category || "General").trim() || "General",
         sort_order: Number(data.sort_order) || 0,
         active: data.active === "1",
       };
       try {
         if (data.id) {
           await api(`/faqs/${data.id}`, { method: "PUT", body: JSON.stringify(payload) });
-          showToast("FAQ updated");
+          showToast("FAQ updated — live on website");
         } else {
           await api("/faqs", { method: "POST", body: JSON.stringify(payload) });
-          showToast("FAQ created");
+          showToast("FAQ created — live on website");
         }
+        invalidateApiCache("/faqs");
+        markSaved();
         render();
       } catch (err) {
-        showToast(err.message);
+        showToast(err.message || "Could not save FAQ");
       }
+      return;
     }
   });
 
@@ -937,10 +950,12 @@ function wireEntityHandlers() {
         if (!confirm("Delete this FAQ?")) return;
         try {
           await api(`/faqs/${button.dataset.id}`, { method: "DELETE" });
-          showToast("FAQ deleted");
+          invalidateApiCache("/faqs");
+          showToast("FAQ deleted — removed from website");
+          markSaved();
           render();
         } catch (err) {
-          showToast(err.message);
+          showToast(err.message || "Delete failed");
         }
         return;
       }
@@ -1047,6 +1062,12 @@ async function connectAdminSocket() {
   socket.emit("join:admin");
   socket.on("contact:new", () => {
     if (getRoute().section === "notifications" || getRoute().section === "overview") render();
+  });
+  socket.on("faq:updated", () => {
+    if (getRoute().section === "faq-management") {
+      invalidateApiCache("/faqs");
+      render();
+    }
   });
 }
 

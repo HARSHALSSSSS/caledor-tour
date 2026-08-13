@@ -18,15 +18,17 @@ window.AdminEntities = (() => {
   }
 
   async function packagesView(api, selectedId = "") {
-    const [pkgData, cmsData] = await Promise.all([
+    const [pkgData, cmsData, homeData] = await Promise.all([
       api("/packages?active=false").catch(() => ({ packages: [] })),
       api("/cms/packages-page").catch(() => ({ sections: {} })),
+      api("/cms/home").catch(() => ({ sections: {} })),
     ]);
     const packages = pkgData.packages || [];
     const hasSelected = selectedId && packages.some((p) => String(p.id) === String(selectedId));
     const pick = hasSelected ? selectedId : (packages[0]?.id || "");
-    const listingEnabled = cmsData.sections?.listing?.enabled !== "0";
-    return window.PackageEditor.renderForm(packages, pick, { listingEnabled });
+    const sectionVisible = homeData.sections?.packages_heading?.enabled !== "0"
+      && cmsData.sections?.listing?.enabled !== "0";
+    return window.PackageEditor.renderForm(packages, pick, { listingEnabled: sectionVisible });
   }
 
   async function galleryView(api) {
