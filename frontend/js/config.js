@@ -28,7 +28,12 @@
     if (/^https?:\/\//i.test(value)) return value;
     const path = value.startsWith("/") ? value : `/${value}`;
 
-    // Backend media only — frontend static files stay on the current domain (cPanel).
+    // New admin uploads are stored on this cPanel site (/media) and persist.
+    if (path.startsWith("/media/")) {
+      return path;
+    }
+
+    // Legacy /uploads files still live on Render. Do not remap assets/* .
     if (path.startsWith("/uploads/")) {
       const origin = trimOrigin(API_ORIGIN);
       return origin ? `${origin}${path}` : path;
@@ -99,8 +104,11 @@
     },
 
     get uploadsBase() {
-      const origin = trimOrigin(API_ORIGIN);
-      return origin ? `${origin}/uploads` : "/uploads";
+      if (isLocalDev) {
+        const origin = trimOrigin(API_ORIGIN);
+        return origin ? `${origin}/uploads` : "/uploads";
+      }
+      return "/media";
     },
 
     get socketOrigin() {
@@ -119,7 +127,8 @@
     },
 
     uploadUrl() {
-      return `${this.apiBase}/upload`;
+      if (isLocalDev) return `${this.apiBase}/upload`;
+      return "/media-upload.php";
     },
 
     ensureSocketIoClient() {

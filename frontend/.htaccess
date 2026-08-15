@@ -3,7 +3,11 @@
 RewriteEngine On
 RewriteBase /
 
-# Backend media lives on Render, not in public_html.
+# PHP on CGI often drops Authorization; pass it through for media-upload.php
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+
+# Legacy /uploads files still live on Render. New admin uploads go to /media on cPanel.
 RewriteRule ^uploads/(.*)$ https://caledor-tour.onrender.com/uploads/$1 [R=302,L,NC]
 
 # Pretty URLs (same behavior as local dev-server / Vercel rewrites)

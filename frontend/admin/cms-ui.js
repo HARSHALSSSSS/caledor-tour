@@ -82,9 +82,14 @@ window.CmsUI = (() => {
     const uploadFile = file.type.startsWith("video/") ? file : await compressImage(file);
     const form = new FormData();
     form.append("image", uploadFile);
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+      headers["X-Caledor-Token"] = token;
+    }
     const res = await fetch(window.CALEDOR_CONFIG?.uploadUrl?.() ?? "/api/upload", {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers,
       body: form,
     });
     const data = await res.json().catch(() => ({}));
