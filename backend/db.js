@@ -441,7 +441,12 @@ async function createMysqlDb() {
   const schema = readFileSync(schemaPath, "utf8");
   const statements = schema.split(";").map((s) => s.trim()).filter(Boolean);
   for (const statement of statements) {
-    await pool.query(statement);
+    try {
+      await pool.query(statement);
+    } catch (err) {
+      console.warn(`MySQL schema warning: ${err.message}`);
+      if (!/already exists|Duplicate/i.test(err.message)) throw err;
+    }
   }
 
   db = wrapMysqlPool(pool);

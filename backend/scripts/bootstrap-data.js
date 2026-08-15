@@ -88,10 +88,15 @@ async function main() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.mkdirSync(UPLOADS, { recursive: true });
 
-  if (!process.env.DB_HOST) {
-    restoreLegacyDatabase();
-    mergeUploads();
+  // Remote MySQL is initialized when the API starts. Doing it here makes Render
+  // builds wait on cPanel and can fail the whole install step.
+  if (process.env.DB_HOST) {
+    console.log('MySQL: skipping postinstall bootstrap (tables are created on API start).');
+    return;
   }
+
+  restoreLegacyDatabase();
+  mergeUploads();
 
   const db = await initDb();
   await upsertMissingCms(db);
@@ -99,10 +104,7 @@ async function main() {
 }
 
 main().then(() => {
-  if (process.env.DB_HOST) {
-    console.log('\nBootstrap complete (MySQL).');
-    return;
-  }
+  if (process.env.DB_HOST) return;
   return runImportMedia().then(() => {
     console.log('\nBootstrap complete.');
   });
