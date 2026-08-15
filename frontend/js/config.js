@@ -10,6 +10,8 @@
   const isLocalDev = !host || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
   // Any live site (cPanel, custom domain, staging) talks to Render; only local dev uses /api proxy.
   const API_ORIGIN = isLocalDev ? "" : PROD_API_ORIGIN;
+  // Public Web3Forms access key — used by the homepage proposal form for email delivery.
+  const WEB3FORMS_ACCESS_KEY = "68e8d577-8008-4446-abef-7fa45d2a3608";
 
   function trimOrigin(origin) {
     return String(origin || "").replace(/\/+$/, "");
@@ -83,12 +85,17 @@
 
   window.CALEDOR_CONFIG = {
     API_ORIGIN,
+    WEB3FORMS_ACCESS_KEY,
     isLocalDev,
     isProdHost: !isLocalDev && Boolean(host),
 
     get apiBase() {
       const origin = trimOrigin(API_ORIGIN);
       return origin ? `${origin}/api` : "/api";
+    },
+
+    get web3formsKey() {
+      return WEB3FORMS_ACCESS_KEY;
     },
 
     get uploadsBase() {

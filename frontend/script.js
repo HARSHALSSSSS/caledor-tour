@@ -1,7 +1,10 @@
 const API = window.CALEDOR_CONFIG?.apiBase ?? "/api";
 
 function apiBase() {
-  return window.CALEDOR_CONFIG?.apiBase ?? "/api";
+  if (window.CALEDOR_CONFIG?.apiBase) return window.CALEDOR_CONFIG.apiBase;
+  const host = String(window.location?.hostname || "").toLowerCase();
+  const isLocal = !host || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+  return isLocal ? "/api" : "https://caledor-tour.onrender.com/api";
 }
 
 let cmsRevision = String(Date.now());
@@ -296,6 +299,18 @@ function applyPackagesVisibility() {
   if (grid && !visible) grid.innerHTML = "";
 }
 
+function resolveHeroStats(stats = {}) {
+  if (Object.prototype.hasOwnProperty.call(stats, "items_json") && String(stats.items_json ?? "").trim() !== "") {
+    return parseJson(stats.items_json).filter((item) => String(item?.value || "").trim() || String(item?.label || "").trim());
+  }
+  return [1, 2, 3, 4]
+    .map((i) => ({
+      value: String(stats[`stat_${i}_value`] ?? STATS_DEFAULTS[`stat_${i}_value`] ?? "").trim(),
+      label: String(stats[`stat_${i}_label`] ?? STATS_DEFAULTS[`stat_${i}_label`] ?? "").trim(),
+    }))
+    .filter((item) => item.value || item.label);
+}
+
 function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   const heroSection = document.getElementById("hero") || document.querySelector(".hero");
   setSectionVisible(heroSection, hero.enabled !== "0");
@@ -303,7 +318,6 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
   const legacyHero = hero.title && String(hero.title).includes("Discover Your Next");
   const h = legacyHero ? { ...HERO_DEFAULTS, enabled: hero.enabled } : { ...HERO_DEFAULTS, ...hero };
   const t = { ...TRUST_DEFAULTS, ...trust };
-  const s = { ...STATS_DEFAULTS, ...stats };
 
   const eyebrow = document.getElementById("heroEyebrow") || document.querySelector(".hero .eyebrow");
   const heading = document.getElementById("heroTitle") || document.querySelector(".hero h1");
@@ -343,19 +357,19 @@ function applyHeroContent(hero = {}, trust = {}, stats = {}) {
     if (trustValues[index]) item.textContent = trustValues[index];
   });
 
-  const statValues = [
-    [s.stat_1_value, s.stat_1_label],
-    [s.stat_2_value, s.stat_2_label],
-    [s.stat_3_value, s.stat_3_label],
-    [s.stat_4_value, s.stat_4_label],
-  ];
-  document.querySelectorAll(".hero-stats article").forEach((card, index) => {
-    const [value, label] = statValues[index] || [];
-    const strong = card.querySelector("strong");
-    const span = card.querySelector("span");
-    if (strong && value) strong.textContent = value;
-    if (span && label) span.textContent = label;
-  });
+  const statsRoot = document.getElementById("heroStats") || document.querySelector(".hero-stats");
+  if (statsRoot) {
+    const cards = resolveHeroStats(stats);
+    statsRoot.dataset.count = String(cards.length);
+    if (!cards.length) {
+      statsRoot.innerHTML = "";
+      statsRoot.hidden = true;
+    } else {
+      statsRoot.hidden = false;
+      statsRoot.innerHTML = cards.map((item) => `
+        <article><strong>${escapeHtml(item.value || "")}</strong><span>${escapeHtml(item.label || "")}</span></article>`).join("");
+    }
+  }
 }
 
 function applySectionHeading(selector, kicker, title, subtitle) {
@@ -651,7 +665,9 @@ function renderProposalForm(form = {}) {
   const formEl = document.getElementById("proposalForm");
   if (!formEl) return;
 
-  const fields = parseJson(form.fields_json, DEFAULT_FORM_FIELDS);
+  const parsed = parseJson(form.fields_json, DEFAULT_FORM_FIELDS);
+  const fields = Array.isArray(parsed) && parsed.length ? parsed : DEFAULT_FORM_FIELDS;
+  formEl.setAttribute("novalidate", "");
   formEl.innerHTML = fields.map((field) => {
     const req = field.required ? " required" : "";
     const inputType = inferFieldType(field);
@@ -666,7 +682,8 @@ function renderProposalForm(form = {}) {
     ${form.file_upload === "1" ? '<label class="full">Attachment<input type="file" name="attachment" /></label>' : ""}
     <button class="button proposal-button full" type="submit">${escapeHtml(form.submit_text || "Send Message")}</button>`;
 
-  bindProposalForm(form);
+  formEl.dataset.successMessage = form.success_message || "Message Sent";
+  bindProposalForm();
 }
 
 function applyContactContent(sections = {}, settings = {}) {
@@ -1713,49 +1730,176 @@ function bindAccordion() {
   });
 }
 
-function bindProposalForm(formConfig = {}) {
+async function submitViaWeb3Forms(payload = {}) {
+  const accessKey = window.CALEDOR_CONFIG?.web3formsKey || window.CALEDOR_CONFIG?.WEB3FORMS_ACCESS_KEY || "";
+  if (!accessKey) throw new Error("Web3Forms key is missing");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const body = new FormData();
+    body.append("access_key", accessKey);
+    body.append("subject", "New proposal request — Caledor DMC");
+    body.append("from_name", "Caledor DMC Website");
+    body.append("name", payload.name || "");
+    body.append("email", payload.email || "");
+    body.append("phone", payload.phone || "");
+    body.append("company", payload.company || "");
+    body.append(
+      "message",
+      [
+        payload.message || "",
+        "",
+        payload.company ? `Company: ${payload.company}` : "",
+        payload.phone ? `Phone: ${payload.phone}` : "",
+      ].filter(Boolean).join("\n")
+    );
+
+    const res = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      body,
+      signal: controller.signal,
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || result.success !== true) {
+      throw new Error(result.message || "Could not send email");
+    }
+    return result;
+  } catch (err) {
+    if (err?.name === "AbortError") throw new Error("Request timed out. Please try again.");
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function saveContactSubmission(payload = {}) {
+  // Fire-and-forget so a slow/cold API never blocks the success popup.
+  fetch(`${apiBase()}/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
+function ensureFormToast() {
+  let toast = document.getElementById("formToast");
+  if (toast) return toast;
+
+  toast = document.createElement("div");
+  toast.id = "formToast";
+  toast.className = "form-toast";
+  toast.hidden = true;
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  toast.innerHTML = `
+    <div class="form-toast-card">
+      <button class="form-toast-close" type="button" aria-label="Close">&times;</button>
+      <div class="form-toast-icon" aria-hidden="true">✓</div>
+      <h3 class="form-toast-title">Message Sent</h3>
+      <p class="form-toast-copy">Thank you. Our team will get back to you shortly.</p>
+      <button class="button form-toast-ok" type="button">OK</button>
+    </div>`;
+  document.body.appendChild(toast);
+  return toast;
+}
+
+function hideFormToast() {
+  const toast = document.getElementById("formToast");
+  if (!toast) return;
+  toast.classList.remove("is-open");
+  toast.hidden = true;
+  document.body.classList.remove("form-toast-open");
+}
+
+function showFormToast({ title = "Message Sent", copy = "Thank you. Our team will get back to you shortly.", ok = true } = {}) {
+  const toast = ensureFormToast();
+  const icon = toast.querySelector(".form-toast-icon");
+  const titleEl = toast.querySelector(".form-toast-title");
+  const copyEl = toast.querySelector(".form-toast-copy");
+  toast.classList.toggle("is-error", !ok);
+  if (icon) icon.textContent = ok ? "✓" : "!";
+  if (titleEl) titleEl.textContent = title;
+  if (copyEl) copyEl.textContent = copy;
+  toast.hidden = false;
+  requestAnimationFrame(() => toast.classList.add("is-open"));
+  document.body.classList.add("form-toast-open");
+
+  if (!toast._wired) {
+    toast._wired = true;
+    toast.addEventListener("click", (event) => {
+      if (event.target === toast || event.target.closest(".form-toast-close, .form-toast-ok")) {
+        hideFormToast();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hideFormToast();
+    });
+  }
+}
+
+function bindProposalForm() {
   const form = document.getElementById("proposalForm");
-  if (!form || form._bound) return;
-  form._bound = true;
+  if (!form || form._proposalBound) return;
+  form._proposalBound = true;
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    event.stopPropagation();
+
+    if (form._sending) return;
+    form._sending = true;
+
     const data = new FormData(form);
     const payload = {
-      name: data.get("fullName") || data.get("name"),
-      company: data.get("companyName") || data.get("company"),
-      email: data.get("emailAddress") || data.get("email"),
-      phone: data.get("phoneNumber") || data.get("phone"),
-      message: data.get("proposalMessage") || data.get("message") || "Partnership request",
+      name: String(data.get("fullName") || data.get("name") || "").trim(),
+      company: String(data.get("companyName") || data.get("company") || "").trim(),
+      email: String(data.get("emailAddress") || data.get("email") || "").trim(),
+      phone: String(data.get("phoneNumber") || data.get("phone") || "").trim(),
+      message: String(data.get("proposalMessage") || data.get("message") || "").trim(),
     };
 
-    const button = form.querySelector(".proposal-button");
+    const button = form.querySelector(".proposal-button, button[type='submit']");
     const original = button?.textContent || "Send Message";
+
+    if (!payload.name || !payload.email || !payload.message) {
+      form._sending = false;
+      showFormToast({
+        ok: false,
+        title: "Missing details",
+        copy: "Please fill in your name, email, and message before sending.",
+      });
+      return;
+    }
+
     if (button) {
       button.textContent = "Sending...";
       button.disabled = true;
     }
 
     try {
-      const res = await fetch(`${API}/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Request failed");
-
-      if (button) button.textContent = formConfig.success_message || "Message Sent";
+      await submitViaWeb3Forms(payload);
+      saveContactSubmission(payload);
       form.reset();
-    } catch {
-      if (button) button.textContent = "Failed";
+      showFormToast({
+        ok: true,
+        title: "Message Sent",
+        copy: "Thank you for contacting us! We will get back to you soon",
+      });
+    } catch (err) {
+      console.warn("Proposal form submit failed:", err?.message || err);
+      showFormToast({
+        ok: false,
+        title: "Could not send",
+        copy: err?.message || "Something went wrong. Please try again in a moment.",
+      });
     } finally {
-      setTimeout(() => {
-        if (button) {
-          button.textContent = original;
-          button.disabled = false;
-        }
-      }, 1800);
+      form._sending = false;
+      if (button) {
+        button.textContent = original;
+        button.disabled = false;
+      }
     }
   });
 }
@@ -1926,6 +2070,7 @@ async function init() {
 
   bindAccordion();
   bindChatBubble();
+  bindProposalForm();
   bindPackageSearch();
   bindBlogSearch();
   bindNewsletterForm();

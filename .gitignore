@@ -6,6 +6,8 @@ backend/node_modules/
 .env
 .env.*
 backend/.env
+!.env.example
+!backend/.env.example
 
 # OS / editor
 .DS_Store

@@ -14,15 +14,14 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and message are required' });
   }
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO contact_submissions (name, company, email, phone, message) VALUES (?, ?, ?, ?, ?)'
   ).run(name, company || null, email, phone || null, message);
 
-  // Notify admin
   const io = req.app.get('io');
   if (io) {
     io.emit('contact:new', { name, email, message: message.substring(0, 50) + '...' });
-    db.prepare('INSERT INTO notifications (type, title, message) VALUES (?, ?, ?)').run(
+    await db.prepare('INSERT INTO notifications (type, title, message) VALUES (?, ?, ?)').run(
       'contact', 'New Contact Submission',
       `${name} (${email}) sent a message`
     );
@@ -38,29 +37,27 @@ router.post('/', async (req, res) => {
 });
 
 // List submissions (protected)
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   const db = getDb();
   const { status } = req.query;
   let sql = 'SELECT * FROM contact_submissions';
   const params = [];
   if (status) { sql += ' WHERE status = ?'; params.push(status); }
   sql += ' ORDER BY created_at DESC';
-  res.json({ submissions: db.prepare(sql).all(...params) });
+  res.json({ submissions: await db.prepare(sql).all(...params) });
 });
 
-// Update submission status (protected)
-router.put('/:id', authMiddleware, (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   const db = getDb();
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: 'Status is required' });
-  db.prepare('UPDATE contact_submissions SET status = ? WHERE id = ?').run(status, req.params.id);
+  await db.prepare('UPDATE contact_submissions SET status = ? WHERE id = ?').run(status, req.params.id);
   res.json({ success: true });
 });
 
-// Get unread count (protected)
-router.get('/stats/unread', authMiddleware, (req, res) => {
+router.get('/stats/unread', authMiddleware, async (req, res) => {
   const db = getDb();
-  const count = db.prepare("SELECT COUNT(*) as count FROM contact_submissions WHERE status = 'unread'").get().count;
+  const count = (await db.prepare("SELECT COUNT(*) as count FROM contact_submissions WHERE status = 'unread'").get()).count;
   res.json({ unread: count });
 });
 

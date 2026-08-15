@@ -5,14 +5,14 @@ import { generateToken, verifyToken } from '../middleware/auth.js';
 
 const router = Router();
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
   const db = getDb();
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
@@ -38,7 +38,7 @@ router.post('/login', (req, res) => {
   });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token' });
@@ -46,7 +46,7 @@ router.get('/me', (req, res) => {
   try {
     const decoded = verifyToken(auth.split(' ')[1]);
     const db = getDb();
-    const user = db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(decoded.id);
+    const user = await db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(decoded.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json({ user });
   } catch {

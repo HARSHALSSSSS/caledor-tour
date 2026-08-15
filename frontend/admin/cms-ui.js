@@ -303,6 +303,7 @@ window.CmsUI = (() => {
     wireAddButton(container, ".cms-add-process", '[data-json-section="process"]', window.CmsSchema.processStepRow);
     wireAddButton(container, ".cms-add-testimonial", '[data-json-section="testimonials"]', window.CmsSchema.testimonialItemRow);
     wireAddButton(container, ".cms-add-success", '[data-json-section="success_stories"]', window.CmsSchema.successStoryRow);
+    wireAddButton(container, ".cms-add-hero-stat", '[data-json-section="stats"][data-json-key="items_json"]', () => window.CmsSchema.statRow({}, "hero-stats"));
     wireAddButton(container, ".cms-add-number", '[data-json-section="numbers"]', () => window.CmsSchema.statRow({}, "numbers-stats"));
     wireAddButton(container, ".cms-add-owned-card", '[data-json-section="owned_assets"]', window.CmsSchema.ownedPropertyCardRow);
 

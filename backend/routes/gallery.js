@@ -4,33 +4,30 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-// List gallery items (public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const db = getDb();
   const { album } = req.query;
   let sql = 'SELECT * FROM gallery_items WHERE active = 1';
   const params = [];
   if (album) { sql += ' AND album = ?'; params.push(album); }
   sql += ' ORDER BY sort_order ASC, created_at DESC';
-  res.json({ items: db.prepare(sql).all(...params) });
+  res.json({ items: await db.prepare(sql).all(...params) });
 });
 
-// List albums (public)
-router.get('/albums/list', (req, res) => {
+router.get('/albums/list', async (req, res) => {
   const db = getDb();
-  const albums = db.prepare('SELECT DISTINCT album FROM gallery_items WHERE active = 1 ORDER BY album').all();
-  res.json({ albums: albums.map(a => a.album) });
+  const albums = await db.prepare('SELECT DISTINCT album FROM gallery_items WHERE active = 1 ORDER BY album').all();
+  res.json({ albums: albums.map((a) => a.album) });
 });
 
-// Create gallery item (protected)
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   const db = getDb();
   const { title, alt_text, image_url, video_url, poster_url, album, sort_order, media_type } = req.body;
   const type = String(media_type || 'image').toLowerCase() === 'video' ? 'video' : 'image';
   const mediaUrl = (type === 'video' ? (video_url || image_url) : image_url)?.trim();
   if (!mediaUrl) return res.status(400).json({ error: 'Media URL is required' });
 
-  const result = db.prepare(
+  const result = await db.prepare(
     'INSERT INTO gallery_items (title, alt_text, image_url, video_url, poster_url, media_type, album, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     title,
@@ -43,24 +40,19 @@ router.post('/', authMiddleware, (req, res) => {
     sort_order ?? 0
   );
 
-  const item = db.prepare('SELECT * FROM gallery_items WHERE id = ?').get(result.lastInsertRowid);
-
+  const item = await db.prepare('SELECT * FROM gallery_items WHERE id = ?').get(result.lastInsertRowid);
   const io = req.app.get('io');
   if (io) io.emit('gallery:updated', item);
-
   res.status(201).json({ item });
 });
 
-// Delete gallery item (protected)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM gallery_items WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT id FROM gallery_items WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Item not found' });
-  db.prepare('DELETE FROM gallery_items WHERE id = ?').run(req.params.id);
-
+  await db.prepare('DELETE FROM gallery_items WHERE id = ?').run(req.params.id);
   const io = req.app.get('io');
   if (io) io.emit('gallery:deleted', { id: Number(req.params.id) });
-
   res.json({ success: true });
 });
 

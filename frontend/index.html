@@ -12,9 +12,9 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20260813-video" />
+    <link rel="stylesheet" href="styles.css?v=20260814-hero-stats" />
     <link rel="preload" as="image" href="/assets/hero-background.png" />
-    <script src="/js/config.js?v=20260813-live-sync"></script>
+    <script src="/js/config.js?v=20260814-web3forms2"></script>
   </head>
   <body class="cms-ready">
     <header class="site-header">
@@ -649,7 +649,24 @@
           </p>
           <span class="request-proposal-rule" aria-hidden="true"></span>
 
-          <form class="proposal-form" id="proposalForm"></form>
+          <form class="proposal-form" id="proposalForm" novalidate>
+            <label>Full Name
+              <input type="text" name="fullName" required autocomplete="name" />
+            </label>
+            <label>Company Name
+              <input type="text" name="companyName" autocomplete="organization" />
+            </label>
+            <label>Email Address
+              <input type="email" name="emailAddress" required autocomplete="email" />
+            </label>
+            <label>Phone Number
+              <input type="tel" name="phoneNumber" autocomplete="tel" />
+            </label>
+            <label class="full">Message
+              <textarea name="proposalMessage" rows="5" required placeholder="Tell us about your partnership goals..."></textarea>
+            </label>
+            <button class="button proposal-button full" type="submit">Send Message</button>
+          </form>
         </div>
       </section>
     </main>
@@ -692,9 +709,18 @@
     </footer>
 
     <div class="chat-bubble" aria-label="Chat shortcut">S</div>
+    <div class="form-toast" id="formToast" hidden role="status" aria-live="polite">
+      <div class="form-toast-card">
+        <button class="form-toast-close" type="button" aria-label="Close">&times;</button>
+        <div class="form-toast-icon" aria-hidden="true">✓</div>
+        <h3 class="form-toast-title">Message Sent</h3>
+        <p class="form-toast-copy">Thank you for contacting us! We will get back to you soon</p>
+        <button class="button form-toast-ok" type="button">OK</button>
+      </div>
+    </div>
     <script src="/js/gallery-defaults.js?v=20260813-live-sync"></script>
     <script src="/js/site-chrome.js?v=20260813-live-sync"></script>
     <script src="/js/package-defaults.js?v=20260813-empty"></script>
-    <script src="script.js?v=20260813-live-sync"></script>
+    <script src="script.js?v=20260814-hero-stats"></script>
   </body>
 </html>

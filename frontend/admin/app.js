@@ -1,8 +1,13 @@
 const TOKEN_KEY = "caledor_token";
 
 function apiBase() {
-  return window.CALEDOR_CONFIG?.apiBase ?? "/api";
+  if (window.CALEDOR_CONFIG?.apiBase) return window.CALEDOR_CONFIG.apiBase;
+  const host = String(window.location?.hostname || "").toLowerCase();
+  const isLocal = !host || host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+  return isLocal ? "/api" : "https://caledor-tour.onrender.com/api";
 }
+
+const API = apiBase();
 
 const loginScreen = document.getElementById("loginScreen");
 const appShell = document.getElementById("appShell");
@@ -515,7 +520,7 @@ function setLoggedIn(isLoggedIn) {
 }
 
 async function login(email, password) {
-  const res = await fetch(`${API}/auth/login`, {
+  const res = await fetch(`${apiBase()}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),

@@ -30,14 +30,14 @@ function parseRelatedSlugs(raw) {
 }
 
 /** Only packages that currently exist and are active. Deleted/old slugs are skipped. */
-function getLiveRelatedPackages(db, pkg, limit = 3) {
+async function getLiveRelatedPackages(db, pkg, limit = 3) {
   const related = [];
   const seen = new Set([String(pkg.id), String(pkg.slug || '')]);
   const slugs = parseRelatedSlugs(pkg.related_slugs_json);
 
   if (slugs.length) {
     const placeholders = slugs.map(() => '?').join(',');
-    const rows = db.prepare(
+    const rows = await db.prepare(
       `SELECT * FROM packages WHERE slug IN (${placeholders}) AND active = 1 AND id != ?`
     ).all(...slugs, pkg.id);
     for (const row of rows) {
@@ -49,7 +49,7 @@ function getLiveRelatedPackages(db, pkg, limit = 3) {
     }
   }
 
-  const fillers = db.prepare(
+  const fillers = await db.prepare(
     'SELECT * FROM packages WHERE active = 1 AND id != ? ORDER BY featured DESC, created_at DESC'
   ).all(pkg.id);
   for (const row of fillers) {
@@ -60,15 +60,13 @@ function getLiveRelatedPackages(db, pkg, limit = 3) {
   return related;
 }
 
-// Categories
-router.get('/categories/all', (req, res) => {
+router.get('/categories/all', async (req, res) => {
   const db = getDb();
-  const categories = db.prepare('SELECT * FROM package_categories WHERE active = 1 ORDER BY sort_order').all();
+  const categories = await db.prepare('SELECT * FROM package_categories WHERE active = 1 ORDER BY sort_order').all();
   res.json({ categories });
 });
 
-// List packages (public)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const db = getDb();
   const { category, featured, active } = req.query;
 
@@ -78,27 +76,22 @@ router.get('/', (req, res) => {
   if (category) { sql += ' AND category = ?'; params.push(category); }
   if (featured === 'true') { sql += ' AND featured = 1'; }
   if (active === 'true' || active === undefined || active === '') { sql += ' AND active = 1'; }
-  if (active === 'false') { /* admin: all packages */ }
 
   sql += ' ORDER BY created_at DESC';
 
-  const packages = db.prepare(sql).all(...params);
+  const packages = await db.prepare(sql).all(...params);
   res.json({ packages });
 });
 
-// Get single package (public)
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const db = getDb();
-  const pkg = db.prepare('SELECT * FROM packages WHERE id = ? OR slug = ?').get(req.params.id, req.params.id);
+  const pkg = await db.prepare('SELECT * FROM packages WHERE id = ? OR slug = ?').get(req.params.id, req.params.id);
   if (!pkg) return res.status(404).json({ error: 'Package not found' });
-
-  const related = getLiveRelatedPackages(db, pkg);
-
+  const related = await getLiveRelatedPackages(db, pkg);
   res.json({ package: pkg, related });
 });
 
-// Create package (protected)
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   const db = getDb();
   const body = pickPackageFields(req.body);
   if (!body.name) return res.status(400).json({ error: 'Name is required' });
@@ -113,8 +106,8 @@ router.post('/', authMiddleware, (req, res) => {
   const placeholders = keys.map(() => '?').join(', ');
 
   try {
-    const result = db.prepare(`INSERT INTO packages (${keys.join(', ')}) VALUES (${placeholders})`).run(...vals);
-    const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(result.lastInsertRowid);
+    const result = await db.prepare(`INSERT INTO packages (${keys.join(', ')}) VALUES (${placeholders})`).run(...vals);
+    const pkg = await db.prepare('SELECT * FROM packages WHERE id = ?').get(result.lastInsertRowid);
     const io = req.app.get('io');
     if (io) io.emit('package:created', pkg);
     res.status(201).json({ package: pkg });
@@ -123,10 +116,9 @@ router.post('/', authMiddleware, (req, res) => {
   }
 });
 
-// Update package (protected)
-router.put('/:id', authMiddleware, (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM packages WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT id FROM packages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Package not found' });
 
   const body = pickPackageFields(req.body);
@@ -135,26 +127,20 @@ router.put('/:id', authMiddleware, (req, res) => {
   const sets = Object.keys(body).map((k) => `${k}=?`).join(', ');
   const vals = [...Object.values(body), req.params.id];
 
-  db.prepare(`UPDATE packages SET ${sets}, updated_at=datetime('now') WHERE id=?`).run(...vals);
-  const pkg = db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id);
-
+  await db.prepare(`UPDATE packages SET ${sets}, updated_at=datetime('now') WHERE id=?`).run(...vals);
+  const pkg = await db.prepare('SELECT * FROM packages WHERE id = ?').get(req.params.id);
   const io = req.app.get('io');
   if (io) io.emit('package:updated', pkg);
-
   res.json({ package: pkg });
 });
 
-// Delete package (protected)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   const db = getDb();
-  const existing = db.prepare('SELECT id FROM packages WHERE id = ?').get(req.params.id);
+  const existing = await db.prepare('SELECT id FROM packages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Package not found' });
-
-  db.prepare('DELETE FROM packages WHERE id = ?').run(req.params.id);
-
+  await db.prepare('DELETE FROM packages WHERE id = ?').run(req.params.id);
   const io = req.app.get('io');
   if (io) io.emit('package:deleted', { id: Number(req.params.id) });
-
   res.json({ success: true });
 });
 

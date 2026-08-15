@@ -5,9 +5,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getDb } from '../db.js';
+import { initDb } from '../db.js';
 import { flattenCmsDefaults } from '../cms-defaults.js';
-import { forceSyncCanonicalTeamSection, forceSyncCanonicalHeroSection, syncCanonicalGallerySection, syncCanonicalBlogPosts, syncAdminDisplayName } from '../cms-repair.js';
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.join(__dirname, '..');
@@ -62,27 +62,18 @@ function mergeUploads() {
   if (total) console.log(`✓ Merged ${total} upload file(s) into backend/uploads`);
 }
 
-function upsertMissingCms(db) {
+async function upsertMissingCms(db) {
   const insert = db.prepare(
     `INSERT INTO cms_content (tab, section, key, value) VALUES (?, ?, ?, ?)
      ON CONFLICT(tab, section, key) DO NOTHING`
   );
   const rows = flattenCmsDefaults();
   let added = 0;
-  const transaction = db.transaction(() => {
-    for (const row of rows) {
-      const result = insert.run(...row);
-      if (result.changes) added += 1;
-    }
-  });
-  transaction();
-  console.log(`✓ CMS defaults checked (${added} new row(s) added)`);
-}
-
-function syncTeam(db) {
-  if (forceSyncCanonicalTeamSection(db)) {
-    console.log('✓ Leadership team synced (Mr. Alok Singh, Ms. Neha Sawant)');
+  for (const row of rows) {
+    const result = await Promise.resolve(insert.run(...row));
+    if (result?.changes) added += 1;
   }
+  console.log(`✓ CMS defaults checked (${added} new row(s) added, existing values kept)`);
 }
 
 async function runImportMedia() {
@@ -93,36 +84,28 @@ async function runImportMedia() {
   }
 }
 
-function main() {
+async function main() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.mkdirSync(UPLOADS, { recursive: true });
 
-  restoreLegacyDatabase();
-  mergeUploads();
-
-  const db = getDb();
-  upsertMissingCms(db);
-  if (forceSyncCanonicalHeroSection(db)) {
-    console.log('✓ Hero section synced (DMC partner copy, trust points, stats)');
-  }
-  if (forceSyncCanonicalTeamSection(db)) {
-    console.log('✓ Leadership team synced (Mr. Alok Singh, Ms. Neha Sawant)');
-  }
-  if (syncCanonicalGallerySection(db)) {
-    console.log('✓ Gallery synced with website Photo Gallery images');
-  }
-  if (syncCanonicalBlogPosts(db)) {
-    console.log('✓ Blog posts synced with website Travel Insights images');
-  }
-  if (syncAdminDisplayName(db)) {
-    console.log('✓ Admin display name cleaned');
+  if (!process.env.DB_HOST) {
+    restoreLegacyDatabase();
+    mergeUploads();
   }
 
-  console.log('✓ Database ready at backend/data/caledor.db');
+  const db = await initDb();
+  await upsertMissingCms(db);
+  console.log('✓ Database ready (existing CMS content is not overwritten)');
 }
 
-main();
-
-runImportMedia().then(() => {
-  console.log('\nBootstrap complete.');
+main().then(() => {
+  if (process.env.DB_HOST) {
+    console.log('\nBootstrap complete (MySQL).');
+    return;
+  }
+  return runImportMedia().then(() => {
+    console.log('\nBootstrap complete.');
+  });
+}).catch((err) => {
+  console.warn('⚠ bootstrap skipped:', err.message);
 });

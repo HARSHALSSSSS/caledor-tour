@@ -407,6 +407,25 @@ a {
   margin: 0 auto;
 }
 
+.hero-stats[hidden] {
+  display: none;
+}
+
+.hero-stats[data-count="1"] {
+  grid-template-columns: 1fr;
+  width: min(240px, 100%);
+}
+
+.hero-stats[data-count="2"] {
+  grid-template-columns: repeat(2, 1fr);
+  width: min(420px, 100%);
+}
+
+.hero-stats[data-count="3"] {
+  grid-template-columns: repeat(3, 1fr);
+  width: min(620px, 100%);
+}
+
 .hero-stats article {
   padding: 22px 18px 18px;
   text-align: left;
@@ -3008,6 +3027,101 @@ details p {
   cursor: pointer;
   background: linear-gradient(135deg, #e7bf38, #cfa836);
   box-shadow: 0 12px 24px rgba(207, 168, 54, 0.24);
+}
+
+.proposal-button:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.form-toast {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(6, 9, 16, 0.72);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.form-toast.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.form-toast-card {
+  width: min(420px, 100%);
+  padding: 28px 24px 22px;
+  border-radius: 16px;
+  background: #0f1728;
+  border: 1px solid rgba(231, 191, 56, 0.28);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: #f5f1e8;
+  position: relative;
+}
+
+.form-toast-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: 0;
+  background: transparent;
+  color: rgba(245, 241, 232, 0.7);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.form-toast-icon {
+  width: 52px;
+  height: 52px;
+  margin: 4px auto 14px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #0b1220;
+  background: linear-gradient(135deg, #e7bf38, #cfa836);
+}
+
+.form-toast.is-error .form-toast-icon {
+  color: #fff;
+  background: linear-gradient(135deg, #d45b5b, #b43d3d);
+}
+
+.form-toast-title {
+  margin: 0 0 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.form-toast-copy {
+  margin: 0 0 18px;
+  color: rgba(245, 241, 232, 0.78);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.form-toast-ok {
+  min-width: 120px;
+  min-height: 42px;
+  border: none;
+  border-radius: 8px;
+  color: #09111f;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(135deg, #e7bf38, #cfa836);
+}
+
+body.form-toast-open {
+  overflow: hidden;
 }
 
 .footer {

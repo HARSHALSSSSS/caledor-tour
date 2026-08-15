@@ -1,16 +1,54 @@
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
+import mysql from 'mysql2/promise';
+import { existsSync, readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { flattenCmsDefaults } from './cms-defaults.js';
 import { syncCanonicalTeamSection, syncCanonicalHeroSection, syncCanonicalGallerySection, syncCanonicalBlogPosts, syncAdminDisplayName } from './cms-repair.js';
 import { DB_PATH, ensureDataDirs } from './paths.js';
+import { parsePragmaTable, toMysqlSql } from './sql-compat.js';
+
+function loadLocalEnv() {
+  const envPath = join(dirname(fileURLToPath(import.meta.url)), '.env');
+  if (!existsSync(envPath)) return;
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
+loadLocalEnv();
 
 let db;
 
-export function getDb() {
+export function useMysql() {
+  return Boolean(process.env.DB_HOST);
+}
+
+export async function initDb() {
   if (db) return db;
+  db = useMysql() ? await createMysqlDb() : createSqliteDb();
+  return db;
+}
 
+export function getDb() {
+  if (!db) {
+    if (useMysql()) {
+      throw new Error('Database not ready. MySQL init is still running.');
+    }
+    db = createSqliteDb();
+  }
+  return db;
+}
+
+function createSqliteDb() {
   ensureDataDirs();
-
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
@@ -327,4 +365,145 @@ function seedDefaultCms() {
     for (const row of rows) insert.run(...row);
   });
   transaction();
+}
+
+async function mysqlQuery(pool, sql, params = []) {
+  const table = parsePragmaTable(sql);
+  if (table) {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME AS name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+      [table]
+    );
+    return { rows, header: null };
+  }
+
+  const converted = toMysqlSql(sql);
+  const hasParams = params.length > 0;
+  const [rows] = hasParams ? await pool.execute(converted, params) : await pool.query(converted);
+  const isHeader = rows && !Array.isArray(rows);
+  return {
+    rows: isHeader ? [] : rows,
+    header: isHeader ? rows : null,
+  };
+}
+
+function wrapMysqlPool(pool) {
+  return {
+    prepare(sql) {
+      return {
+        async get(...params) {
+          const { rows } = await mysqlQuery(pool, sql, params);
+          return rows[0];
+        },
+        async all(...params) {
+          const { rows } = await mysqlQuery(pool, sql, params);
+          return rows;
+        },
+        async run(...params) {
+          const { header, rows } = await mysqlQuery(pool, sql, params);
+          const result = header || rows;
+          return {
+            lastInsertRowid: Number(result?.insertId || 0),
+            changes: Number(result?.affectedRows || 0),
+          };
+        },
+      };
+    },
+    async exec(sql) {
+      const converted = toMysqlSql(sql);
+      await pool.query(converted);
+    },
+    transaction(fn) {
+      return async () => fn();
+    },
+    pragma() {},
+  };
+}
+
+async function createMysqlDb() {
+  const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 8,
+    namedPlaceholders: false,
+    charset: "utf8mb4",
+    ssl: process.env.DB_SSL === "1" ? { rejectUnauthorized: false } : undefined,
+    enableKeepAlive: true,
+  });
+
+  await pool.query("SELECT 1");
+
+  const schemaPath = join(dirname(fileURLToPath(import.meta.url)), "mysql-schema.sql");
+  const schema = readFileSync(schemaPath, "utf8");
+  const statements = schema.split(";").map((s) => s.trim()).filter(Boolean);
+  for (const statement of statements) {
+    await pool.query(statement);
+  }
+
+  db = wrapMysqlPool(pool);
+  await seedMysqlDefaults();
+  await seedMysqlCms();
+  console.log(`MySQL connected: ${process.env.DB_USER}@${process.env.DB_HOST}/${process.env.DB_NAME}`);
+  return db;
+}
+
+async function seedMysqlDefaults() {
+  const userCount = await db.prepare("SELECT COUNT(*) as count FROM users").get();
+  if (!userCount?.count) {
+    const hash = bcrypt.hashSync("admin123", 10);
+    await db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(
+      "Admin",
+      "admin@caledor.com",
+      hash,
+      "super_admin"
+    );
+  }
+
+  const catCount = await db.prepare("SELECT COUNT(*) as count FROM package_categories").get();
+  if (!catCount?.count) {
+    const stmt = db.prepare("INSERT INTO package_categories (name, slug, package_count, sort_order) VALUES (?, ?, ?, ?)");
+    for (const cat of [
+      ["Adventure & Trekking", "adventure-trekking", 18, 1],
+      ["Beach & Island", "beach-island", 12, 2],
+      ["Cultural Heritage", "cultural-heritage", 9, 3],
+      ["Luxury Escapes", "luxury-escapes", 7, 4],
+      ["Family Holidays", "family-holidays", 14, 5],
+    ]) await stmt.run(...cat);
+  }
+
+  const settingsCount = await db.prepare("SELECT COUNT(*) as count FROM settings").get();
+  if (!settingsCount?.count) {
+    const stmt = db.prepare("INSERT INTO settings (`key`, value, group_name) VALUES (?, ?, ?)");
+    for (const [k, v, g] of [
+      ["site_name", "Caledor DMC", "general"],
+      ["site_tagline", "Your Trusted DMC Partner for UK & Europe", "general"],
+      ["site_description", "Premium destination management for the UK and Europe.", "general"],
+      ["contact_email", "info@caledor.com", "contact"],
+      ["contact_phone", "+44 20 0000 0000", "contact"],
+      ["address", "12 Waterfront Lane, London, United Kingdom", "contact"],
+      ["facebook_url", "https://facebook.com/caledor", "social"],
+      ["instagram_url", "https://instagram.com/caledor", "social"],
+      ["twitter_url", "https://twitter.com/caledor", "social"],
+      ["linkedin_url", "https://linkedin.com/company/caledor", "social"],
+      ["youtube_url", "https://youtube.com/caledor", "social"],
+      ["copyright", "© 2026 Caledor DMC. All rights reserved.", "general"],
+      ["meta_title", "Caledor DMC | UK & Europe", "seo"],
+      ["meta_description", "Premium destination management for the UK and Europe.", "seo"],
+      ["focus_keywords", "DMC, UK travel, Europe tours, corporate travel", "seo"],
+    ]) await stmt.run(k, v, g);
+  }
+}
+
+async function seedMysqlCms() {
+  const insert = db.prepare(
+    `INSERT INTO cms_content (tab, section, \`key\`, value) VALUES (?, ?, ?, ?)
+     ON CONFLICT(tab, section, key) DO NOTHING`
+  );
+  for (const row of flattenCmsDefaults()) {
+    await insert.run(...row);
+  }
 }

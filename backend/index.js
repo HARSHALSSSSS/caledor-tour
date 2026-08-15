@@ -5,7 +5,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
-import { getDb } from './db.js';
+import { getDb, initDb } from './db.js';
 import { UPLOADS_DIR, ensureDataDirs } from './paths.js';
 import authRoutes from './routes/auth.js';
 import cmsRoutes from './routes/cms.js';
@@ -40,7 +40,7 @@ loadEnvFile();
 const PORT = process.env.PORT || 4000;
 const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 
-getDb();
+await initDb();
 
 const app = express();
 const httpServer = createServer(app);
@@ -76,9 +76,9 @@ app.use('/api/faqs', faqRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', async (req, res) => {
   const db = getDb();
-  const rows = db.prepare('SELECT key, value, group_name FROM settings ORDER BY group_name, key').all();
+  const rows = await db.prepare('SELECT `key`, value, group_name FROM settings ORDER BY group_name, `key`').all();
   const grouped = {};
   for (const row of rows) {
     if (!grouped[row.group_name]) grouped[row.group_name] = {};
@@ -87,24 +87,21 @@ app.get('/api/settings', (req, res) => {
   res.json({ settings: grouped, raw: rows });
 });
 
-app.put('/api/settings', authMiddleware, (req, res) => {
+app.put('/api/settings', authMiddleware, async (req, res) => {
   const db = getDb();
   const { settings } = req.body;
   const upsert = db.prepare(
-    "INSERT INTO settings (key, value, group_name, updated_at) VALUES (?, ?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')"
+    "INSERT INTO settings (`key`, value, group_name, updated_at) VALUES (?, ?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')"
   );
-  const transaction = db.transaction(() => {
-    for (const [groupOrKey, value] of Object.entries(settings || {})) {
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        for (const [key, nestedValue] of Object.entries(value)) {
-          upsert.run(key, String(nestedValue ?? ''), groupOrKey);
-        }
-      } else {
-        upsert.run(groupOrKey, String(value ?? ''), 'custom');
+  for (const [groupOrKey, value] of Object.entries(settings || {})) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      for (const [key, nestedValue] of Object.entries(value)) {
+        await upsert.run(key, String(nestedValue ?? ""), groupOrKey);
       }
+    } else {
+      await upsert.run(groupOrKey, String(value ?? ""), "custom");
     }
-  });
-  transaction();
+  }
 
   const socket = req.app.get('io');
   if (socket) socket.emit('settings:updated', { timestamp: new Date().toISOString() });
@@ -112,36 +109,36 @@ app.put('/api/settings', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/dashboard/stats', (req, res) => {
+app.get('/api/dashboard/stats', async (req, res) => {
   const db = getDb();
   const stats = {
-    totalBookings: db.prepare('SELECT COUNT(*) as count FROM bookings').get().count,
-    activePackages: db.prepare('SELECT COUNT(*) as count FROM packages WHERE active = 1').get().count,
-    monthlyRevenue: db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM bookings WHERE status != 'cancelled' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')").get().total,
-    newSubmissions: db.prepare("SELECT COUNT(*) as count FROM contact_submissions WHERE status = 'unread'").get().count,
-    pendingBookings: db.prepare("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'").get().count,
-    totalUsers: db.prepare('SELECT COUNT(*) as count FROM users').get().count,
-    totalBlogPosts: db.prepare('SELECT COUNT(*) as count FROM blog_posts WHERE published = 1').get().count,
-    unreadNotifications: db.prepare('SELECT COUNT(*) as count FROM notifications WHERE read = 0').get().count,
+    totalBookings: (await db.prepare('SELECT COUNT(*) as count FROM bookings').get()).count,
+    activePackages: (await db.prepare('SELECT COUNT(*) as count FROM packages WHERE active = 1').get()).count,
+    monthlyRevenue: (await db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM bookings WHERE status != 'cancelled' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')").get()).total,
+    newSubmissions: (await db.prepare("SELECT COUNT(*) as count FROM contact_submissions WHERE status = 'unread'").get()).count,
+    pendingBookings: (await db.prepare("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'").get()).count,
+    totalUsers: (await db.prepare('SELECT COUNT(*) as count FROM users').get()).count,
+    totalBlogPosts: (await db.prepare('SELECT COUNT(*) as count FROM blog_posts WHERE published = 1').get()).count,
+    unreadNotifications: (await db.prepare('SELECT COUNT(*) as count FROM notifications WHERE read = 0').get()).count,
   };
   res.json(stats);
 });
 
-app.get('/api/notifications', (req, res) => {
+app.get('/api/notifications', async (req, res) => {
   const db = getDb();
-  const notifications = db.prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50').all();
+  const notifications = await db.prepare('SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50').all();
   res.json({ notifications });
 });
 
-app.put('/api/notifications/:id/read', (req, res) => {
+app.put('/api/notifications/:id/read', async (req, res) => {
   const db = getDb();
-  db.prepare('UPDATE notifications SET read = 1 WHERE id = ?').run(req.params.id);
+  await db.prepare('UPDATE notifications SET read = 1 WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
 
-app.put('/api/notifications/read-all', (req, res) => {
+app.put('/api/notifications/read-all', async (req, res) => {
   const db = getDb();
-  db.prepare('UPDATE notifications SET read = 1').run();
+  await db.prepare('UPDATE notifications SET read = 1').run();
   res.json({ success: true });
 });
 

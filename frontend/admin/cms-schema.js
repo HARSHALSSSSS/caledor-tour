@@ -422,6 +422,15 @@ window.CmsSchema = (() => {
     const testimonials = parseJson(val(s, "testimonials", "items_json"));
     const successStories = parseJson(val(s, "success_stories", "items_json"));
     const numbersStats = parseJson(val(s, "numbers", "stats_json"));
+    const heroStatsJson = parseJson(val(s, "stats", "items_json"));
+    const heroStats = heroStatsJson.length
+      ? heroStatsJson
+      : [
+          { value: val(s, "stats", "stat_1_value", "500+"), label: val(s, "stats", "stat_1_label", "Hotels Network") },
+          { value: val(s, "stats", "stat_2_value", "50+"), label: val(s, "stats", "stat_2_label", "Cities Covered") },
+          { value: val(s, "stats", "stat_3_value", "200+"), label: val(s, "stats", "stat_3_label", "Transfer Partners") },
+          { value: val(s, "stats", "stat_4_value", "15+"), label: val(s, "stats", "stat_4_label", "Years of Experience") },
+        ].filter((item) => String(item.value || "").trim() || String(item.label || "").trim());
 
     return [
       section("Hero Section", `<div class="form-grid">
@@ -440,15 +449,12 @@ window.CmsSchema = (() => {
         ${cmsInput("trust", "point_2", "Trust Point 2", val(s, "trust", "point_2", "Dedicated DMC Support"))}
         ${cmsInput("trust", "point_3", "Trust Point 3", val(s, "trust", "point_3", "Tailor-Made Itineraries"))}
         ${cmsInput("trust", "point_4", "Trust Point 4", val(s, "trust", "point_4", "Competitive Contracted Rates"))}
-        ${cmsInput("stats", "stat_1_value", "Stat 1 Value", val(s, "stats", "stat_1_value", "500+"))}
-        ${cmsInput("stats", "stat_1_label", "Stat 1 Label", val(s, "stats", "stat_1_label", "Hotels Network"))}
-        ${cmsInput("stats", "stat_2_value", "Stat 2 Value", val(s, "stats", "stat_2_value", "50+"))}
-        ${cmsInput("stats", "stat_2_label", "Stat 2 Label", val(s, "stats", "stat_2_label", "Cities Covered"))}
-        ${cmsInput("stats", "stat_3_value", "Stat 3 Value", val(s, "stats", "stat_3_value", "200+"))}
-        ${cmsInput("stats", "stat_3_label", "Stat 3 Label", val(s, "stats", "stat_3_label", "Transfer Partners"))}
-        ${cmsInput("stats", "stat_4_value", "Stat 4 Value", val(s, "stats", "stat_4_value", "15+"))}
-        ${cmsInput("stats", "stat_4_label", "Stat 4 Label", val(s, "stats", "stat_4_label", "Years of Experience"))}
-      </div>`, "hero", isOn(s, "hero")),
+      </div>
+      <div class="field-full" style="margin-top:14px">
+        <span class="settings-copy">Hero stats cards. Click ✕ to remove a card from the website. Save CMS after changes.</span>
+      </div>
+      <div class="cms-list" data-json-section="stats" data-json-key="items_json">${heroStats.map((item) => statRow(item, "hero-stats")).join("")}</div>
+      <button class="add-row-btn cms-add-hero-stat" type="button">+ Add Stat Card</button>`, "hero", isOn(s, "hero")),
 
       section("Why Choose Us", `<div class="form-grid">${cmsInput("why_choose", "section_title", "Section Title", val(s, "why_choose", "section_title", "Why Choose Caledor"), true)}</div>
         <div class="cms-list" data-json-section="why_choose" data-json-key="features_json">${features.map(featureRow).join("")}</div>
@@ -1069,6 +1075,22 @@ window.CmsSchema = (() => {
     if (successStories.length || container.querySelector('[data-json-section="success_stories"]')) {
       sections.success_stories = sections.success_stories || {};
       sections.success_stories.items_json = JSON.stringify(successStories);
+    }
+
+    const heroStats = [];
+    container.querySelectorAll('[data-list="hero-stats"]').forEach((row) => {
+      const value = row.querySelector('[name="value"]')?.value || "";
+      const label = row.querySelector('[name="label"]')?.value || "";
+      if (!String(value).trim() && !String(label).trim()) return;
+      heroStats.push({ value, label });
+    });
+    if (heroStats.length || container.querySelector('[data-json-section="stats"][data-json-key="items_json"]')) {
+      sections.stats = sections.stats || {};
+      sections.stats.items_json = JSON.stringify(heroStats);
+      for (let i = 1; i <= 4; i += 1) {
+        sections.stats[`stat_${i}_value`] = heroStats[i - 1]?.value || "";
+        sections.stats[`stat_${i}_label`] = heroStats[i - 1]?.label || "";
+      }
     }
 
     const numbersStats = [];
